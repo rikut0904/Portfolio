@@ -27,8 +27,8 @@ body {
 }
 
 main {
-    width: 80%;
-    padding: 1% 10% 0;
+    width: 90%;
+    margin: 0 auto;
 }
 
 a {
@@ -43,8 +43,10 @@ h2 {
 
 .two {
     display: flex;
-    width: 135%;
-    justify-content: space-evenly;
+    padding: 1% 0 1% 10%;
+    gap: 15%;
+    width: 100%;
+    justify-content:start;
 }
 
 .three {
@@ -60,4 +62,30 @@ img {
     height: 250px;
     object-fit: cover;
     border-radius: 10%;
+}
+
+/* テーブルデザイン */
+table {
+    width: 100%;
+    margin: auto;
+    padding: 0 3%;
+    border-spacing: 0;
+}
+
+table th,
+table td {
+    padding: 10px 20px;
+    border-bottom: 1px solid #c9c2bc;
+}
+
+table th {
+    text-align: center;
+    font-weight: normal;
+    width: 20%;
+    padding: 1rem;
+}
+
+table td {
+    text-align: left;
+    padding: 1rem 0;
 }
