@@ -31,6 +31,10 @@ main {
     margin: 0 auto;
 }
 
+footer {
+    height: 100px;
+}
+
 a {
     text-decoration: none;
     color: black;
@@ -40,13 +44,24 @@ h2 {
     font-size: 20px;
 }
 
+.explain {
+    display: flex;
+    padding: 1% 0 1% 10%;
+    gap: 15%;
+    width: 100%;
+    justify-content: start;
+}
+
+.explain>div {
+    width: 50%;
+}
 
 .two {
     display: flex;
     padding: 1% 0 1% 10%;
     gap: 15%;
     width: 100%;
-    justify-content:start;
+    justify-content: start;
 }
 
 .three {
@@ -56,12 +71,19 @@ h2 {
     justify-content: space-between;
 }
 
+
 img {
     background-repeat: no-repeat;
     width: 250px;
     height: 250px;
     object-fit: cover;
     border-radius: 10%;
+}
+
+.Display img {
+    width: 80%;
+    height: auto;
+    border-radius: 0;
 }
 
 /* テーブルデザイン */
