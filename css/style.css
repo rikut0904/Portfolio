@@ -1,1 +1,63 @@
 @charset "utf-8";
+
+body {
+    font-family: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "BIZ UDPGothic", sans-serif;
+    line-height: 1.7;
+    background-color: rgb(254, 246, 235);
+}
+
+/* トピックパス設定*/
+#topic_path {
+    padding-left: 0;
+}
+
+#topic_path li {
+    list-style-type: none;
+    display: inline;
+    font-size: 80%;
+}
+
+#topic_path li:after {
+    padding: 0 10px;
+    content: "\003E";
+}
+
+#topic_path li:last-child:after {
+    content: none;
+}
+
+main {
+    width: 80%;
+    padding: 1% 10% 0;
+}
+
+a {
+    text-decoration: none;
+    color: black;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+
+.two {
+    display: flex;
+    width: 135%;
+    justify-content: space-evenly;
+}
+
+.three {
+    display: flex;
+    padding: 0 3%;
+    gap: 15%;
+    justify-content: space-between;
+}
+
+img {
+    background-repeat: no-repeat;
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 10%;
+}
