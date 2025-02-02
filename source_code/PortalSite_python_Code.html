@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<body style="white-space: nowrap;">
+    <main>
+        <div class="code">
+            <p>from flask import Flask, render_template, redirect, url_for<br></p>
+            <p>import os<br><br></p>
+            <p>app = Flask(__name__)<br><br></p>
+            <p>@app.route('/')<br></p>
+            <p>def index():<br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return render_template('index.html')<br><br>
+            </p>
+            <p>def app_open(file):<br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;try:<br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
+                &nbsp;os.startfile(file)<br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;except Exception as e:<br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
+                &nbsp;print(f"エラーが発生しました: {str(e)}")
+                <br>
+            </p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return redirect('../')<br><br></p>
+            <p>@app.route('<a style="color: red;">/htmlに記入するroute名</a>')&nbsp;&nbsp;<a style="color: green;">#
+                    例:@app.route('/app')</a><br></p>
+            <p>def <a style="color: red;">htmlに記入するroute名</a>():&nbsp;&nbsp;<a style="color: green;">#
+                    例:def app():</a><br></p>
+            <p><a style="color: green;"># プロジェクトツリーのtemplates内にあるsub.htmlフォルダを参照する場合</a><br>
+            </p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return render_template('sub.html')<br></p>
+            <p><a style="color: green;"># ローカルにあるteamsを起動する場合</a><br></p>
+            <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return
+                app_open("C:\\プログラムディレクトリ\\ms-teams.exe")<br></p>
+        </div>
+    </main>
+</body>
+
+</html>
