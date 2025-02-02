@@ -19,7 +19,46 @@
             <li>BusTime</li>
         </ol>
         <h1>八束穂キャンパス行きバス時刻表取得システム</h1>
-
+        <section class="Display">
+            <h1>システム画面</h1>
+            <img src="img/BusTime2.jpg">
+        </section>
+        <section class="explain">
+            <div>
+                <h1>概要</h1>
+                <p>八束穂キャンパス行きのバスが次いつ出発するのかを表示するアプリケーションです。</p>
+                <p>Pythonの学習をおこなうために初めて本格的なシステムを作成し、GUIを実装するためにPySimpleGUIを利用しています。</p>
+                <p>バスの時刻表は同ディレクトリ上のcsvファイルによって管理されています。
+                    今後の展望として、現在csvファイルに自身で記述しなければならないものをホームページ等から取得できるように修正できればと考えています。</p>
+            </div>
+            <div>
+                <h1>プロジェクトツリー</h1>
+                <p>C:.</p>
+                <p>├─bus_time.py</p>
+                <p>├─normal_mon-fri_23to65.csv</p>
+                <p>├─normal_mon-fri_65to23.csv</p>
+                <p>├─normal_sat_23to65.csv</p>
+                <p>├─normal_sat_65to23.csv</p>
+                <p>├─vac_mon-fri_23to65.csv</p>
+                <p>├─vac_mon-fri_65to23.csv</p>
+                <p>├─vac_sat_23to65.csv</p>
+                <p>└─vac_sat_65to23.csv</p>
+            </div>
+        </section>
+        <section class="explain">
+            <div>
+                <h1>ソースコード</h1>
+                <h3 class="code"><a target="_blank" href="https://github.com/rikut0904/Bus_Time">Githubを参照</a></h3>
+            </div>
+            <div>
+                <h1>使用技術・ライブラリ</h1>
+                <p>Python</p>
+                <p>PySimpleGUI</p>
+                <p>datetime</p>
+                <p>time</p>
+                <p>csv</p>
+            </div>
+        </section>
     </main>
     <footer></footer>
 </body>
