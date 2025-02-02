@@ -19,9 +19,10 @@
             <li><a href="/Portfolio/">home</a></li>
             <li>ポータルサイト</li>
         </ol>
+        <h1>ポータルサイト</h1>
         <section class="Display">
-            <h1>ポータルサイト画面</h1>
-            <img src="img/PortalSite2.png">
+            <h1>システム画面</h1>
+            <img src="img/PortalSite2.jpg">
         </section>
         <section class="explain">
             <div>
@@ -51,32 +52,9 @@
             <div>
                 <h1>ソースコード例</h1>
                 <h2>cssファイルの参照方法</h2>
-                <p></p>&lt;head&gt;</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&lt;link
-                    rel=&quot;stylesheet&quot; href=&quot;{{url_for('static',filename='css/style.css')}}&quot;&gt;</p>
-                <p>&lt;/head&gt;</p>
+                <iframe src="source_code/PortalSite_css_Code.html" width="100%"></iframe>
                 <h2>ローカルアプリを開くためのPythonソースコード</h2>
-                <p>from flask import Flask, render_template, redirect, url_for</p>
-                <p>import os</p>
-                <p>app = Flask(__name__)</p>
-                <p>@app.route('/')</p>
-                <p>def index():</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return render_template('index.html')</p>
-                <p>def app_open(file):</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;try:</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;os.startfile(file)</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;except Exception as e:</p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;print(f"エラーが発生しました: {str(e)}")
-                </p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return redirect('../')</p>
-                <p>@app.route('<a style="color: red;">/htmlに記入するroute名</a>')&nbsp;&nbsp;<a style="color: green;">#
-                        例:@app.route('/app')</a></p>
-                <p>def <a style="color: red;">htmlに記入するroute名</a>():&nbsp;&nbsp;<a style="color: green;">#
-                        例:def app():</a></p>
-                <p><a style="color: green;"># プロジェクトツリーのtemplates内にあるsub.htmlフォルダを参照する場合</a></p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return render_template('sub.html')</p>
-                <p><a style="color: green;"># ローカルにあるteamsを起動する場合</a></p>
-                <p>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;return app_open("C:\\プログラムディレクトリ\\ms-teams.exe")</p>
+                <iframe src="source_code/PortalSite_python_Code.html" width="100%"></iframe>
             </div>
         </section>
     </main>
