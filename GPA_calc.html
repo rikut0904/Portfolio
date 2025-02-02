@@ -19,7 +19,39 @@
             <li>GPA_calc</li>
         </ol>
         <h1>GPA計算システム</h1>
-
+        <section class="Display">
+            <h1>システム画面</h1>
+            <img src="img/GPA_calc2.jpg">
+        </section>
+        <section class="explain">
+            <div>
+                <h1>概要</h1>
+                <p>金沢工業大学のGPA及び正課学習ポイントを計算するためのシステムです。</p>
+                <p>入力データとして、科目名、単位数、評価ポイント(S,A,B,C,D,F)を入力することにより科目を登録することができます。</p>
+                <p>また、システム下部に表示されているcsvファイルを押下することにより、成績情報をcsvファイル化し保存することができる。</p>
+                <p>この出力されたcsvファイルを次回成績入力時にファイル選択から入力することにより、これまでの成績情報を入力することなく、これまでの累積GPAや正課学習ポイントを計算することができます。</p>
+                <p>今後の展望として、現在csvファイルにて管理している成績情報をfirebase等のデータベースを用いることにより、ログインすることで瞬時にこれまでの成績情報にアクセスすることができるようにしていきたいと考えています。</p>
+            </div>
+            <div>
+                <h1>プロジェクトツリー</h1>
+                <p>C:.</p>
+                <p>├─KIT_GPA_calc.py</p>
+                <p>└─subject_grades_data.csv</p>
+            </div>
+        </section>
+        <section class="explain">
+            <div>
+                <h1>ソースコード</h1>
+                <h3 class="code"><a target="_blank" href="https://github.com/rikut0904/KIT_GPA_calc">Githubを参照</a></h3>
+            </div>
+            <div>
+                <h1>使用技術・ライブラリ</h1>
+                <p>Python</p>
+                <p>PySimpleGUI</p>
+                <p>pandas</p>
+                <p>csv</p>
+            </div>
+        </section>
     </main>
     <footer></footer>
 </body>
