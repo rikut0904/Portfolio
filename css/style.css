@@ -35,6 +35,10 @@ footer {
     height: 100px;
 }
 
+.index a {
+    text-align: right;
+}
+
 .code a {
     text-decoration: underline;
 }
@@ -45,6 +49,7 @@ a {
 }
 
 h1 {
+    font-size: 2.5rem;
     padding: 10px 0 5px;
 }
 
@@ -91,6 +96,12 @@ table th {
 table td {
     text-align: left;
     padding: 1rem 0;
+}
+
+.portfolio {
+    width: 250px;
+    height: 250px;
+    margin-bottom: 20px;
 }
 
 iframe {
