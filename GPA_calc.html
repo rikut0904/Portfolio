@@ -30,13 +30,28 @@
                 <p>入力データとして、科目名、単位数、評価ポイント(S,A,B,C,D,F)を入力することにより科目を登録することができます。</p>
                 <p>また、システム下部に表示されているcsvファイルを押下することにより、成績情報をcsvファイル化し保存することができる。</p>
                 <p>この出力されたcsvファイルを次回成績入力時にファイル選択から入力することにより、これまでの成績情報を入力することなく、これまでの累積GPAや正課学習ポイントを計算することができます。</p>
-                <p>今後の展望として、現在csvファイルにて管理している成績情報をfirebase等のデータベースを用いることにより、ログインすることで瞬時にこれまでの成績情報にアクセスすることができるようにしていきたいと考えています。</p>
+                <p>2025/2/26 にシステム改修を行い、csvファイルを用いることなく、データベースを用いて成績情報を入力することができるようになりました。</p>
+                <p>また、ログインすることにより瞬時にこれまでの成績情報にアクセスすることができるようになりました。</p>
             </div>
             <div>
                 <h1>プロジェクトツリー</h1>
                 <p>C:.</p>
+                <p>├─firebase_setting</p>
+                <p>│ ├─.env</p>
+                <p>│ ├─firebase.py</p>
+                <p>│ └─firebase_api.json</p>
+                <p>├─function</p>
+                <p>│ ├─gui.py</p>
+                <p>│ ├─logic_function.py</p>
+                <p>│ └─state.py</p>
+                <p>├─node_modules</p>
+                <p>│ └─...(省略)</p>
                 <p>├─KIT_GPA_calc.py</p>
-                <p>└─subject_grades_data.csv</p>
+                <p>├─package.json</p>
+                <p>├─package-lock.json</p>
+                <p>├─.gitignore</p>
+                <p>├─subject_grades_data_guest.csv</p>
+                <p>└─README.md</p>
             </div>
         </section>
         <section class="explain">
@@ -50,6 +65,11 @@
                 <p>PySimpleGUI</p>
                 <p>pandas</p>
                 <p>csv</p>
+                <p>dotenv</p>
+                <p>firebase</p>
+                <p>firebase-admin</p>
+                <p>webbrowser</p>
+                <p>npm</p>
             </div>
         </section>
     </main>
