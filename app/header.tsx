@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="p-4 bg-primary-light shadow-md">
       <div className="flex justify-between items-center">
-        <div className="text-xl font-bold text-header-color">平田 陸翔</div>
+        <div className="text-xl font-bold text-header-color"><Link href="/">平田 陸翔</Link></div>
         <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
           <span className="text-3xl">☰</span>
         </button>
