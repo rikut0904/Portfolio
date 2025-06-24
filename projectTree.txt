@@ -1,0 +1,28 @@
+フォルダー パスの一覧
+ボリューム シリアル番号は 40AB-C4C1 です
+C:.
+├─.next
+│  ├─cache
+│  │  ├─swc
+│  │  │  └─plugins
+│  │  │      └─v7_windows_x86_64_9.0.0
+│  │  └─webpack
+│  │      ├─client-development
+│  │      └─server-development
+│  ├─server
+│  │  ├─app
+│  │  │  └─_not-found
+│  │  └─vendor-chunks
+│  ├─static
+│  │  ├─chunks
+│  │  │  └─app
+│  │  │      └─_not-found
+│  │  ├─css
+│  │  │  └─app
+│  │  ├─development
+│  │  └─webpack
+│  │      └─app
+│  └─types
+│      └─app
+├─app
+└─public
