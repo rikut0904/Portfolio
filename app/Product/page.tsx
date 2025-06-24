@@ -46,6 +46,18 @@ const products = [
         link: "/10card_creater",
         description: "名刺10枚切り用紙対応印刷システム",
     },
+    {
+        title: "HanaScore",
+        image: "/img/product/HanaScore.jpg",
+        link: "/HanaScore",
+        description: "花札の点数計算をするためのアプリ",
+    },
+    {
+        title: "Bloomia",
+        image: "/img/product/Bloomia.jpg",
+        link: "/Bloomia",
+        description: "中等教育機関向けLMS",
+    }
 ];
 
 export default function ProductSection() {
