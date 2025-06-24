@@ -1,7 +1,7 @@
 フォルダー パスの一覧
 ボリューム シリアル番号は 40AB-C4C1 です
 C:\PROGRAMING_STUDY\SELF_PROGRAM\PORTFOLIO\APP
-├─Activity
+├─Activities
 ├─components
 ├─Contact
 └─Product
