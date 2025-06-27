@@ -7,55 +7,55 @@ const products = [
     {
         title: "バス時刻表取得システム",
         image: "/img/product/BusTime.jpg",
-        link: "/BusTime",
+        link: "bustime",
         description: "八束穂キャンパス行きバス時刻表取得アプリ",
     },
     {
         title: "GPA計算システム",
         image: "/img/product/GPA_calc.jpg",
-        link: "/GPA_calc",
+        link: "gpa_calc",
         description: "KITのGPA計算と成績管理",
     },
     {
         title: "ふくにしファーム\nWebサイト",
         image: "/img/product/Fukunishifarm.jpg",
-        link: "/Fukunishifarm",
+        link: "fukunishifarm",
         description: "ぶどう園の紹介用Webサイト",
     },
     {
         title: "コンビニ経営ゲーム",
         image: "/img/product/SimulationGame.jpg",
-        link: "/SimulationGame",
+        link: "simulation_game",
         description: "ハッカソンで作成した経営シミュレーションゲーム",
     },
     {
         title: "Todoアプリ IconicMomentum",
         image: "/img/product/IconicMomentum.jpg",
-        link: "/IconicMomentum",
+        link: "iconic_momentum",
         description: "Flutter & FirebaseのTodo管理アプリ",
     },
     {
         title: "ポータルサイト",
         image: "/img/product/PortalSite.jpg",
-        link: "/PortalSite",
+        link: "portal_site",
         description: "自身がよく利用するWebサイト及びアプリケーション集約したシステム",
     },
     {
         title: "10card_creater",
         image: "/img/product/10card_creater.jpg",
-        link: "/10card_creater",
+        link: "10card_creater",
         description: "名刺10枚切り用紙対応印刷システム",
     },
     {
         title: "HanaScore",
         image: "/img/product/HanaScore.jpg",
-        link: "/HanaScore",
+        link: "hana_score",
         description: "花札の点数計算をするためのアプリ",
     },
     {
         title: "Bloomia",
         image: "/img/product/Bloomia.jpg",
-        link: "/Bloomia",
+        link: "bloomia",
         description: "中等教育機関向けLMS",
     }
 ];
@@ -71,8 +71,8 @@ export default function ProductSection() {
                             key={index}
                             title={product.title}
                             image={product.image}
-                            link={product.link}
                             description={product.description}
+                            slug={product.link}
                         />
                     ))}
                 </div>
