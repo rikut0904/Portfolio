@@ -18,17 +18,10 @@ const historyData = [
     { date: "2025年01月", details: ["金沢IT部活メンター 開始", "GDGoC金沢工業大学 参加"] },
     { date: "2025年04月", details: ["インクルーシブデベロッパーズ 参加"] },
     { date: "2025年06月", details: ["キャリア教育学会 運営お手伝い"] },
-    { date: "2025年07月", details: ["Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 金沢工大 運営"] },
-    { date: "2025年07月", details: ["Kanazawa.go 参加"]},
-    { date: "2025年08月", details: ["Go Workshop Conference 参加"]},
-    { date: "2025年08月", details: ["電気学会C部門 運営お手伝い"]},
-    { date: "2025年08月", details: ["日本教育情報学会 年会 参加予定"]},
-    { date: "2025年09月", details: ["情報処理学会 FIT 参加予定"]},
-    { date: "2025年09月", details: ["HelloDevWorld 運営予定"]},
-    { date: "2025年09月", details: ["Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 神戸電子 運営予定"]},
-    { date: "2025年09月", details: ["Go Conference 参加予定"]},
-    { date: "2025年10月", details: ["第58回工大祭 運営予定"]},
-    { date: "2025年10月", details: ["Vueフェス 参加予定"]},
+    { date: "2025年07月", details: ["Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 金沢工大 運営", "Kanazawa.go 参加"]},
+    { date: "2025年08月", details: ["Go Workshop Conference 参加", "電気学会C部門 運営お手伝い", "日本教育情報学会 年会 参加予定"]},
+    { date: "2025年09月", details: ["情報処理学会 FIT 参加予定", "HelloDevWorld 運営予定", "Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 神戸電子 運営予定", "Go Conference 参加予定"]},
+    { date: "2025年10月", details: ["第58回工大祭 運営予定", "Vueフェス 参加予定"]},
 ];
 
 export default function HistorySection() {
