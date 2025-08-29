@@ -1,7 +1,7 @@
 // components/ProductSection.tsx
 import React from "react";
-import FadeInSection from "../components/FadeInSection";
-import ProductCard from "../components/ProductCard";
+import FadeInSection from "../../components/FadeInSection";
+import ProductCard from "../../components/ProductCard";
 
 const products = [
     {
@@ -54,7 +54,7 @@ const products = [
     },
     {
         title: "Bloomia",
-        image: "/img/product/Bloomia.jpg",
+        image: "/img/product/Bloomia_icon.png",
         link: "bloomia",
         description: "中等教育機関向けLMS",
     }

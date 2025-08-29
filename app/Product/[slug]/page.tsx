@@ -3,7 +3,7 @@
 
 import React from "react";
 import { useParams } from "next/navigation";
-import ProductDetail from "../../components/ProductPage";
+import ProductDetail from "../../../components/ProductPage";
 
 const productData: {
     [key: string]: {
