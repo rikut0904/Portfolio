@@ -10,13 +10,50 @@ export default function Home() {
         <section id="profile">
           <h2>About Me</h2>
           <div className="flex flex-col md:flex-row items-left gap-8 card">
-            <Image src="/img/profile.jpg" alt="プロフィール写真" width={150} height={150} className="rounded-full object-cover" />
+            <Image src="/img/profile.jpg" alt="プロフィール写真" width={150} height={150} className="rounded-foll object-cover" />
             <div>
               <h3>名前：平田 陸翔</h3>
               <p>出身：滋賀県甲賀市</p>
-              <p>専門：情報工学(システム開発-backend)、心理学、電気工学、教職</p>
               <p>趣味：温泉巡り、デバイス収集</p>
               <p>金沢工業大学 情報工学科 2年</p>
+            </div>
+          </div>
+        </section>
+      </FadeInSection>
+
+      <FadeInSection>
+        <section id="majer">
+          <h2>専門領域</h2>
+          <div className="grid-card">
+            <div className="card">
+              <h3>情報工学</h3>
+              <ol>
+                <li>システム開発</li>
+                <li>データベース</li>
+                <li>OS開発</li>
+                <li>データ分析</li>
+              </ol>
+            </div>
+            <div className="card">
+              <h3>心理学</h3>
+              <ol>
+                <li>教育心理学</li>
+              </ol>
+            </div>
+            <div className="card">
+              <h3>電気工学</h3>
+              <ol>
+                <li>電気工事</li>
+                <li>電気設備</li>
+                <li>電子機器組み立て</li>
+              </ol>
+            </div>
+              <div className="card">
+              <h3>教職</h3>
+              <ol>
+                <li>教育工学</li>
+                <li>教育心理学</li>
+              </ol>
             </div>
           </div>
         </section>
