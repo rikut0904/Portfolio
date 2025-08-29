@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import HistorySection from "./components/HistorySection";
-import FadeInSection from "./components/FadeInSection";
+import HistorySection from "../components/HistorySection";
+import FadeInSection from "../components/FadeInSection";
 
 export default function Home() {
   return (

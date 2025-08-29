@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import FadeInSection from "../components/FadeInSection";
+import FadeInSection from "../../components/FadeInSection";
 
 export default function ActivityPage() {
     return (
@@ -9,7 +9,6 @@ export default function ActivityPage() {
             <FadeInSection>
                 <section id="activity" className="py-8">
                     <h1>お問い合わせ</h1>
-
                 </section>
             </FadeInSection>
         </main>
