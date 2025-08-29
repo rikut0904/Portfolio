@@ -9,6 +9,7 @@ export default function ActivityPage() {
             <FadeInSection>
                 <section id="activity" className="py-8">
                     <h1>お問い合わせ</h1>
+                    <iframe src="https://forms.gle/UiAi1ccjjyxHmvvu9" width="640" height="802">読み込み中...</iframe>
                 </section>
             </FadeInSection>
         </main>
