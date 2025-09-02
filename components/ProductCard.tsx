@@ -1,25 +1,17 @@
-"use client";
 
 import React from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 
 interface ProductCardProps {
   title: string;
   image: string;
-  slug: string;
   description: string;
 }
 
-export default function ProductCard({ title, image, slug, description }: ProductCardProps) {
-  const router = useRouter();
-
-  const handleClick = () => {
-    router.push(`/Product/${slug}`);
-  };
+export default function ProductCard({ title, image, description }: ProductCardProps) {
 
   return (
-    <div className="card cursor-pointer" onClick={handleClick}>
+    <div className="card cursor-pointer">
       <Image
         src={image}
         alt={title}

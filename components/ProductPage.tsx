@@ -19,5 +19,5 @@ interface ProductProps {
 }
 
 export default function ProductPage(props: ProductProps) {
-    return <ProductDetail slug={""} {...props} />;
+    return <ProductDetail {...props} />;
 }
