@@ -23,7 +23,7 @@ export default function Home() {
 
       <FadeInSection>
         <section id="majer">
-          <h2>専門領域</h2>
+          <h2>専門領域-学習中</h2>
           <div className="grid-card">
             <div className="card">
               <h3>情報工学</h3>
@@ -48,7 +48,7 @@ export default function Home() {
                 <li>電子機器組み立て</li>
               </ol>
             </div>
-              <div className="card">
+            <div className="card">
               <h3>教職</h3>
               <ol>
                 <li>教育工学</li>
@@ -82,6 +82,8 @@ export default function Home() {
                 <li>第二種電気工事士</li>
                 <li>認定電気工事従事者</li>
                 <li>低圧取扱業務(低圧)特別教育(学科)終了</li>
+                <li>技能検定 3級電子機器組立て電子機器組立て作業</li>
+                <li>技能検定 3級電気機器組立てシーケンス制御作業</li>
               </ol>
             </div>
             <div className="card">
