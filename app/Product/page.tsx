@@ -57,7 +57,8 @@ const products = [
         image: "/img/product/Bloomia_icon.png",
         link: "bloomia",
         description: "中等教育機関向けLMS",
-    }
+    },
+    
 ];
 
 export default function ProductSection() {
