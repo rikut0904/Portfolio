@@ -58,7 +58,19 @@ const products = [
         link: "bloomia",
         description: "中等教育機関向けLMS",
     },
-    
+    {
+        title: "TimeTracker",
+        image: "/img/product/time_tracker.jpg",
+        link: "time_tracker",
+        description: "実習時間管理用アプリ",
+    },
+    {
+        title: "Bini",
+        image: "/img/product/bini.jpg",
+        link: "bini",
+        description: "新しい挑戦を始めるためのアプリ",
+    },
+
 ];
 
 export default function ProductSection() {
@@ -73,7 +85,6 @@ export default function ProductSection() {
                             title={product.title}
                             image={product.image}
                             description={product.description}
-                            slug={product.link}
                         />
                     ))}
                 </div>
