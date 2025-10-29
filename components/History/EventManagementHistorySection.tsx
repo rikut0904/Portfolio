@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import FadeInSection from "./FadeInSection";
+import FadeInSection from "../FadeInSection";
 
 const historyData = [
     { date: "2021年04月", details: ["滋賀県立瀬田工業高等学校 電気科 入学"] },
@@ -24,11 +24,11 @@ const historyData = [
     { date: "2025年10月", details: ["第58回工大祭 運営予定", "Vueフェス 参加予定"] },
 ];
 
-export default function HistorySection() {
+export default function SchoolHistorySection() {
     return (
         <FadeInSection>
-            <section id="history">
-                <h2>略歴</h2>
+            <section id="event-management-history">
+                <h2>イベント運営履歴</h2>
                 <div className="flex flex-col gap-4">
                     {historyData.map((item, index) => (
                         <div key={index} className="card">
