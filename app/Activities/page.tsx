@@ -45,7 +45,7 @@ export default function ActivityPage() {
                     </div>
                 </FadeInSection>
                 <FadeInSection>
-                    <h2>その他大学課外活動-</h2>
+                    <h2>その他大学課外活動</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Link href="https://www2.kanazawa-it.ac.jp/kitfes/">
                             <div className="card">
@@ -105,6 +105,11 @@ export default function ActivityPage() {
                         <Link href="https://kanazawago.connpass.com/">
                             <div className="card">
                                 <h3>Kanazawa.go</h3>
+                            </div>
+                        </Link>
+                        <Link href="https://biwakogo.connpass.com/">
+                            <div className="card">
+                                <h3>Biwako.go</h3>
                             </div>
                         </Link>
                         <Link href="https://gwc.gocon.jp/2025/">
