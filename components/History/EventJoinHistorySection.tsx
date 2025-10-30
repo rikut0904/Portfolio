@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import FadeInSection from "../FadeInSection";
+import Accordion from "../Accordion";
 
 const historyData = [
     { date: "2022年06月", details: ["令和4年度高校生ものづくりコンテスト電気工事部門 滋賀県大会 2位"] },
@@ -20,19 +21,20 @@ export default function EventJoinHistorySection() {
     return (
         <FadeInSection>
             <section id="event-join-history">
-                <h2>イベント参加履歴</h2>
-                <div className="flex flex-col gap-4">
-                    {historyData.map((item, index) => (
-                        <div key={index} className="card">
-                            <h3>{item.date}</h3>
-                            <ul className="list-disc ml-5">
-                                {item.details.map((detail, i) => (
-                                    <li key={i}>{detail}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </div>
+                <Accordion title="イベント参加履歴" defaultOpen={false}>
+                    <div className="flex flex-col gap-4">
+                        {historyData.map((item, index) => (
+                            <div key={index} className="card">
+                                <h3>{item.date}</h3>
+                                <ul className="list-disc ml-5">
+                                    {item.details.map((detail, i) => (
+                                        <li key={i}>{detail}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </Accordion>
             </section>
         </FadeInSection>
     );

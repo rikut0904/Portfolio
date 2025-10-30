@@ -99,11 +99,13 @@ export default function Home() {
           </div>
         </section>
       </FadeInSection>
-      <SchoolHistorySection />
-      <CommunityJoinHistorySection />
-      <EventManagementHistorySection />
-      <EventJoinHistorySection />
-
+      <FadeInSection>
+        <h2>略歴</h2>
+        <SchoolHistorySection />
+        <CommunityJoinHistorySection />
+        <EventManagementHistorySection />
+        <EventJoinHistorySection />
+      </FadeInSection>
     </main>
   );
 }

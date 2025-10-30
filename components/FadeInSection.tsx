@@ -10,7 +10,7 @@ export default function FadeInSection({ children }: { children: React.ReactNode 
             entries.forEach(entry => {
                 setVisible(entry.isIntersecting);
             });
-        }, { rootMargin: "0px 0px -150px 0px", threshold: 0.1 });
+        }, { rootMargin: "0px 0px -100px 0px", threshold: 0.1 });
 
         if (domRef.current) observer.observe(domRef.current);
         return () => { if (domRef.current) observer.unobserve(domRef.current); };
