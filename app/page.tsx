@@ -1,6 +1,9 @@
 import React from "react";
 import Image from "next/image";
-import HistorySection from "../components/History/SchoolHistorySection";
+import SchoolHistorySection from "../components/History/SchoolHistorySection";
+import EventManagementHistorySection from "../components/History/EventManagementHistorySection";
+import EventJoinHistorySection from "../components/History/EventJoinHistorySection";
+import CommunityJoinHistorySection from "../components/History/CommunityJoinHistorySection";
 import FadeInSection from "../components/FadeInSection";
 
 export default function Home() {
@@ -96,8 +99,11 @@ export default function Home() {
           </div>
         </section>
       </FadeInSection>
+      <SchoolHistorySection />
+      <CommunityJoinHistorySection />
+      <EventManagementHistorySection />
+      <EventJoinHistorySection />
 
-      <HistorySection />
     </main>
   );
 }

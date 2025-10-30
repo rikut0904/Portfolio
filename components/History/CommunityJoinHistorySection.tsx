@@ -4,6 +4,7 @@ import FadeInSection from "../FadeInSection";
 
 const historyData = [
     { date: "2024年04月", details: ["Science Project for Children 参加", "工大祭実行委員会 参加", "坂本研究室 参加"] },
+    { date: "2024年06月", details: ["LCレファレンススタッフアルバイト 開始", "第二種電気工事士試験アドバイザーアルバイト 開始"] },
     { date: "2024年07月", details: ["BusStopProject モバイル班 参加"] },
     { date: "2024年10月", details: ["RescueEd 設立"] },
     { date: "2024年11月", details: ["金沢市地域課題解決プロジェクト 参画"] },
@@ -11,11 +12,10 @@ const historyData = [
     { date: "2025年04月", details: ["インクルーシブデベロッパーズ 参加"] },
     { date: "2025年07月", details: ["Kanazawa.go 参加"] },
     { date: "2025年08月", details: ["Go Workshop Conference 参加"] },
-    { date: "2025年09月", details: ["情報処理学会 FIT 参加予定", "HelloDevWorld 運営予定", "Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 神戸電子 運営予定", "Go Conference 参加予定"] },
-    { date: "2025年10月", details: ["第58回工大祭 運営予定", "Vueフェス 参加予定"] },
+    { date: "2025年09月", details: ["Biwako.go 立ち上げ"] },
 ];
 
-export default function SchoolHistorySection() {
+export default function CommunityJoinHistorySection() {
     return (
         <FadeInSection>
             <section id="community-join-history">
