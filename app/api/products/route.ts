@@ -23,13 +23,19 @@ export async function GET() {
   try {
     const snapshot = await adminDb
       .collection("products")
-      .orderBy("createdAt", "desc")
+      .orderBy("createdAt", "asc")
       .get();
 
-    const products = snapshot.docs.map((doc: any) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    const products = snapshot.docs.map((doc: any) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        // Timestamp を文字列に変換
+        createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+        updatedAt: data.updatedAt?.toDate?.()?.toISOString() || data.updatedAt,
+      };
+    });
 
     return NextResponse.json({ products });
   } catch (error) {
@@ -47,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
-    const { title, description, image, link } = data;
+    const { title, description, image, link, category, technologies, status, year } = data;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -61,6 +67,10 @@ export async function POST(request: NextRequest) {
       description,
       image: image || "",
       link: link || "",
+      category: category || "",
+      technologies: technologies || [],
+      status: status || "公開中",
+      year: year || new Date().getFullYear(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

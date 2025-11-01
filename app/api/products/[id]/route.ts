@@ -31,7 +31,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const data = await request.json();
-    const { title, description, image, link } = data;
+    const { title, description, image, link, category, technologies, status, year } = data;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -48,6 +48,10 @@ export async function PUT(
         description,
         image: image || "",
         link: link || "",
+        category: category || "",
+        technologies: technologies || [],
+        status: status || "公開中",
+        year: year || new Date().getFullYear(),
         updatedAt: new Date().toISOString(),
       });
 

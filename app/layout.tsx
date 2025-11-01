@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Header from "./header";
 import "./globals.css";
 import { AuthProvider } from "../lib/auth/AuthContext";
 
@@ -15,11 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ja">
       <body>
-        <AuthProvider>
-          <Header />
-          <main className="max-w-5xl mx-auto px-6">{children}</main>
-          <footer className="text-center py-6">&copy; 2025 平田 陸翔</footer>
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

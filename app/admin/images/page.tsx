@@ -59,25 +59,14 @@ function ImagesContent() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/dashboard"
-              className="text-blue-600 hover:text-blue-800"
-            >
-              ← ダッシュボード
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">画像管理</h1>
-          </div>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-5">
+          <Link href="/admin" className="text-blue-800 hover:text-gray-900 mb-4">
+            ← ダッシュボード
+          </Link>
+          <h1 className="text-2xl font-bold mb-4">画像管理</h1>
         </div>
-      </header>
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">画像をアップロード</h2>
-
           <div className="space-y-4">
             {/* アップロード先選択 */}
             <div>
@@ -158,14 +147,6 @@ function ImagesContent() {
               <li>表示されたパスをコピー</li>
               <li>作品登録などで画像パスとして使用</li>
             </ol>
-
-            <div className="mt-4 bg-yellow-50 border border-yellow-200 p-4 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>注意:</strong>{" "}
-                画像は自動的にGitHubリポジトリにコミットされます。
-                デプロイ完了まで数分かかる場合があります。
-              </p>
-            </div>
           </div>
         </div>
       </main>

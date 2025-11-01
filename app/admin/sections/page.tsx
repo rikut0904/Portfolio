@@ -87,22 +87,13 @@ function SectionsContent() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/admin/dashboard"
-              className="text-blue-600 hover:text-blue-800"
-            >
-              ← ダッシュボード
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900">セクション管理</h1>
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-4">
+          <Link href="/admin" className="text-blue-800 hover:text-gray-900 mb-4">
+            ← ダッシュボード
+          </Link>
+          <h1 className="text-2xl font-bold mb-4">セクション管理</h1>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {editingSection ? (
           /* 編集モード */
           <div className="bg-white p-6 rounded-lg shadow">
@@ -119,9 +110,6 @@ function SectionsContent() {
                 rows={20}
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
               />
-              <p className="mt-2 text-sm text-gray-500">
-                ヒント: 配列やオブジェクトを直接編集できます
-              </p>
             </div>
             <div className="flex gap-2">
               <button
@@ -153,7 +141,7 @@ function SectionsContent() {
                       {section.meta.displayName}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      タイプ: {section.meta.type} | ID: {section.id}
+                      ID: {section.id}
                     </p>
                   </div>
                   {section.meta.editable && (

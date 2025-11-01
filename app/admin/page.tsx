@@ -1,42 +1,56 @@
 "use client";
 
-import React from "react";
-import { useAuth } from "../../../lib/auth/AuthContext";
-import { useRouter } from "next/navigation";
-import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import React, { useEffect, useState } from "react";
+import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
 
-function DashboardContent() {
-  const { user, signOut } = useAuth();
-  const router = useRouter();
+interface Stats {
+  productsCount: number;
+  sectionsCount: number;
+  publicProductsCount: number;
+}
 
-  const handleSignOut = async () => {
+function DashboardContent() {
+  const [stats, setStats] = useState<Stats>({
+    productsCount: 0,
+    sectionsCount: 0,
+    publicProductsCount: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
     try {
-      await signOut();
-      router.push("/");
+      // 作品数を取得
+      const productsRes = await fetch("/api/products");
+      const productsData = await productsRes.json();
+      const products = productsData.products || [];
+
+      // セクション数を取得
+      const sectionsRes = await fetch("/api/sections");
+      const sectionsData = await sectionsRes.json();
+      const sections = sectionsData.sections || [];
+
+      // 公開中の作品数
+      const publicProducts = products.filter((p: any) => p.status === "公開中");
+
+      setStats({
+        productsCount: products.length,
+        sectionsCount: sections.length,
+        publicProductsCount: publicProducts.length,
+      });
     } catch (error) {
-      console.error("Sign out error:", error);
+      console.error("Failed to fetch stats:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
+ return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">管理画面</h1>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">{user?.email}</span>
-            <button
-              onClick={handleSignOut}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-            >
-              ログアウト
-            </button>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -150,27 +164,29 @@ function DashboardContent() {
           </Link>
         </div>
 
-        {/* 統計情報（将来の拡張用） */}
+        {/* 統計情報 */}
         <div className="mt-8 bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">クイック情報</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-blue-600">7</p>
-              <p className="text-gray-600">セクション</p>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-green-600">11</p>
-              <p className="text-gray-600">制作物</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-3xl font-bold text-blue-600">{stats.sectionsCount}</p>
+                <p className="text-gray-600">セクション</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-3xl font-bold text-green-600">{stats.productsCount}</p>
+                <p className="text-gray-600">制作物（全体）</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-3xl font-bold text-purple-600">{stats.publicProductsCount}</p>
+                <p className="text-gray-600">公開中の作品</p>
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-purple-600">15</p>
-              <p className="text-gray-600">資格</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-orange-600">最新</p>
-              <p className="text-gray-600">データ更新</p>
-            </div>
-          </div>
+          )}
         </div>
       </main>
     </div>

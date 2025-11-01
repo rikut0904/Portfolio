@@ -5,10 +5,11 @@ import EventManagementHistorySection from "../components/History/EventManagement
 import EventJoinHistorySection from "../components/History/EventJoinHistorySection";
 import CommunityJoinHistorySection from "../components/History/CommunityJoinHistorySection";
 import FadeInSection from "../components/FadeInSection";
+import SiteLayout from "../components/layouts/SiteLayout";
 
 export default function Home() {
   return (
-    <main className="max-w-5xl mx-auto px-6">
+    <SiteLayout>
       <FadeInSection>
         <section id="profile">
           <h2>About Me</h2>
@@ -106,6 +107,6 @@ export default function Home() {
         <EventManagementHistorySection />
         <EventJoinHistorySection />
       </FadeInSection>
-    </main>
+    </SiteLayout>
   );
 }

@@ -1,10 +1,11 @@
 import React from "react";
 import FadeInSection from "../../components/FadeInSection";
 import Link from "next/link";
+import SiteLayout from "../../components/layouts/SiteLayout";
 
 export default function ActivityPage() {
     return (
-        <main className="max-w-5xl mx-auto px-6">
+        <SiteLayout>
             <section id="activity" className="py-8">
                 <FadeInSection>
                     <h1>課外活動</h1>
@@ -120,6 +121,6 @@ export default function ActivityPage() {
                     </div>
                 </FadeInSection>
             </section>
-        </main >
+        </SiteLayout>
     )
 }
