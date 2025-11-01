@@ -20,8 +20,12 @@ const historyData = [
     { date: "2025年06月", details: ["キャリア教育学会 運営お手伝い"] },
     { date: "2025年07月", details: ["Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 金沢工大 運営", "Kanazawa.go 参加"] },
     { date: "2025年08月", details: ["Go Workshop Conference 参加", "電気学会C部門 運営お手伝い", "日本教育情報学会 年会 参加"] },
-    { date: "2025年09月", details: ["情報処理学会 FIT 参加予定", "HelloDevWorld 運営予定", "Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 神戸電子 運営予定", "Go Conference 参加予定"] },
-    { date: "2025年10月", details: ["第58回工大祭 運営予定", "Vueフェス 参加予定"] },
+    { date: "2025年09月", details: ["情報処理学会 FIT 参加", "HelloDevWorld 運営", "Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 神戸電子 運営", "Go Conference 参加", "Biwako.go 立ち上げ"] },
+    { date: "2025年10月", details: ["技育祭 参加", "第58回工大祭 運営", "Vueフェス 参加"] },
+    { date: "2025年11月", details: ["星稜祭 参加予定", "LTインフィニティ 運営予定"] },
+    { date: "2025年12月", details: ["Go Workshop Conference2025 運営予定"] },
+    { date: "2026年01月", details: ["成人式 参加予定"] },
+    { date: "2026年02月", details: ["dmm.go 参加予定", "Go Conference mini in Sendai.go 参加予定"] },
 ];
 
 export default function HistorySection() {
