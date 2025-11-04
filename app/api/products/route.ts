@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
-    const { title, description, image, link, category, technologies, status, year } = data;
+    const { title, description, image, link, category, technologies, status, deployStatus, createdYear, createdMonth } = data;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -69,8 +69,10 @@ export async function POST(request: NextRequest) {
       link: link || "",
       category: category || "",
       technologies: technologies || [],
-      status: status || "公開中",
-      year: year || new Date().getFullYear(),
+      status: status || "公開",
+      deployStatus: deployStatus || "未公開",
+      createdYear: createdYear || new Date().getFullYear(),
+      createdMonth: createdMonth || (new Date().getMonth() + 1),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });

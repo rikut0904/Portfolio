@@ -136,6 +136,34 @@ function DashboardContent() {
             </div>
           </Link>
 
+          {/* 技術管理 */}
+          <Link
+            href="/admin/technologies"
+            className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">技術管理</h2>
+                <p className="mt-2 text-gray-600">
+                  使用技術の追加・削除
+                </p>
+              </div>
+              <svg
+                className="w-8 h-8 text-orange-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                />
+              </svg>
+            </div>
+          </Link>
+
           {/* プレビュー */}
           <Link
             href="/"

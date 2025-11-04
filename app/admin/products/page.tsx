@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
+import Accordion from "../../../components/Accordion";
 import Link from "next/link";
 
 interface Product {
@@ -13,10 +14,12 @@ interface Product {
   link: string;
   category?: string;
   technologies?: string[];
-  status?: string;
-  year?: number;
-  createdAt?: string;
-  updatedAt?: string;
+  status?: string; // 公開ステータス（公開、非公開）
+  deployStatus?: string; // デプロイ状況（デプロイ済み、未公開、デプロイ中）
+  createdYear?: number; // 作品作成年
+  createdMonth?: number; // 作品作成月
+  createdAt?: string; // 登録日時
+  updatedAt?: string; // 更新日時
 }
 
 // 定数定義
@@ -29,17 +32,13 @@ const CATEGORIES = [
   "その他"
 ];
 
-const TECHNOLOGIES = [
-  "React", "Next.js", "Flutter", "Swift", "Kotlin",
-  "Python", "Go", "Java", "Ruby", "Node.js", "Firebase",
-  "AWS", "Docker", "TypeScript", "JavaScript", "HTML/CSS"
-];
-
-const STATUSES = ["公開中", "非公開", "開発中"];
+const STATUSES = ["公開", "非公開"];
+const DEPLOY_STATUSES = ["公開中", "未公開"];
 
 function ProductsContent() {
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
+  const [technologies, setTechnologies] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -50,19 +49,32 @@ function ProductsContent() {
     link: "",
     category: "",
     technologies: [] as string[],
-    status: "公開中",
-    year: new Date().getFullYear(),
+    status: "公開",
+    deployStatus: "未公開",
+    createdYear: new Date().getFullYear(),
+    createdMonth: new Date().getMonth() + 1, // 1-12
   });
 
   // フィルター・ソート用のstate
   const [filterCategory, setFilterCategory] = useState("");
   const [filterTechnologies, setFilterTechnologies] = useState<string[]>([]);
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterYear, setFilterYear] = useState("");
-  const [sortBy, setSortBy] = useState("createdAt-asc");
+  const [filterDeployStatus, setFilterDeployStatus] = useState("");
+  const [filterCreatedYear, setFilterCreatedYear] = useState(""); // 作成年フィルター
+  const [filterCreatedMonth, setFilterCreatedMonth] = useState(""); // 作成月フィルター
+  const [sortBy, setSortBy] = useState("createdYear-asc");
+
+  // 技術追加用のstate
+  const [newTechName, setNewTechName] = useState("");
+  const [isAddingTech, setIsAddingTech] = useState(false);
+
+  // ステータスクイック変更用のstate
+  const [statusModalProduct, setStatusModalProduct] = useState<Product | null>(null);
+  const [deployStatusModalProduct, setDeployStatusModalProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     fetchProducts();
+    fetchTechnologies();
   }, []);
 
   const fetchProducts = async () => {
@@ -74,6 +86,55 @@ function ProductsContent() {
       console.error("Failed to fetch products:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTechnologies = async () => {
+    try {
+      const response = await fetch("/api/technologies");
+      const data = await response.json();
+      setTechnologies(data.technologies.map((t: any) => t.name));
+    } catch (error) {
+      console.error("Failed to fetch technologies:", error);
+    }
+  };
+
+  const handleAddTechnology = async () => {
+    if (!newTechName.trim() || !user) return;
+
+    const techName = newTechName.trim();
+
+    // フォームを即座にクリア
+    setNewTechName("");
+    setIsAddingTech(true);
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/technologies", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: techName }),
+      });
+
+      if (response.ok) {
+        await fetchTechnologies(); // 技術リストを再取得
+        alert(`「${techName}」を追加しました`);
+      } else {
+        const error = await response.json();
+        // 失敗したらフォームの値を戻す
+        setNewTechName(techName);
+        alert(error.error || "Failed to add technology");
+      }
+    } catch (error) {
+      console.error("Error adding technology:", error);
+      // エラーが発生したらフォームの値を戻す
+      setNewTechName(techName);
+      alert("Failed to add technology");
+    } finally {
+      setIsAddingTech(false);
     }
   };
 
@@ -97,7 +158,7 @@ function ProductsContent() {
         });
 
         if (response.ok) {
-          fetchProducts();
+          await fetchProducts();
           setEditingProduct(null);
           setFormData({
             title: "",
@@ -106,8 +167,10 @@ function ProductsContent() {
             link: "",
             category: "",
             technologies: [],
-            status: "公開中",
-            year: new Date().getFullYear(),
+            status: "公開",
+            deployStatus: "未公開",
+            createdYear: new Date().getFullYear(),
+            createdMonth: new Date().getMonth() + 1,
           });
         }
       } else {
@@ -122,7 +185,7 @@ function ProductsContent() {
         });
 
         if (response.ok) {
-          fetchProducts();
+          await fetchProducts();
           setIsAddingNew(false);
           setFormData({
             title: "",
@@ -131,8 +194,10 @@ function ProductsContent() {
             link: "",
             category: "",
             technologies: [],
-            status: "公開中",
-            year: new Date().getFullYear(),
+            status: "公開",
+            deployStatus: "未公開",
+            createdYear: new Date().getFullYear(),
+            createdMonth: new Date().getMonth() + 1,
           });
         }
       }
@@ -150,8 +215,10 @@ function ProductsContent() {
       link: product.link,
       category: product.category || "",
       technologies: product.technologies || [],
-      status: product.status || "公開中",
-      year: product.year || new Date().getFullYear(),
+      status: product.status || "公開",
+      deployStatus: product.deployStatus || "未公開",
+      createdYear: product.createdYear || new Date().getFullYear(),
+      createdMonth: product.createdMonth || new Date().getMonth() + 1,
     });
     setIsAddingNew(false);
   };
@@ -161,6 +228,11 @@ function ProductsContent() {
 
     if (!user) return;
 
+    // 楽観的更新: UIから即座に削除
+    const previousProducts = [...products];
+    setProducts(prevProducts => prevProducts.filter(p => p.id !== id));
+
+    // バックグラウンドでAPIを呼び出す
     try {
       const token = await user.getIdToken();
       const response = await fetch(`/api/products/${id}`, {
@@ -170,11 +242,16 @@ function ProductsContent() {
         },
       });
 
-      if (response.ok) {
-        fetchProducts();
+      if (!response.ok) {
+        // 失敗したら元に戻す
+        setProducts(previousProducts);
+        alert("削除に失敗しました");
       }
     } catch (error) {
+      // エラーが発生したら元に戻す
+      setProducts(previousProducts);
       console.error("Failed to delete product:", error);
+      alert("削除に失敗しました");
     }
   };
 
@@ -188,9 +265,103 @@ function ProductsContent() {
       link: "",
       category: "",
       technologies: [],
-      status: "公開中",
-      year: new Date().getFullYear(),
+      status: "公開",
+      deployStatus: "未公開",
+      createdYear: new Date().getFullYear(),
+      createdMonth: new Date().getMonth() + 1,
     });
+  };
+
+  // 公開ステータスをクイック変更
+  const handleQuickStatusChange = async (productId: string, newStatus: string) => {
+    if (!user) return;
+
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    // 楽観的更新: UIを即座に更新
+    const previousProducts = [...products];
+    setProducts(prevProducts =>
+      prevProducts.map(p =>
+        p.id === productId ? { ...p, status: newStatus } : p
+      )
+    );
+
+    // モーダルを即座に閉じる
+    setStatusModalProduct(null);
+
+    // バックグラウンドでAPIを呼び出す
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...product,
+          status: newStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        // 失敗したら元に戻す
+        setProducts(previousProducts);
+        alert("公開ステータスの更新に失敗しました");
+      }
+    } catch (error) {
+      // エラーが発生したら元に戻す
+      setProducts(previousProducts);
+      console.error("Failed to update status:", error);
+      alert("公開ステータスの更新に失敗しました");
+    }
+  };
+
+  // デプロイ状況をクイック変更
+  const handleQuickDeployStatusChange = async (productId: string, newDeployStatus: string) => {
+    if (!user) return;
+
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    // 楽観的更新: UIを即座に更新
+    const previousProducts = [...products];
+    setProducts(prevProducts =>
+      prevProducts.map(p =>
+        p.id === productId ? { ...p, deployStatus: newDeployStatus } : p
+      )
+    );
+
+    // モーダルを即座に閉じる
+    setDeployStatusModalProduct(null);
+
+    // バックグラウンドでAPIを呼び出す
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...product,
+          deployStatus: newDeployStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        // 失敗したら元に戻す
+        setProducts(previousProducts);
+        alert("デプロイ状況の更新に失敗しました");
+      }
+    } catch (error) {
+      // エラーが発生したら元に戻す
+      setProducts(previousProducts);
+      console.error("Failed to update deploy status:", error);
+      alert("デプロイ状況の更新に失敗しました");
+    }
   };
 
   // ESCキーでモーダルを閉じる
@@ -206,6 +377,11 @@ function ProductsContent() {
 
   // フィルター・ソート処理
   const getFilteredAndSortedProducts = () => {
+    // productsが配列でない場合は空配列を返す
+    if (!Array.isArray(products)) {
+      return [];
+    }
+
     let filtered = [...products];
 
     // カテゴリフィルター
@@ -226,19 +402,30 @@ function ProductsContent() {
     }
 
     // 作成年フィルター
-    if (filterYear) {
-      filtered = filtered.filter(p => p.year?.toString() === filterYear);
+    if (filterCreatedYear) {
+      filtered = filtered.filter(p => p.createdYear?.toString() === filterCreatedYear);
+    }
+
+    // 作成月フィルター
+    if (filterCreatedMonth) {
+      filtered = filtered.filter(p => p.createdMonth?.toString() === filterCreatedMonth);
     }
 
     // ソート
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case "createdAt-asc":
-          return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
-        case "createdAt-desc":
-          return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
-        case "updatedAt-desc":
-          return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+        case "createdYear-asc": {
+          // 作成年（古い順）→ 年が同じ場合は月でソート
+          const yearDiff = (a.createdYear || 0) - (b.createdYear || 0);
+          if (yearDiff !== 0) return yearDiff;
+          return (a.createdMonth || 0) - (b.createdMonth || 0);
+        }
+        case "createdYear-desc": {
+          // 作成年（新しい順）→ 年が同じ場合は月でソート（降順）
+          const yearDiff = (b.createdYear || 0) - (a.createdYear || 0);
+          if (yearDiff !== 0) return yearDiff;
+          return (b.createdMonth || 0) - (a.createdMonth || 0);
+        }
         case "title-asc":
           return a.title.localeCompare(b.title);
         case "title-desc":
@@ -252,6 +439,11 @@ function ProductsContent() {
   };
 
   const filteredProducts = getFilteredAndSortedProducts();
+
+  // 実際に存在する年と月を取得（productsが配列でない場合は空配列を使用）
+  const safeProducts = Array.isArray(products) ? products : [];
+  const availableYears = Array.from(new Set(safeProducts.map(p => p.createdYear).filter(Boolean))).sort((a, b) => b! - a!);
+  const availableMonths = Array.from(new Set(safeProducts.map(p => p.createdMonth).filter(Boolean))).sort((a, b) => a! - b!);
 
   if (loading) {
     return (
@@ -285,8 +477,10 @@ function ProductsContent() {
                 link: "",
                 category: "",
                 technologies: [],
-                status: "公開中",
-                year: new Date().getFullYear(),
+                status: "公開",
+                deployStatus: "未公開",
+                createdYear: new Date().getFullYear(),
+                createdMonth: new Date().getMonth() + 1,
               });
             }}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md"
@@ -331,150 +525,221 @@ function ProductsContent() {
                   {/* フォーム */}
                   <form onSubmit={handleSubmit} className="bg-white px-6 pt-5 pb-6">
                     <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    タイトル *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) =>
-                      setFormData({ ...formData, title: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    説明 *
-                  </label>
-                  <textarea
-                    required
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    rows={3}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    画像パス
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.image}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image: e.target.value })
-                    }
-                    placeholder="/img/product/example.jpg"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                  <p className="mt-1 text-sm text-gray-500">
-                    画像アップロードは「画像管理」から行えます
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    リンク
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.link}
-                    onChange={(e) =>
-                      setFormData({ ...formData, link: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-
-                {/* カテゴリ */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    カテゴリ
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">選択してください</option>
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 使用技術 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    使用技術（複数選択可）
-                  </label>
-                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
-                    {TECHNOLOGIES.map((tech) => (
-                      <label key={tech} className="flex items-center space-x-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          タイトル *
+                        </label>
                         <input
-                          type="checkbox"
-                          checked={formData.technologies.includes(tech)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({
-                                ...formData,
-                                technologies: [...formData.technologies, tech]
-                              });
-                            } else {
-                              setFormData({
-                                ...formData,
-                                technologies: formData.technologies.filter(t => t !== tech)
-                              });
-                            }
-                          }}
-                          className="rounded"
+                          type="text"
+                          required
+                          value={formData.title}
+                          onChange={(e) =>
+                            setFormData({ ...formData, title: e.target.value })
+                          }
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                         />
-                        <span className="text-sm">{tech}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          説明 *
+                        </label>
+                        <textarea
+                          required
+                          value={formData.description}
+                          onChange={(e) =>
+                            setFormData({ ...formData, description: e.target.value })
+                          }
+                          rows={3}
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                      </div>
 
-                {/* ステータス */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    ステータス
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) =>
-                      setFormData({ ...formData, status: e.target.value })
-                    }
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    {STATUSES.map((status) => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
-                  </select>
-                </div>
+                      {/* 画像名 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          画像名
+                        </label>
+                        <input
+                          type="text"
+                          value={("/img/product/" + formData.image)}
+                          onChange={(e) =>
+                            setFormData({ ...formData, image: e.target.value })
+                          }
+                          placeholder="example.jpg"
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                        />
+                        <p className="mt-1 text-sm text-gray-500">
+                          画像アップロードは「画像管理」から行えます
+                        </p>
+                      </div>
 
-                {/* 作成年 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    作成年
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) =>
-                      setFormData({ ...formData, year: parseInt(e.target.value) })
-                    }
-                    min="2000"
-                    max="2100"
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
+                      {/* カテゴリ */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700">
+                          カテゴリ
+                        </label>
+                        <select
+                          value={formData.category}
+                          onChange={(e) =>
+                            setFormData({ ...formData, category: e.target.value })
+                          }
+                          className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                        >
+                          <option value="">選択してください</option>
+                          {CATEGORIES.map((cat) => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* リンク */}
+                      <div>
+                        {formData.category === "Webアプリケーション" && (
+                          <>
+                            <label className="block text-sm font-medium text-gray-700">
+                              リンク
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.link}
+                              onChange={(e) =>
+                                setFormData({ ...formData, link: e.target.value })
+                              }
+                              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </>
+                        )}
+                      </div>
+
+                      {/* 使用技術 */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          使用技術（複数選択可）
+                        </label>
+
+                        {/* 新しい技術を追加 */}
+                        <div className="mb-2 flex gap-2">
+                          <input
+                            type="text"
+                            value={newTechName}
+                            onChange={(e) => setNewTechName(e.target.value)}
+                            placeholder="新しい技術を追加（例: Vue.js）"
+                            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            onKeyPress={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleAddTechnology();
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddTechnology}
+                            disabled={isAddingTech || !newTechName.trim()}
+                            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 font-medium whitespace-nowrap"
+                          >
+                            {isAddingTech ? "追加中..." : "+ 追加"}
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-gray-300 rounded-md p-3">
+                          {technologies.map((tech) => (
+                            <label key={tech} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                checked={formData.technologies.includes(tech)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFormData({
+                                      ...formData,
+                                      technologies: [...formData.technologies, tech]
+                                    });
+                                  } else {
+                                    setFormData({
+                                      ...formData,
+                                      technologies: formData.technologies.filter(t => t !== tech)
+                                    });
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <span className="text-sm">{tech}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* ステータス */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            公開ステータス
+                          </label>
+                          <select
+                            value={formData.status}
+                            onChange={(e) =>
+                              setFormData({ ...formData, status: e.target.value })
+                            }
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            {STATUSES.map((status) => (
+                              <option key={status} value={status}>{status}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            デプロイ状況
+                          </label>
+                          <select
+                            value={formData.deployStatus}
+                            onChange={(e) =>
+                              setFormData({ ...formData, deployStatus: e.target.value })
+                            }
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            {DEPLOY_STATUSES.map((status) => (
+                              <option key={status} value={status}>{status}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* 作成年月 */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            作成年
+                          </label>
+                          <input
+                            type="number"
+                            value={formData.createdYear}
+                            onChange={(e) =>
+                              setFormData({ ...formData, createdYear: parseInt(e.target.value) })
+                            }
+                            min="2000"
+                            max="2100"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">
+                            作成月
+                          </label>
+                          <select
+                            value={formData.createdMonth}
+                            onChange={(e) =>
+                              setFormData({ ...formData, createdMonth: parseInt(e.target.value) })
+                            }
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                          >
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                              <option key={month} value={month}>{month}月</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
 
                     </div>
 
@@ -502,117 +767,149 @@ function ProductsContent() {
         }
 
         {/* フィルター・ソート */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-semibold mb-4">フィルター・ソート</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* カテゴリフィルター */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
-              <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">すべて</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+        <Accordion title="フィルター・ソート" defaultOpen={false}>
+          <div className="bg-white p-6 rounded-lg shadow mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* カテゴリフィルター */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">すべて</option>
+                  {CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
 
-            {/* ステータスフィルター */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">ステータス</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">すべて</option>
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>{status}</option>
-                ))}
-              </select>
-            </div>
+              {/* 公開ステータスフィルター */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">公開ステータス</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">すべて</option>
+                  {STATUSES.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
 
-            {/* 作成年フィルター */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">作成年</label>
-              <select
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="">すべて</option>
-                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                  <option key={year} value={year}>{year}年</option>
-                ))}
-              </select>
-            </div>
+              {/* デプロイ状況フィルター */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">デプロイ状況</label>
+                <select
+                  value={filterDeployStatus}
+                  onChange={(e) => setFilterDeployStatus(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">すべて</option>
+                  {DEPLOY_STATUSES.map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </div>
 
-            {/* ソート */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">並び順</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                <option value="createdAt-asc">作成日時（古い順）</option>
-                <option value="createdAt-desc">作成日時（新しい順）</option>
-                <option value="updatedAt-desc">更新日時（新しい順）</option>
-                <option value="title-asc">タイトル（あ→ん）</option>
-                <option value="title-desc">タイトル（ん→あ）</option>
-              </select>
-            </div>
+              {/* 作成年フィルター */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">作成年</label>
+                <select
+                  value={filterCreatedYear}
+                  onChange={(e) => setFilterCreatedYear(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">すべて</option>
+                  {availableYears.map((year) => (
+                    <option key={year} value={year}>{year}年</option>
+                  ))}
+                </select>
+              </div>
 
-            {/* 使用技術フィルター */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">使用技術</label>
-              <div className="flex flex-wrap gap-2">
-                {TECHNOLOGIES.map((tech) => (
-                  <button
-                    key={tech}
-                    onClick={() => {
-                      if (filterTechnologies.includes(tech)) {
-                        setFilterTechnologies(filterTechnologies.filter(t => t !== tech));
-                      } else {
-                        setFilterTechnologies([...filterTechnologies, tech]);
-                      }
-                    }}
-                    className={`px-3 py-1 text-sm rounded-full ${filterTechnologies.includes(tech)
+              {/* 作成月フィルター */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">作成月</label>
+                <select
+                  value={filterCreatedMonth}
+                  onChange={(e) => setFilterCreatedMonth(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="">すべて</option>
+                  {availableMonths.map((month) => (
+                    <option key={month} value={month}>{month}月</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ソート */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">並び順</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                >
+                  <option value="createdYear-asc">作成年月（古い順）</option>
+                  <option value="createdYear-desc">作成年月（新しい順）</option>
+                  <option value="title-asc">タイトル（あ→ん）</option>
+                  <option value="title-desc">タイトル（ん→あ）</option>
+                </select>
+              </div>
+
+              {/* 使用技術フィルター */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">使用技術</label>
+                <div className="flex flex-wrap gap-2">
+                  {technologies.map((tech) => (
+                    <button
+                      key={tech}
+                      onClick={() => {
+                        if (filterTechnologies.includes(tech)) {
+                          setFilterTechnologies(filterTechnologies.filter(t => t !== tech));
+                        } else {
+                          setFilterTechnologies([...filterTechnologies, tech]);
+                        }
+                      }}
+                      className={`px-3 py-1 text-sm rounded-full ${filterTechnologies.includes(tech)
                         ? "bg-blue-600 text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      }`}
-                  >
-                    {tech}
-                  </button>
-                ))}
+                        }`}
+                    >
+                      {tech}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* フィルタークリアボタン */}
-          <div className="mt-4">
-            <button
-              onClick={() => {
-                setFilterCategory("");
-                setFilterTechnologies([]);
-                setFilterStatus("");
-                setFilterYear("");
-                setSortBy("createdAt-asc");
-              }}
-              className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
-            >
-              フィルターをクリア
-            </button>
+            {/* フィルタークリアボタン */}
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  setFilterCategory("");
+                  setFilterTechnologies([]);
+                  setFilterStatus("");
+                  setFilterDeployStatus("");
+                  setFilterCreatedYear("");
+                  setFilterCreatedMonth("");
+                  setSortBy("createdYear-asc");
+                }}
+                className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+              >
+                フィルターをクリア
+              </button>
+            </div>
           </div>
-        </div>
+        </Accordion>
 
         {/* 作品一覧 */}
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b">
-            <h2 className="text-xl font-semibold">作品一覧（{filteredProducts.length}件 / 全{products.length}件）</h2>
+            <h2 className="text-xl font-semibold">作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}件）</h2>
           </div>
           <div className="divide-y">
             {filteredProducts.map((product) => (
@@ -621,11 +918,50 @@ function ProductsContent() {
                 className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
               >
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{product.title}</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900">{product.title}</h3>
+                    {/* 公開ステータスバッジ（クリック可能） */}
+                    <button
+                      onClick={() => setStatusModalProduct(product)}
+                      className={`px-2 py-0.5 text-xs rounded-full hover:opacity-80 ${product.status === "公開"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-700"
+                        }`}
+                      title="クリックして公開ステータスを変更"
+                    >
+                      {product.status || "公開"}
+                    </button>
+                    {/* デプロイ状況バッジ（クリック可能） */}
+                    <button
+                      onClick={() => setDeployStatusModalProduct(product)}
+                      className={`px-2 py-0.5 text-xs rounded-full hover:opacity-80 ${product.deployStatus === "公開中"
+                        ? "bg-blue-100 text-blue-700"
+                        : "bg-orange-100 text-orange-700"
+                        }`}
+                      title="クリックしてデプロイ状況を変更"
+                    >
+                      {product.deployStatus || "未公開"}
+                    </button>
+                  </div>
                   <p className="text-gray-600 text-sm mt-1">{product.description}</p>
-                  {product.image && (
-                    <p className="text-gray-400 text-xs mt-1">画像: {product.image}</p>
-                  )}
+                  <div className="flex flex-col gap-1 text-xs text-gray-400 mt-1">
+                    {product.link && product.category === "Webアプリケーション" && (
+                      <a
+                        href={product.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        🔗 {product.title}
+                      </a>
+                    )}
+                    <div className="flex gap-3">
+                      {product.image && <span>画像: {product.image}</span>}
+                      {product.createdYear && product.createdMonth && (
+                        <span>作成: {product.createdYear}年{product.createdMonth}月</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 <div className="flex gap-2 ml-4">
                   <button
@@ -645,6 +981,124 @@ function ProductsContent() {
             ))}
           </div>
         </div>
+
+        {/* 公開ステータス変更モーダル */}
+        {
+          statusModalProduct && (
+            <>
+              {/* 背景オーバーレイ */}
+              <div
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setStatusModalProduct(null)}
+              ></div>
+
+              {/* モーダルコンテナ */}
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                {/* モーダルコンテンツ */}
+                <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 pointer-events-auto">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-900">
+                    公開ステータスを変更
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    作品: <span className="font-medium">{statusModalProduct.title}</span>
+                  </p>
+
+                  <p className="text-sm text-gray-700 mb-3">
+                    現在のステータス: <span className="font-semibold">{statusModalProduct.status || "公開"}</span>
+                  </p>
+
+                  <div className="space-y-2">
+                    {STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleQuickStatusChange(statusModalProduct.id, status)}
+                        className={`w-full px-4 py-3 rounded-lg border-2 text-left transition-colors ${statusModalProduct.status === status
+                          ? status === "公開"
+                            ? "border-green-500 bg-green-50 text-green-900 font-semibold"
+                            : "border-gray-500 bg-gray-50 text-gray-900 font-semibold"
+                          : status === "公開"
+                            ? "border-green-200 hover:border-green-300 hover:bg-green-50 text-green-700"
+                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-700"
+                          }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setStatusModalProduct(null)}
+                      className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )
+        }
+
+        {/* デプロイ状況変更モーダル */}
+        {
+          deployStatusModalProduct && (
+            <>
+              {/* 背景オーバーレイ */}
+              <div
+                className="fixed inset-0 z-40 bg-black/50"
+                onClick={() => setDeployStatusModalProduct(null)}
+              ></div>
+
+              {/* モーダルコンテナ */}
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+                {/* モーダルコンテンツ */}
+                <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6 pointer-events-auto">
+                  <h3 className="text-xl font-semibold mb-4 text-gray-900">
+                    デプロイ状況を変更
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    作品: <span className="font-medium">{deployStatusModalProduct.title}</span>
+                  </p>
+
+                  <p className="text-sm text-gray-700 mb-3">
+                    現在のステータス: <span className="font-semibold">{deployStatusModalProduct.deployStatus || "未公開"}</span>
+                  </p>
+
+                  <div className="space-y-2">
+                    {DEPLOY_STATUSES.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => handleQuickDeployStatusChange(deployStatusModalProduct.id, status)}
+                        className={`w-full px-4 py-3 rounded-lg border-2 text-left transition-colors ${deployStatusModalProduct.deployStatus === status
+                          ? status === "公開中"
+                            ? "border-blue-500 bg-blue-50 text-blue-900 font-semibold"
+                            : "border-orange-500 bg-orange-50 text-orange-900 font-semibold"
+                          : status === "公開中"
+                            ? "border-blue-200 hover:border-blue-300 hover:bg-blue-50 text-blue-700"
+                            : "border-orange-200 hover:border-orange-300 hover:bg-orange-50 text-orange-700"
+                          }`}
+                      >
+                        {status}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <button
+                      onClick={() => setDeployStatusModalProduct(null)}
+                      className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )
+        }
       </main >
     </div >
   );
