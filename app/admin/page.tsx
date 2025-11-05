@@ -35,7 +35,7 @@ function DashboardContent() {
       const sections = sectionsData.sections || [];
 
       // 公開中の作品数
-      const publicProducts = products.filter((p: any) => p.status === "公開中");
+      const publicProducts = products.filter((p: any) => p.status === "公開");
 
       setStats({
         productsCount: products.length,
