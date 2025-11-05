@@ -133,7 +133,15 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
   };
 
   const renderHistory = () => {
-    const histories = data?.histories || [];
+    // データ構造が2種類ある:
+    // 1. 新形式: { histories: [...] }
+    // 2. 旧形式: { items: [...] } または { type: 'timeline', items: [...] }
+    let histories = data?.histories || [];
+
+    // 旧形式（items）の場合は変換
+    if (histories.length === 0 && data?.items) {
+      histories = data.items;
+    }
 
     return (
       <FadeInSection>
@@ -141,7 +149,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
           <Accordion title={meta.displayName} defaultOpen={false}>
             <div className="flex flex-col gap-4">
               {histories.map((history: any, index: number) => (
-                <div key={index} className="card">
+                <div key={index} className="card" style={{ backgroundColor: 'white' }}>
                   <h3>{history.date}</h3>
                   <ul className="list-disc ml-5">
                     {history.details?.map((detail: string, detailIndex: number) => (
