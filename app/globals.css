@@ -6,6 +6,9 @@
   --foreground: #171717;
   --primary-color: #6B46C1;
   --primary-light: #F5EBFF;
+  --card-background: transparent;
+  --card-border: #D1D5DB;
+  --accordion-background: #F5EBFF;
   --header-color: #6B46C1;
   --text-heading: #6B46C1;
   --text-body: #4B5563;
@@ -70,7 +73,8 @@ ul {
 
 /* カードスタイル */
 .card {
-  background-color: var(--primary-light);
+  background-color: var(--card-background);
+  border: 1px solid var(--card-border);
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

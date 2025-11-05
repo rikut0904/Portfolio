@@ -11,12 +11,12 @@ export default function Accordion({ title, children, defaultOpen = false }: Acco
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className="rounded-lg my-4 mb-4 border border-purple-200">
+        <div className="rounded-lg my-4 mb-4">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="w-full px-4 transition-all duration-200 flex justify-between items-center text-left sticky top-0 z-10 rounded-t-lg"
                 style={{
-                    backgroundColor: 'var(--primary-light)',
+                    backgroundColor: 'var(--accordion-background)',
                     borderBottom: isOpen ? '2px solid var(--primary-color)' : 'none'
                 }}
                 aria-expanded={isOpen}
@@ -42,7 +42,7 @@ export default function Accordion({ title, children, defaultOpen = false }: Acco
                 className={`transition-all duration-300 ease-in-out ${
                     isOpen ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
                 } overflow-hidden rounded-b-lg`}
-                style={{ backgroundColor: 'var(--background)' }}
+                style={{ backgroundColor: 'var(--accordion-background)' }}
             >
                 <div className="px-6 py-4">{children}</div>
             </div>
