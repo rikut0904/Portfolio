@@ -1,9 +1,10 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FadeInSection from "../FadeInSection";
 import Accordion from "../Accordion";
 
-const historyData = [
+// フォールバック用のデフォルトデータ
+const defaultHistoryData = [
     { date: "2021年04月", details: ["滋賀県立瀬田工業高等学校 電気科 入学"] },
     { date: "2024年03月", details: ["滋賀県立瀬田工業高等学校 電気科 卒業"] },
     { date: "2024年04月", details: ["金沢工業大学 情報工学科 入学"] },
@@ -11,6 +12,26 @@ const historyData = [
 ];
 
 export default function SchoolHistorySection() {
+    const [historyData, setHistoryData] = useState(defaultHistoryData);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await fetch("/api/sections");
+            const data = await response.json();
+            const section = data.sections?.find((s: any) => s.id === "school-history");
+            if (section && section.data.histories) {
+                setHistoryData(section.data.histories);
+            }
+        } catch (error) {
+            console.error("Failed to fetch school history:", error);
+            // エラー時はデフォルトデータを使用
+        }
+    };
+
     return (
         <FadeInSection>
             <section id="history">

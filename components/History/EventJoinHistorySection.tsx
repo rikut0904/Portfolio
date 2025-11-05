@@ -1,9 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FadeInSection from "../FadeInSection";
 import Accordion from "../Accordion";
 
-const historyData = [
+const defaultHistoryData = [
     { date: "2022年06月", details: ["令和4年度高校生ものづくりコンテスト電気工事部門 滋賀県大会 2位"] },
     { date: "2022年11月", details: ["令和4年度滋賀県技能競技大会 滋賀県知事表彰 3級技能検定電子機器組立て電子機器組立て作業"] },
     { date: "2023年06月", details: ["令和5年度高校生ものづくりコンテスト電気工事部門 滋賀県大会 1位"] },
@@ -18,6 +18,25 @@ const historyData = [
 ];
 
 export default function EventJoinHistorySection() {
+    const [historyData, setHistoryData] = useState(defaultHistoryData);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await fetch("/api/sections");
+            const data = await response.json();
+            const section = data.sections?.find((s: any) => s.id === "event-join-history");
+            if (section && section.data.histories) {
+                setHistoryData(section.data.histories);
+            }
+        } catch (error) {
+            console.error("Failed to fetch event join history:", error);
+        }
+    };
+
     return (
         <FadeInSection>
             <section id="event-join-history">

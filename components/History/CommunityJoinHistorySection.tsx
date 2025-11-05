@@ -1,9 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FadeInSection from "../FadeInSection";
 import Accordion from "../Accordion";
 
-const historyData = [
+const defaultHistoryData = [
     { date: "2024年04月", details: ["Science Project for Children 参加", "工大祭実行委員会 参加", "坂本研究室 参加"] },
     { date: "2024年06月", details: ["LCレファレンススタッフアルバイト 開始", "第二種電気工事士試験アドバイザーアルバイト 開始"] },
     { date: "2024年07月", details: ["BusStopProject モバイル班 参加"] },
@@ -17,6 +17,25 @@ const historyData = [
 ];
 
 export default function CommunityJoinHistorySection() {
+    const [historyData, setHistoryData] = useState(defaultHistoryData);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await fetch("/api/sections");
+            const data = await response.json();
+            const section = data.sections?.find((s: any) => s.id === "community-join-history");
+            if (section && section.data.histories) {
+                setHistoryData(section.data.histories);
+            }
+        } catch (error) {
+            console.error("Failed to fetch community join history:", error);
+        }
+    };
+
     return (
         <FadeInSection>
             <section id="community-join-history">

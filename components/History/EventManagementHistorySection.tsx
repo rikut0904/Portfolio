@@ -1,9 +1,9 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import FadeInSection from "../FadeInSection";
 import Accordion from "../Accordion";
 
-const historyData = [
+const defaultHistoryData = [
     { date: "2024年10月", details: ["第57回工大祭 運営"] },
     { date: "2025年06月", details: ["キャリア教育学会 運営お手伝い"] },
     { date: "2025年07月", details: ["Google直伝！爆速アイデア創出術を1日で体験！ Build With AI in 金沢工大 運営"] },
@@ -15,6 +15,25 @@ const historyData = [
 ];
 
 export default function EventManagementHistorySection() {
+    const [historyData, setHistoryData] = useState(defaultHistoryData);
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
+        try {
+            const response = await fetch("/api/sections");
+            const data = await response.json();
+            const section = data.sections?.find((s: any) => s.id === "event-management-history");
+            if (section && section.data.histories) {
+                setHistoryData(section.data.histories);
+            }
+        } catch (error) {
+            console.error("Failed to fetch event management history:", error);
+        }
+    };
+
     return (
         <FadeInSection>
             <section id="event-management-history">

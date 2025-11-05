@@ -4,6 +4,9 @@ import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
+import SectionForm from "../../../components/admin/SectionForm";
+import NewSectionForm from "../../../components/admin/NewSectionForm";
+import DeleteConfirmModal from "../../../components/admin/DeleteConfirmModal";
 
 interface Section {
   id: string;
@@ -21,8 +24,8 @@ function SectionsContent() {
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
-  const [editData, setEditData] = useState("");
-  const [saveLoading, setSaveLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [deletingSection, setDeletingSection] = useState<Section | null>(null);
 
   useEffect(() => {
     fetchSections();
@@ -42,16 +45,12 @@ function SectionsContent() {
 
   const handleEdit = (section: Section) => {
     setEditingSection(section);
-    setEditData(JSON.stringify(section.data, null, 2));
   };
 
-  const handleSave = async () => {
+  const handleSave = async (data: any) => {
     if (!user || !editingSection) return;
 
     try {
-      setSaveLoading(true);
-      const parsedData = JSON.parse(editData);
-
       const token = await user.getIdToken();
       const response = await fetch(`/api/sections/${editingSection.id}`, {
         method: "PUT",
@@ -59,21 +58,240 @@ function SectionsContent() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(parsedData),
+        body: JSON.stringify(data),
       });
 
       if (response.ok) {
-        fetchSections();
+        await fetchSections();
         setEditingSection(null);
-        setEditData("");
+        alert("保存しました");
       } else {
         alert("保存に失敗しました");
       }
     } catch (error) {
       console.error("Failed to save section:", error);
-      alert("JSONの形式が正しくありません");
-    } finally {
-      setSaveLoading(false);
+      alert("保存に失敗しました");
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingSection(null);
+  };
+
+  const handleCreate = async (sectionData: {
+    id: string;
+    displayName: string;
+    type: string;
+    sortOrder?: "asc" | "desc";
+    data: any;
+  }) => {
+    if (!user) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch("/api/sections", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(sectionData),
+      });
+
+      if (response.ok) {
+        await fetchSections();
+        setIsCreating(false);
+        alert("セクションを作成しました");
+      } else {
+        const errorData = await response.json();
+        alert(`作成に失敗しました: ${errorData.error || "不明なエラー"}`);
+      }
+    } catch (error) {
+      console.error("Failed to create section:", error);
+      alert("作成に失敗しました");
+    }
+  };
+
+  const handleMetaUpdate = async (meta: any) => {
+    if (!user || !editingSection) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/sections/${editingSection.id}/meta`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(meta),
+      });
+
+      if (response.ok) {
+        await fetchSections();
+      } else {
+        console.error("Failed to update meta");
+      }
+    } catch (error) {
+      console.error("Failed to update meta:", error);
+    }
+  };
+
+  const handleCancelCreate = () => {
+    setIsCreating(false);
+  };
+
+  const handleDeleteClick = (section: Section) => {
+    setDeletingSection(section);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!user || !deletingSection) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch(`/api/sections/${deletingSection.id}/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        await fetchSections();
+        setDeletingSection(null);
+        alert("セクションを削除しました");
+      } else {
+        alert("削除に失敗しました");
+      }
+    } catch (error) {
+      console.error("Failed to delete section:", error);
+      alert("削除に失敗しました");
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeletingSection(null);
+  };
+
+  const handleMoveUp = async (section: Section) => {
+    if (!user) return;
+
+    const currentIndex = sections.findIndex(s => s.id === section.id);
+    if (currentIndex === 0) return; // 既に一番上
+
+    const targetSection = sections[currentIndex - 1];
+
+    // 楽観的更新: UIを即座に更新
+    const newSections = [...sections];
+
+    // 先にorder値を保存
+    const currentOrder = section.meta.order;
+    const targetOrder = targetSection.meta.order;
+
+    // セクションオブジェクトを複製してorder値を入れ替え
+    const updatedCurrent = {
+      ...section,
+      meta: { ...section.meta, order: targetOrder }
+    };
+    const updatedTarget = {
+      ...targetSection,
+      meta: { ...targetSection.meta, order: currentOrder }
+    };
+
+    // 配列内の位置を入れ替え
+    newSections[currentIndex - 1] = updatedCurrent;
+    newSections[currentIndex] = updatedTarget;
+
+    setSections(newSections);
+
+    try {
+      const token = await user.getIdToken();
+
+      // バックグラウンドで2つのセクションの順番を入れ替え
+      await Promise.all([
+        fetch(`/api/sections/${section.id}/meta`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ order: targetSection.meta.order }),
+        }),
+        fetch(`/api/sections/${targetSection.id}/meta`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ order: section.meta.order }),
+        }),
+      ]);
+    } catch (error) {
+      console.error("Failed to move section up:", error);
+      alert("順番の変更に失敗しました");
+      // エラー時は元に戻す
+      await fetchSections();
+    }
+  };
+
+  const handleMoveDown = async (section: Section) => {
+    if (!user) return;
+
+    const currentIndex = sections.findIndex(s => s.id === section.id);
+    if (currentIndex === sections.length - 1) return; // 既に一番下
+
+    const targetSection = sections[currentIndex + 1];
+
+    // 楽観的更新: UIを即座に更新
+    const newSections = [...sections];
+
+    // 先にorder値を保存
+    const currentOrder = section.meta.order;
+    const targetOrder = targetSection.meta.order;
+
+    // セクションオブジェクトを複製してorder値を入れ替え
+    const updatedCurrent = {
+      ...section,
+      meta: { ...section.meta, order: targetOrder }
+    };
+    const updatedTarget = {
+      ...targetSection,
+      meta: { ...targetSection.meta, order: currentOrder }
+    };
+
+    // 配列内の位置を入れ替え
+    newSections[currentIndex] = updatedTarget;
+    newSections[currentIndex + 1] = updatedCurrent;
+
+    setSections(newSections);
+
+    try {
+      const token = await user.getIdToken();
+
+      // バックグラウンドで2つのセクションの順番を入れ替え
+      await Promise.all([
+        fetch(`/api/sections/${section.id}/meta`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ order: targetSection.meta.order }),
+        }),
+        fetch(`/api/sections/${targetSection.id}/meta`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ order: section.meta.order }),
+        }),
+      ]);
+    } catch (error) {
+      console.error("Failed to move section down:", error);
+      alert("順番の変更に失敗しました");
+      // エラー時は元に戻す
+      await fetchSections();
     }
   };
 
@@ -92,66 +310,93 @@ function SectionsContent() {
           <Link href="/admin" className="text-blue-800 hover:text-gray-900 mb-4">
             ← ダッシュボード
           </Link>
-          <h1 className="text-2xl font-bold mb-4">セクション管理</h1>
-        </div>
-        {editingSection ? (
-          /* 編集モード */
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">
-              {editingSection.meta.displayName}を編集
-            </h2>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                データ（JSON形式）
-              </label>
-              <textarea
-                value={editData}
-                onChange={(e) => setEditData(e.target.value)}
-                rows={20}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
-              />
-            </div>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold">セクション管理</h1>
+            {!editingSection && !isCreating && (
               <button
-                onClick={handleSave}
-                disabled={saveLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => setIsCreating(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
               >
-                {saveLoading ? "保存中..." : "保存"}
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                新規セクションを作成
               </button>
-              <button
-                onClick={() => {
-                  setEditingSection(null);
-                  setEditData("");
-                }}
-                className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
-              >
-                キャンセル
-              </button>
-            </div>
+            )}
           </div>
+        </div>
+        {isCreating ? (
+          /* 新規作成モード */
+          <NewSectionForm
+            onSave={handleCreate}
+            onCancel={handleCancelCreate}
+            existingSections={sections}
+          />
+        ) : editingSection ? (
+          /* 編集モード */
+          <SectionForm
+            section={editingSection}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onMetaUpdate={handleMetaUpdate}
+          />
         ) : (
           /* 一覧モード */
           <div className="space-y-4">
-            {sections.map((section) => (
+            {sections.map((section, index) => (
               <div key={section.id} className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      {section.meta.displayName}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      ID: {section.id}
-                    </p>
-                  </div>
-                  {section.meta.editable && (
+                <div className="flex items-center gap-4 mb-4">
+                  {/* 順番変更ボタン */}
+                  <div className="flex flex-col gap-1">
                     <button
-                      onClick={() => handleEdit(section)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={() => handleMoveUp(section)}
+                      disabled={index === 0}
+                      className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="上に移動"
                     >
-                      編集
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                      </svg>
                     </button>
-                  )}
+                    <button
+                      onClick={() => handleMoveDown(section)}
+                      disabled={index === sections.length - 1}
+                      className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="下に移動"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* セクション情報 */}
+                  <div className="flex-1 flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {section.meta.displayName}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        ID: {section.id} | 順番: {section.meta.order}
+                      </p>
+                    </div>
+                    {section.meta.editable && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(section)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(section)}
+                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                        >
+                          削除
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* データプレビュー */}
@@ -164,6 +409,14 @@ function SectionsContent() {
             ))}
           </div>
         )}
+
+        {/* 削除確認モーダル */}
+        <DeleteConfirmModal
+          isOpen={!!deletingSection}
+          sectionName={deletingSection?.meta.displayName || ""}
+          onConfirm={handleDeleteConfirm}
+          onCancel={handleDeleteCancel}
+        />
       </main>
     </div>
   );
