@@ -58,11 +58,46 @@ export async function PATCH(
     const { id } = await params;
     const updates = await request.json();
 
-    await adminDb.collection("activityCategories").doc(id).update(updates);
+    // カテゴリ名の変更の場合、関連する活動も更新する必要がある
+    if (updates.name) {
+      // トランザクションを使用して原子的に更新
+      await adminDb.runTransaction(async (transaction) => {
+        // カテゴリ情報を取得
+        const categoryRef = adminDb.collection("activityCategories").doc(id);
+        const categoryDoc = await transaction.get(categoryRef);
 
-    return NextResponse.json({
-      message: "Category updated successfully",
-    });
+        if (!categoryDoc.exists) {
+          throw new Error("Category not found");
+        }
+
+        const oldCategoryName = categoryDoc.data()?.name;
+
+        // カテゴリを更新
+        transaction.update(categoryRef, updates);
+
+        // 古いカテゴリ名を持つすべての活動を検索
+        const activitiesSnapshot = await adminDb
+          .collection("activities")
+          .where("category", "==", oldCategoryName)
+          .get();
+
+        // すべての活動のcategoryフィールドを新しいカテゴリ名に更新
+        activitiesSnapshot.docs.forEach((doc) => {
+          transaction.update(doc.ref, { category: updates.name });
+        });
+      });
+
+      return NextResponse.json({
+        message: "Category and related activities updated successfully",
+      });
+    } else {
+      // カテゴリ名以外の更新（順番変更など）の場合は通常通り更新
+      await adminDb.collection("activityCategories").doc(id).update(updates);
+
+      return NextResponse.json({
+        message: "Category updated successfully",
+      });
+    }
   } catch (error) {
     console.error("Error updating category:", error);
     return NextResponse.json(
