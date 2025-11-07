@@ -54,45 +54,7 @@ export async function GET(request: NextRequest) {
       query = query.where("createdMonth", "==", parseInt(createdMonth));
     }
 
-    // ソート処理
-    let sortField = "createdYear";
-    let sortDirection: "asc" | "desc" = "asc";
-
-    switch (sortBy) {
-      case "createdYear-asc":
-        sortField = "createdYear";
-        sortDirection = "asc";
-        break;
-      case "createdYear-desc":
-        sortField = "createdYear";
-        sortDirection = "desc";
-        break;
-      case "title-asc":
-        sortField = "title";
-        sortDirection = "asc";
-        break;
-      case "title-desc":
-        sortField = "title";
-        sortDirection = "desc";
-        break;
-      case "createdAt-asc":
-        sortField = "createdAt";
-        sortDirection = "asc";
-        break;
-      case "createdAt-desc":
-        sortField = "createdAt";
-        sortDirection = "desc";
-        break;
-    }
-
-    query = query.orderBy(sortField, sortDirection);
-
-    // 作成月でのサブソート（年でソートする場合のみ）
-    if (sortBy === "createdYear-asc" || sortBy === "createdYear-desc") {
-      query = query.orderBy("createdMonth", sortDirection);
-    }
-
-    // データ取得
+    // データ取得（ソートはクライアント側で実行）
     const snapshot = await query.get();
 
     let products = snapshot.docs.map((doc: any) => {
@@ -111,6 +73,32 @@ export async function GET(request: NextRequest) {
         p.technologies?.some((tech: string) => technologies.includes(tech))
       );
     }
+
+    // クライアント側でソート
+    products.sort((a: any, b: any) => {
+      switch (sortBy) {
+        case "createdYear-asc": {
+          const yearDiff = (a.createdYear || 0) - (b.createdYear || 0);
+          if (yearDiff !== 0) return yearDiff;
+          return (a.createdMonth || 0) - (b.createdMonth || 0);
+        }
+        case "createdYear-desc": {
+          const yearDiff = (b.createdYear || 0) - (a.createdYear || 0);
+          if (yearDiff !== 0) return yearDiff;
+          return (b.createdMonth || 0) - (a.createdMonth || 0);
+        }
+        case "title-asc":
+          return a.title.localeCompare(b.title);
+        case "title-desc":
+          return b.title.localeCompare(a.title);
+        case "createdAt-asc":
+          return (a.createdAt || "").localeCompare(b.createdAt || "");
+        case "createdAt-desc":
+          return (b.createdAt || "").localeCompare(a.createdAt || "");
+        default:
+          return 0;
+      }
+    });
 
     // 総数を取得
     const total = products.length;
