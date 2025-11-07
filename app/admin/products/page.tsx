@@ -150,6 +150,14 @@ function ProductsContent() {
     try {
       const token = await user.getIdToken();
 
+      // 画像パスにプレフィックスを付加（まだ付いていない場合）
+      const dataToSave = {
+        ...formData,
+        image: formData.image.startsWith('/img/product/')
+          ? formData.image
+          : `/img/product/${formData.image}`
+      };
+
       if (editingProduct) {
         // 更新
         const response = await fetch(`/api/products/${editingProduct.id}`, {
@@ -158,7 +166,7 @@ function ProductsContent() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSave),
         });
 
         if (response.ok) {
@@ -185,7 +193,7 @@ function ProductsContent() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(dataToSave),
         });
 
         if (response.ok) {

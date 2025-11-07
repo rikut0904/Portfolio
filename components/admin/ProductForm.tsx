@@ -118,7 +118,7 @@ export default function ProductForm({
                   </label>
                   <input
                     type="text"
-                    value={"/img/product/" + formData.image}
+                    value={formData.image.replace(/^\/img\/product\//, '')}
                     onChange={(e) =>
                       setFormData({ ...formData, image: e.target.value })
                     }
@@ -126,7 +126,7 @@ export default function ProductForm({
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                   <p className="mt-1 text-sm text-gray-500">
-                    画像アップロードは「画像管理」から行えます
+                    画像アップロードは「画像管理」から行えます（自動的に /img/product/ が付加されます）
                   </p>
                 </div>
 
