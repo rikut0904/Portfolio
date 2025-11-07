@@ -18,7 +18,7 @@ async function checkAuth(request: NextRequest) {
   }
 }
 
-// DELETE: カテゴリを削除
+// DELETE: カテゴリを削除（関連する活動も削除）
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -30,10 +30,36 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    await adminDb.collection("activityCategories").doc(id).delete();
+
+    // トランザクションを使用して原子的に削除
+    await adminDb.runTransaction(async (transaction) => {
+      // カテゴリ情報を取得
+      const categoryRef = adminDb.collection("activityCategories").doc(id);
+      const categoryDoc = await transaction.get(categoryRef);
+
+      if (!categoryDoc.exists) {
+        throw new Error("Category not found");
+      }
+
+      const categoryName = categoryDoc.data()?.name;
+
+      // カテゴリを削除
+      transaction.delete(categoryRef);
+
+      // このカテゴリに属するすべての活動を検索
+      const activitiesSnapshot = await adminDb
+        .collection("activities")
+        .where("category", "==", categoryName)
+        .get();
+
+      // すべての関連活動を削除
+      activitiesSnapshot.docs.forEach((doc) => {
+        transaction.delete(doc.ref);
+      });
+    });
 
     return NextResponse.json({
-      message: "Category deleted successfully",
+      message: "Category and related activities deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting category:", error);
