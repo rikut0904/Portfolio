@@ -21,7 +21,7 @@ async function checkAuth(request: NextRequest) {
 // PATCH: セクションのメタデータを部分更新
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await checkAuth(request);
   if (!user) {
@@ -29,7 +29,7 @@ export async function PATCH(
   }
 
   try {
-    const { id } = params;
+    const { id } = await params;
     const updates = await request.json();
 
     // メタデータを更新

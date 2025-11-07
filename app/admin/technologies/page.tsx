@@ -213,34 +213,34 @@ function TechnologiesContent() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+        <div className="mb-4 sm:mb-6">
           <Link
             href="/admin"
-            className="text-blue-600 hover:text-blue-800"
+            className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
           >
             ← ダッシュボード
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">技術管理</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">技術管理</h1>
         </div>
 
         {/* 追加フォーム */}
-        <div className="bg-white p-6 rounded-lg shadow mb-8">
-          <h2 className="text-xl font-semibold mb-4">新しい技術を追加</h2>
-          <form onSubmit={handleAddTechnology} className="space-y-3">
-            <div className="flex gap-3">
+        <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">新しい技術を追加</h2>
+          <form onSubmit={handleAddTechnology} className="space-y-2 sm:space-y-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <input
                 type="text"
                 value={newTechName}
                 onChange={(e) => setNewTechName(e.target.value)}
                 placeholder="技術名を入力（例: Vue.js）"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 required
               />
               <select
                 value={newTechCategory}
                 onChange={(e) => setNewTechCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               >
                 <option value="">カテゴリを選択</option>
                 {TECH_CATEGORIES.map((cat) => (
@@ -250,7 +250,7 @@ function TechnologiesContent() {
               <button
                 type="submit"
                 disabled={isAdding}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium whitespace-nowrap"
+                className="px-4 py-2 sm:px-6 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium whitespace-nowrap text-sm sm:text-base"
               >
                 {isAdding ? "追加中..." : "追加"}
               </button>
@@ -259,12 +259,12 @@ function TechnologiesContent() {
         </div>
 
         {/* フィルター */}
-        <div className="bg-white p-4 rounded-lg shadow mb-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">カテゴリでフィルター</label>
+        <div className="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 sm:mb-6">
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">カテゴリでフィルター</label>
           <select
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg"
+            className="w-full sm:w-64 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
           >
             <option value="">すべて表示</option>
             {TECH_CATEGORIES.map((cat) => (
@@ -274,37 +274,37 @@ function TechnologiesContent() {
         </div>
 
         {/* 技術リスト（カテゴリごと） */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {TECH_CATEGORIES.map((category) => {
             const techs = groupedTechnologies[category];
             if (techs.length === 0 && filterCategory) return null;
 
             return (
-              <div key={category} className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">
+              <div key={category} className="bg-white p-3 sm:p-6 rounded-lg shadow">
+                <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-900 truncate">
                   {category}（{techs.length}件）
                 </h2>
 
                 {techs.length === 0 ? (
-                  <p className="text-gray-500 text-sm">このカテゴリには技術が登録されていません。</p>
+                  <p className="text-gray-500 text-xs sm:text-sm">このカテゴリには技術が登録されていません。</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                     {techs.map((tech) => (
                       <div
                         key={tech.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                       >
-                        <span className="font-medium text-gray-900">{tech.name}</span>
-                        <div className="flex gap-2">
+                        <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">{tech.name}</span>
+                        <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                           <button
                             onClick={() => startEditing(tech)}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
+                            className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm px-1 sm:px-0"
                           >
                             編集
                           </button>
                           <button
                             onClick={() => handleDeleteTechnology(tech.id, tech.name)}
-                            className="text-red-600 hover:text-red-800 text-sm"
+                            className="text-red-600 hover:text-red-800 text-xs sm:text-sm px-1 sm:px-0"
                           >
                             削除
                           </button>
@@ -319,27 +319,27 @@ function TechnologiesContent() {
 
           {/* カテゴリなし */}
           {uncategorized.length > 0 && (
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-xl font-semibold mb-4 text-gray-900">
+            <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+              <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-900 truncate">
                 カテゴリ未設定（{uncategorized.length}件）
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
                 {uncategorized.map((tech) => (
                   <div
                     key={tech.id}
-                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
-                    <span className="font-medium text-gray-900">{tech.name}</span>
-                    <div className="flex gap-2">
+                    <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">{tech.name}</span>
+                    <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                       <button
                         onClick={() => startEditing(tech)}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
+                        className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm px-1 sm:px-0"
                       >
                         編集
                       </button>
                       <button
                         onClick={() => handleDeleteTechnology(tech.id, tech.name)}
-                        className="text-red-600 hover:text-red-800 text-sm"
+                        className="text-red-600 hover:text-red-800 text-xs sm:text-sm px-1 sm:px-0"
                       >
                         削除
                       </button>
@@ -359,27 +359,27 @@ function TechnologiesContent() {
             className="fixed inset-0 z-40 bg-black/50"
             onClick={cancelEditing}
           ></div>
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-              <h3 className="text-xl font-semibold mb-4">技術を編集</h3>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+            <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">技術を編集</h3>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">技術名</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">技術名</label>
                   <input
                     type="text"
                     value={editFormData.name}
                     onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">カテゴリ</label>
                   <select
                     value={editFormData.category}
                     onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                   >
                     <option value="">カテゴリを選択</option>
                     {TECH_CATEGORIES.map((cat) => (
@@ -389,16 +389,16 @@ function TechnologiesContent() {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={handleEditTechnology}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base"
                 >
                   保存
                 </button>
                 <button
                   onClick={cancelEditing}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                  className="px-4 py-2 sm:px-6 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm sm:text-base"
                 >
                   キャンセル
                 </button>

@@ -26,7 +26,6 @@ export default function AdminHeader() {
                     <Link href="/admin" className="text-xl font-bold text-header-color">
                         管理画面
                     </Link>
-                    <span className="text-sm text-header-color">{user?.email}</span>
                 </div>
                 <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
                     <span className="text-3xl">☰</span>

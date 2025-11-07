@@ -305,19 +305,19 @@ function SectionsContent() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-4">
-          <Link href="/admin" className="text-blue-800 hover:text-gray-900 mb-4">
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+        <div className="py-2 sm:py-4">
+          <Link href="/admin" className="text-blue-800 hover:text-gray-900 mb-2 sm:mb-4 inline-block text-sm sm:text-base">
             ← ダッシュボード
           </Link>
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold">セクション管理</h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
+            <h1 className="text-lg sm:text-2xl font-bold">セクション管理</h1>
             {!editingSection && !isCreating && (
               <button
                 onClick={() => setIsCreating(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 新規セクションを作成
@@ -342,19 +342,19 @@ function SectionsContent() {
           />
         ) : (
           /* 一覧モード */
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {sections.map((section, index) => (
-              <div key={section.id} className="bg-white p-6 rounded-lg shadow">
-                <div className="flex items-center gap-4 mb-4">
+              <div key={section.id} className="bg-white p-3 sm:p-6 rounded-lg shadow">
+                <div className="flex items-start gap-2 sm:gap-4">
                   {/* 順番変更ボタン */}
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 flex-shrink-0">
                     <button
                       onClick={() => handleMoveUp(section)}
                       disabled={index === 0}
                       className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
                       title="上に移動"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                       </svg>
                     </button>
@@ -364,46 +364,39 @@ function SectionsContent() {
                       className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
                       title="下に移動"
                     >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </button>
                   </div>
 
                   {/* セクション情報 */}
-                  <div className="flex-1 flex items-center justify-between">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        {section.meta.displayName}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        ID: {section.id} | 順番: {section.meta.order}
-                      </p>
-                    </div>
-                    {section.meta.editable && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => handleEdit(section)}
-                          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                        >
-                          編集
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(section)}
-                          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                        >
-                          削除
-                        </button>
-                      </div>
-                    )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                      {section.meta.displayName}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-500 truncate">
+                      ID: {section.id} | 順番: {section.meta.order}
+                    </p>
                   </div>
-                </div>
 
-                {/* データプレビュー */}
-                <div className="bg-gray-50 p-4 rounded border border-gray-200">
-                  <pre className="text-xs text-gray-700 overflow-x-auto">
-                    {JSON.stringify(section.data, null, 2)}
-                  </pre>
+                  {/* 編集・削除ボタン（縦並び） */}
+                  {section.meta.editable && (
+                    <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleEdit(section)}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
+                      >
+                        編集
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(section)}
+                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base whitespace-nowrap"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
