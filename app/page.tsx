@@ -1,103 +1,104 @@
-import React from "react";
-import Image from "next/image";
-import HistorySection from "../components/HistorySection";
-import FadeInSection from "../components/FadeInSection";
+"use client";
+
+import React, { useEffect, useState } from "react";
+import DynamicSection from "../components/DynamicSection";
+import SiteLayout from "../components/layouts/SiteLayout";
+
+interface Section {
+  id: string;
+  meta: {
+    displayName: string;
+    type: string;
+    order: number;
+    editable: boolean;
+    sortOrder?: "asc" | "desc";
+  };
+  data: any;
+}
 
 export default function Home() {
+  const [sections, setSections] = useState<Section[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSections();
+  }, []);
+
+  const fetchSections = async () => {
+    try {
+      const response = await fetch("/api/sections");
+      const data = await response.json();
+      setSections(data.sections || []);
+    } catch (error) {
+      console.error("Failed to fetch sections:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 連続する履歴系セクション（history）のグループを検出
+  const findHistoryGroupStart = () => {
+    let maxConsecutiveCount = 0;
+    let maxGroupStartIndex = -1;
+    let currentCount = 0;
+    let currentGroupStart = -1;
+
+    sections.forEach((section, index) => {
+      const isHistoryType = section.meta.type === 'history';
+
+      if (isHistoryType) {
+        if (currentCount === 0) {
+          currentGroupStart = index;
+        }
+        currentCount++;
+      } else {
+        if (currentCount > maxConsecutiveCount) {
+          maxConsecutiveCount = currentCount;
+          maxGroupStartIndex = currentGroupStart;
+        }
+        currentCount = 0;
+        currentGroupStart = -1;
+      }
+    });
+
+    // 最後のグループもチェック
+    if (currentCount > maxConsecutiveCount) {
+      maxGroupStartIndex = currentGroupStart;
+    }
+
+    return maxGroupStartIndex;
+  };
+
+  if (loading) {
+    return (
+      <SiteLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </SiteLayout>
+    );
+  }
+
+  const historyGroupStartIndex = findHistoryGroupStart();
+
   return (
-    <main className="max-w-5xl mx-auto px-6">
-      <FadeInSection>
-        <section id="profile">
-          <h2>About Me</h2>
-          <div className="flex flex-col md:flex-row items-left gap-8 card">
-            <Image src="/img/profile.jpg" alt="プロフィール写真" width={150} height={150} className="rounded-foll object-cover" />
-            <div>
-              <h3>名前：平田 陸翔</h3>
-              <p>出身：滋賀県甲賀市</p>
-              <p>趣味：温泉巡り、デバイス収集</p>
-              <p>金沢工業大学 情報工学科 2年</p>
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
+    <SiteLayout>
+      {/* 全セクションをFirebaseから動的に表示 */}
+      {sections.map((section, index) => {
+        // 最も長い連続する履歴系セクショングループの最初の前に「略歴」を表示
+        const isFirstOfMainHistoryGroup = index === historyGroupStartIndex;
 
-      <FadeInSection>
-        <section id="majer">
-          <h2>専門領域-学習中</h2>
-          <div className="grid-card">
-            <div className="card">
-              <h3>情報工学</h3>
-              <ol>
-                <li>システム開発</li>
-                <li>データベース</li>
-                <li>OS開発</li>
-                <li>データ分析</li>
-              </ol>
-            </div>
-            <div className="card">
-              <h3>心理学</h3>
-              <ol>
-                <li>教育心理学</li>
-              </ol>
-            </div>
-            <div className="card">
-              <h3>電気工学</h3>
-              <ol>
-                <li>電気工事</li>
-                <li>電気設備</li>
-                <li>電子機器組み立て</li>
-              </ol>
-            </div>
-            <div className="card">
-              <h3>教職</h3>
-              <ol>
-                <li>教育工学</li>
-                <li>教育心理学</li>
-              </ol>
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
-
-      <FadeInSection>
-        <section id="license">
-          <h2>資格</h2>
-          <div className="grid-card">
-            <div className="card">
-              <h3>情報</h3>
-              <ol>
-                <li>ITパスポート</li>
-                <li>Microsoft Office Specialist Word (Office 2019)</li>
-                <li>Microsoft Office Specialist Word Expert (Office 365 Apps)</li>
-                <li>Microsoft Office Specialist Excel (Office 2019)</li>
-                <li>Microsoft Office Specialist PowerPoint (Office 2019)</li>
-                <li>VBA Expert</li>
-              </ol>
-            </div>
-            <div className="card">
-              <h3>電気</h3>
-              <ol>
-                <li>第三種電気主任技術者</li>
-                <li>第一種電気工事士(技能合格)</li>
-                <li>第二種電気工事士</li>
-                <li>認定電気工事従事者</li>
-                <li>低圧取扱業務(低圧)特別教育(学科)終了</li>
-                <li>技能検定 3級電子機器組立て電子機器組立て作業</li>
-                <li>技能検定 3級電気機器組立てシーケンス制御作業</li>
-              </ol>
-            </div>
-            <div className="card">
-              <h3>その他</h3>
-              <ol>
-                <li>普通自動車免許(AT限定)</li>
-                <li>SRI&apos;s introduction to innovation workshop 修了</li>
-              </ol>
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
-
-      <HistorySection />
-    </main>
+        return (
+          <React.Fragment key={section.id}>
+            {isFirstOfMainHistoryGroup && (
+              <section>
+                <h2>略歴</h2>
+              </section>
+            )}
+            <DynamicSection section={section} />
+          </React.Fragment>
+        );
+      })}
+    </SiteLayout>
   );
 }

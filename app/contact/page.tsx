@@ -2,16 +2,17 @@
 
 import React from "react";
 import FadeInSection from "../../components/FadeInSection";
+import SiteLayout from "../../components/layouts/SiteLayout";
 
 export default function ActivityPage() {
     return (
-        <main className="max-w-5xl mx-auto p-6">
+        <SiteLayout>
             <FadeInSection>
                 <section id="activity" className="py-8">
                     <h1>お問い合わせ</h1>
                     <iframe src="https://forms.gle/UiAi1ccjjyxHmvvu9" width="640" height="802">読み込み中...</iframe>
                 </section>
             </FadeInSection>
-        </main>
+        </SiteLayout>
     );
 }
