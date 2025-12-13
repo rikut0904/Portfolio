@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "prepare": "husky",
     "format": "prettier --write .",
-    "migrate": "tsx scripts/migrate-to-firestore.ts"
+    "migrate": "tsx scripts/migrate-to-firestore.ts",
+    "migrate:certifications": "tsx scripts/migrate-certification-data.ts"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
