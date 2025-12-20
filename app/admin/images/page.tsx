@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
@@ -12,6 +12,7 @@ function ImagesContent() {
   const [uploading, setUploading] = useState(false);
   const [uploadedImagePath, setUploadedImagePath] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -42,9 +43,22 @@ function ImagesContent() {
         body: formData,
       });
 
+      if (response.status === 409) {
+        const data = await response.json();
+        alert(
+          `同名のファイルが既に存在します。\nファイル名を変更し、必要に応じて以下のパスを確認してください。\n${data.path ?? ""}`
+        );
+        return;
+      }
+
       if (response.ok) {
         const data = await response.json();
         setUploadedImagePath(data.path);
+        setSelectedFile(null);
+        setPreviewUrl("");
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
         alert("アップロード成功！\nGitHubへのプッシュが完了すると、数分後にデプロイされます。");
       } else {
         alert("アップロードに失敗しました");
@@ -93,6 +107,7 @@ function ImagesContent() {
                 type="file"
                 accept="image/*"
                 onChange={handleFileChange}
+                ref={fileInputRef}
                 className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
               />
             </div>
