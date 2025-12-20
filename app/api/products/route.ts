@@ -165,8 +165,8 @@ export async function POST(request: NextRequest) {
       id: docRef.id,
       title,
       description,
-      image,
-      link,
+      image: image || "",
+      link: link || "",
       githubUrl: githubUrl || "",
     };
 
