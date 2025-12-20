@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const data = await request.json();
-    const { title, description, image, link, category, technologies, status, deployStatus, createdYear, createdMonth } = data;
+    const { title, description, image, link, githubUrl, category, technologies, status, deployStatus, createdYear, createdMonth } = data;
 
     if (!title || !description) {
       return NextResponse.json(
@@ -150,6 +150,7 @@ export async function POST(request: NextRequest) {
       description,
       image: image || "",
       link: link || "",
+      githubUrl: githubUrl || "",
       category: category || "",
       technologies: technologies || [],
       status: status || "公開",
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
       description,
       image,
       link,
+      githubUrl: githubUrl || "",
     };
 
     return NextResponse.json({ product: newProduct }, { status: 201 });

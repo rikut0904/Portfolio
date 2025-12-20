@@ -1,3 +1,4 @@
+"use client";
 
 import React from "react";
 import Image from "next/image";
@@ -7,6 +8,7 @@ interface ProductCardProps {
   image: string;
   description: string;
   link?: string;
+  githubUrl?: string;
   category?: string;
   technologies?: string[];
   deployStatus?: string;
@@ -19,12 +21,28 @@ export default function ProductCard({
   image,
   description,
   link,
+  githubUrl,
   category,
   technologies,
   deployStatus,
   createdYear,
   createdMonth
 }: ProductCardProps) {
+
+  const primaryLink = githubUrl || link;
+
+  const handleCardClick = () => {
+    if (!primaryLink) return;
+    window.open(primaryLink, "_blank", "noopener,noreferrer");
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!primaryLink) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
 
   const CardContent = () => (
     <>
@@ -42,11 +60,10 @@ export default function ProductCard({
       <div className="flex items-start justify-between gap-2 mb-2">
         <h3 className="text-lg font-semibold flex-1">{title}</h3>
         {deployStatus && (
-          <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${
-            deployStatus === "公開中"
+          <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${deployStatus === "公開中"
               ? "bg-blue-100 text-blue-700"
               : "bg-orange-100 text-orange-700"
-          }`}>
+            }`}>
             {deployStatus}
           </span>
         )}
@@ -82,25 +99,54 @@ export default function ProductCard({
             ))}
           </div>
         )}
+
+        {(githubUrl || link) && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            {githubUrl && (
+              <a
+                href={githubUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold transition-colors"
+                style={{
+                  borderColor: "var(--primary-color)",
+                  color: "var(--primary-color)",
+                  backgroundColor: "var(--primary-light)"
+                }}
+              >
+                GitHub
+              </a>
+            )}
+            {link && (
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold text-white transition-colors"
+                style={{
+                  borderColor: "var(--primary-color)",
+                  backgroundColor: "var(--primary-color)"
+                }}
+              >
+                プロダクトを見る
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </>
   );
 
-  if (link && category === "Webアプリケーション") {
-    return (
-      <a
-        href={link}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="card cursor-pointer hover:shadow-lg transition-shadow"
-      >
-        <CardContent />
-      </a>
-    );
-  }
-
   return (
-    <div className="card">
+    <div
+      className={`card ${primaryLink ? "cursor-pointer hover:shadow-lg transition-shadow" : ""}`}
+      onClick={primaryLink ? handleCardClick : undefined}
+      onKeyDown={primaryLink ? handleKeyDown : undefined}
+      role={primaryLink ? "link" : undefined}
+      tabIndex={primaryLink ? 0 : undefined}
+    >
       <CardContent />
     </div>
   );

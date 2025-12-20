@@ -5,7 +5,8 @@ interface Product {
   title: string;
   description: string;
   image: string;
-  link: string;
+  link?: string;
+  githubUrl?: string;
   category?: string;
   technologies?: string[];
   status?: string;
@@ -60,18 +61,32 @@ export default function ProductListItem({
           </button>
         </div>
         <p className="text-gray-600 text-xs sm:text-sm mt-1 line-clamp-2">{product.description}</p>
-        <div className="flex flex-col gap-0.5 sm:gap-1 text-xs text-gray-400 mt-1">
-          {product.link && product.category === "Webアプリケーション" && (
-            <a
-              href={product.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline flex items-center gap-1 truncate"
-            >
-              🔗 {product.title}
-            </a>
+        <div className="flex flex-col gap-1 text-xs text-gray-500 mt-1">
+          {(product.githubUrl || product.link) && (
+            <div className="flex flex-wrap gap-2">
+              {product.githubUrl && (
+                <a
+                  href={product.githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 font-medium text-gray-700 shadow-sm hover:border-gray-300 hover:bg-gray-50"
+                >
+                  <span>GitHub</span>
+                </a>
+              )}
+              {product.link && (
+                <a
+                  href={product.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 font-medium text-purple-700 shadow-sm hover:bg-purple-100"
+                >
+                  <span>Webサイト</span>
+                </a>
+              )}
+            </div>
           )}
-          <div className="flex gap-2 sm:gap-3 flex-wrap">
+          <div className="flex gap-2 sm:gap-3 flex-wrap text-[11px] text-gray-400">
             {product.image && <span className="truncate max-w-[150px] sm:max-w-none">画像: {product.image}</span>}
             {product.createdYear && product.createdMonth && (
               <span className="flex-shrink-0">

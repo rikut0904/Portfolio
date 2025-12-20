@@ -5,6 +5,7 @@ interface FormData {
   description: string;
   image: string;
   link: string;
+  githubUrl: string;
   category: string;
   technologies: string[];
   status: string;
@@ -18,7 +19,8 @@ interface Product {
   title: string;
   description: string;
   image: string;
-  link: string;
+  link?: string;
+  githubUrl?: string;
   category?: string;
   technologies?: string[];
   status?: string;
@@ -151,23 +153,42 @@ export default function ProductForm({
                   </select>
                 </div>
 
-                {/* リンク */}
+                {/* プロダクトリンク */}
                 <div>
-                  {formData.category === "Webアプリケーション" && (
-                    <>
-                      <label className="block text-sm font-medium text-gray-700">
-                        リンク
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.link}
-                        onChange={(e) =>
-                          setFormData({ ...formData, link: e.target.value })
-                        }
-                        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </>
-                  )}
+                  <label className="block text-sm font-medium text-gray-700">
+                    プロダクトリンク
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.link}
+                    onChange={(e) =>
+                      setFormData({ ...formData, link: e.target.value })
+                    }
+                    placeholder="https://example.com"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    公開 URL がある場合は入力してください（省略可）
+                  </p>
+                </div>
+
+                {/* GitHubリンク */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    GitHubリンク
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.githubUrl}
+                    onChange={(e) =>
+                      setFormData({ ...formData, githubUrl: e.target.value })
+                    }
+                    placeholder="https://github.com/username/repository"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    リポジトリがある場合は入力してください（省略可）
+                  </p>
                 </div>
 
                 {/* 使用技術 */}

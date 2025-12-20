@@ -6,7 +6,8 @@ export interface Product {
   title: string;
   description: string;
   image: string;
-  link: string;
+  link?: string;
+  githubUrl?: string;
   category?: string;
   technologies?: string[];
   status?: string;
@@ -22,6 +23,7 @@ export interface ProductFormData {
   description: string;
   image: string;
   link: string;
+  githubUrl: string;
   category: string;
   technologies: string[];
   status: string;
@@ -35,6 +37,7 @@ const getEmptyFormData = (): ProductFormData => ({
   description: "",
   image: "",
   link: "",
+  githubUrl: "",
   category: "",
   technologies: [],
   status: "公開",
@@ -75,7 +78,7 @@ export function useProductManagement() {
       const token = await user.getIdToken();
       const dataToSave = {
         ...formData,
-        image: formData.image.startsWith('/img/product/')
+        image: formData.image.startsWith("/img/product/")
           ? formData.image
           : `/img/product/${formData.image}`
       };
@@ -120,7 +123,8 @@ export function useProductManagement() {
       title: product.title,
       description: product.description,
       image: product.image,
-      link: product.link,
+      link: product.link || "",
+      githubUrl: product.githubUrl || "",
       category: product.category || "",
       technologies: product.technologies || [],
       status: product.status || "公開",
