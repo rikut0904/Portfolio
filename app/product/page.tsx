@@ -12,6 +12,7 @@ interface Product {
   image: string;
   description: string;
   link?: string;
+  githubUrl?: string;
   category?: string;
   technologies?: string[];
   status?: string; // 公開ステータス
@@ -309,6 +310,7 @@ export default function ProductSection() {
                   image={product.image}
                   description={product.description}
                   link={product.link}
+                  githubUrl={product.githubUrl}
                   category={product.category}
                   technologies={product.technologies}
                   deployStatus={product.deployStatus}
