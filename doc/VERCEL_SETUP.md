@@ -41,6 +41,18 @@ cat serviceAccountKey.json | jq -c
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase設定のstorageBucket | Firebaseクライアント設定 |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase設定のmessagingSenderId | Firebaseクライアント設定 |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase設定のappId | Firebaseクライアント設定 |
+| `GITHUB_TOKEN` | GitHubのPAT | 画像アップロードAPIでGitHubにpushする認証トークン |
+| `GITHUB_OWNER` | GitHubユーザー名／Org名 | 画像をpushするリポジトリのオーナー |
+| `GITHUB_REPO` | リポジトリ名 | 画像を配置するリポジトリ |
+| `GITHUB_BRANCH` | ブランチ名（例: main） | ファイルを作成するブランチ。省略時はmain |
+
+### GitHub Personal Access Token の作成
+
+1. GitHubにログインし、右上のプロフィール → **Settings** → **Developer settings** → **Personal access tokens** へ移動
+2. `repo` 権限を含むトークンを作成（Fine-grainedの場合は対象リポジトリへの **Contents: Read and write** を許可）
+3. 得られたトークンを `GITHUB_TOKEN` に設定し、同じリポジトリの `owner` / `repo` / 使用ブランチを環境変数に入力
+
+トークンにはファイル作成権限が必要なので、必要最低限のスコープで生成し、漏洩を避けるためVercelとローカル環境でのみ利用してください。
 
 ### 4. 環境変数の適用範囲
 
@@ -66,6 +78,7 @@ FIREBASE_SERVICE_ACCOUNT_KEY='{"type":"service_account","project_id":"...","priv
 ```
 
 3. その他のFirebase設定値も `.env.local` に追加
+4. GitHubトークンと `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BRANCH` も `.env.local` に追記（`.env.example` を参考に設定）
 
 ## 注意事項
 

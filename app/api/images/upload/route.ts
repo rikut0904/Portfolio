@@ -49,10 +49,32 @@ export async function POST(request: NextRequest) {
     const repo = process.env.GITHUB_REPO!;
     const branch = process.env.GITHUB_BRANCH || "main";
 
-    // ファイル名を生成（タイムスタンプ + 元のファイル名）
-    const timestamp = Date.now();
-    const fileName = `${timestamp}_${file.name}`;
+    // 元のファイル名を利用（空白や全角文字を安全な形式に正規化）
+    const sanitizedFileName = file.name
+      .trim()
+      .replace(/\s+/g, "_")
+      .replace(/[^a-zA-Z0-9._-]/g, "");
+    const fileName = sanitizedFileName.length > 0 ? sanitizedFileName : file.name;
     const filePath = `public/img/${path}/${fileName}`;
+
+    // 既存ファイル確認で同名ファイルアップロードを防止
+    try {
+      await octokit.repos.getContent({
+        owner,
+        repo,
+        path: filePath,
+        ref: branch,
+      });
+
+      return NextResponse.json(
+        { error: "File already exists", path: `/img/${path}/${fileName}` },
+        { status: 409 }
+      );
+    } catch (error: any) {
+      if (error.status !== 404) {
+        throw error;
+      }
+    }
 
     // GitHubにファイルをアップロード
     const response = await octokit.repos.createOrUpdateFileContents({
