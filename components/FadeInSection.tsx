@@ -11,6 +11,7 @@ export default function FadeInSection({ children }: { children: React.ReactNode 
                 // 一度表示されたら、その後は消えないようにする
                 if (entry.isIntersecting) {
                     setVisible(true);
+                    observer.unobserve(entry.target); // 一度表示されたら、その後は監視を停止
                 }
             });
         }, { rootMargin: "0px 0px -100px 0px", threshold: 0.1 });
