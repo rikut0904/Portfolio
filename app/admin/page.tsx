@@ -192,6 +192,34 @@ function DashboardContent() {
             </div>
           </Link>
 
+          {/* ログ一覧 */}
+          <Link
+            href="/admin/logs"
+            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">ログ一覧</h2>
+                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                  管理操作のログを確認
+                </p>
+              </div>
+              <svg
+                className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h10"
+                />
+              </svg>
+            </div>
+          </Link>
+
           {/* プレビュー */}
           <Link
             href="/"

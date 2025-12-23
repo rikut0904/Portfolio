@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -114,6 +115,18 @@ export async function POST(request: NextRequest) {
 
     // セクションデータを作成
     await adminDb.collection("sections").doc(id).set(data || {});
+
+    await writeAdminLog({
+      action: "create",
+      entity: "section",
+      entityId: id,
+      user,
+      details: {
+        displayName,
+        type,
+        order: newOrder,
+      },
+    });
 
     return NextResponse.json({
       message: "Section created successfully",

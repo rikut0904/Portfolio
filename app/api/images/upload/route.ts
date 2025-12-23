@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminAuth } from "../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../lib/admin/logs";
 import { Octokit } from "@octokit/rest";
 
 // 認証チェックヘルパー
@@ -88,6 +89,16 @@ export async function POST(request: NextRequest) {
 
     // 公開URLを返す
     const publicPath = `/img/${path}/${fileName}`;
+
+    await writeAdminLog({
+      action: "upload",
+      entity: "image",
+      user,
+      details: {
+        path: publicPath,
+        fileName,
+      },
+    });
 
     return NextResponse.json({
       success: true,

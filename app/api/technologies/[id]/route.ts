@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -60,6 +61,17 @@ export async function PUT(
       updatedAt: new Date().toISOString(),
     });
 
+    await writeAdminLog({
+      action: "update",
+      entity: "technology",
+      entityId: id,
+      user,
+      details: {
+        name: name.trim(),
+        category: category || "",
+      },
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating technology:", error);
@@ -80,6 +92,15 @@ export async function DELETE(
   try {
     const { id } = await params;
     await adminDb.collection("technologies").doc(id).delete();
+
+    await writeAdminLog({
+      action: "delete",
+      entity: "technology",
+      entityId: id,
+      user,
+      level: "warn",
+    });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting technology:", error);

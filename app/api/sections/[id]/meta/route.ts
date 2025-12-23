@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -34,6 +35,16 @@ export async function PATCH(
 
     // メタデータを更新
     await adminDb.collection("sectionMeta").doc(id).update(updates);
+
+    await writeAdminLog({
+      action: "update",
+      entity: "sectionMeta",
+      entityId: id,
+      user,
+      details: {
+        updates,
+      },
+    });
 
     return NextResponse.json({ message: "Meta updated successfully" });
   } catch (error) {

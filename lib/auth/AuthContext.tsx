@@ -22,6 +22,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const logAuthEvent = async (action: "login" | "logout", targetUser?: User | null) => {
+    const activeUser = targetUser ?? auth.currentUser;
+    if (!activeUser) {
+      return;
+    }
+
+    try {
+      const token = await activeUser.getIdToken();
+      const response = await fetch("/api/admin-logs", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ action }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to log auth event:", action);
+      }
+    } catch (error) {
+      console.error("Auth log error:", error);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
@@ -33,7 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      await logAuthEvent("login", credential.user);
     } catch (error) {
       console.error("Sign in error:", error);
       throw error;
@@ -42,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
+      await logAuthEvent("logout", auth.currentUser);
       await firebaseSignOut(auth);
     } catch (error) {
       console.error("Sign out error:", error);

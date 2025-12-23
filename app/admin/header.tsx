@@ -43,6 +43,9 @@ export default function AdminHeader() {
                     <Link href="/admin/images">
                         画像管理
                     </Link>
+                    <Link href="/admin/logs">
+                        ログ一覧
+                    </Link>
                     <Link href="/" target="_blank">
                         サイトを見る
                     </Link>
@@ -65,6 +68,9 @@ export default function AdminHeader() {
                     </Link>
                     <Link href="/admin/images" onClick={() => setIsOpen(false)}>
                         画像管理
+                    </Link>
+                    <Link href="/admin/logs" onClick={() => setIsOpen(false)}>
+                        ログ一覧
                     </Link>
                     <Link href="/" onClick={() => setIsOpen(false)} target="_blank">
                         サイトを見る

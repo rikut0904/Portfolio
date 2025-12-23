@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -36,6 +37,14 @@ export async function DELETE(
 
     // sectionMetaコレクションから削除
     await adminDb.collection("sectionMeta").doc(id).delete();
+
+    await writeAdminLog({
+      action: "delete",
+      entity: "section",
+      entityId: id,
+      user,
+      level: "warn",
+    });
 
     return NextResponse.json({ message: "Section deleted successfully" });
   } catch (error) {
