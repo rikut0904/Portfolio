@@ -5,6 +5,7 @@ import FadeInSection from "../../components/FadeInSection";
 import ProductCard from "../../components/ProductCard";
 import SiteLayout from "../../components/layouts/SiteLayout";
 import Accordion from "../../components/Accordion";
+import Pagination from "../../components/Pagination";
 
 interface Product {
   id: string;
@@ -45,6 +46,10 @@ export default function ProductSection() {
   const [filterDeployStatus, setFilterDeployStatus] = useState(""); // デプロイステータスフィルター
   const [sortBy, setSortBy] = useState("createdYear-desc"); // 新しい順に変更
   const [isSortChanged, setIsSortChanged] = useState(false); // ソートが変更されたかを追跡
+
+  // ページネーション用のstate
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   useEffect(() => {
     fetchProducts();
@@ -177,6 +182,17 @@ export default function ProductSection() {
     )
   ).sort((a, b) => b! - a!);
 
+  // ページネーション計算
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // フィルター変更時にページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCategory, filterTechnologies, filterStatus, filterYear, sortBy]);
+
   if (loading) {
     return (
       <SiteLayout>
@@ -307,12 +323,24 @@ export default function ProductSection() {
             </div>
           </Accordion>
 
+
+          {/* ページネーション */}
+          {filteredProducts.length > itemsPerPage && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              variant="public"
+              className="mt-8 mb-4"
+            />
+          )}
+
           {/* 作品一覧 */}
           <div className="grid-card">
-            {filteredProducts.length === 0 ? (
+            {currentProducts.length === 0 ? (
               <p className="text-center text-gray-500 py-8">該当する作品がありません</p>
             ) : (
-              filteredProducts.map((product: Product) => (
+              currentProducts.map((product: Product) => (
                 <ProductCard
                   key={product.id}
                   title={product.title}
@@ -329,6 +357,17 @@ export default function ProductSection() {
               ))
             )}
           </div>
+
+          {/* ページネーション */}
+          {filteredProducts.length > itemsPerPage && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              variant="public"
+              className="mt-8 mb-4"
+            />
+          )}
         </section>
       </FadeInSection>
     </SiteLayout >
