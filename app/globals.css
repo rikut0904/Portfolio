@@ -128,3 +128,106 @@ ul {
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
 }
+
+/* 管理画面のダークモード調整 */
+@media (prefers-color-scheme: dark) {
+  .admin .bg-gray-50,
+  .admin .bg-gray-100 {
+    background-color: var(--background);
+  }
+
+  .admin .bg-white {
+    background-color: var(--card-background);
+  }
+
+  .admin .bg-gray-200 {
+    background-color: #2d2d2d;
+  }
+
+  .admin .bg-gray-300 {
+    background-color: #3f3f46;
+  }
+
+  .admin .bg-blue-50 {
+    background-color: #0b1220;
+  }
+
+  .admin .bg-green-50 {
+    background-color: #0b1c13;
+  }
+
+  .admin .bg-purple-50 {
+    background-color: var(--primary-light);
+  }
+
+  .admin .bg-purple-100 {
+    background-color: #2a2138;
+  }
+
+  .admin .bg-red-50 {
+    background-color: #1f0b0b;
+  }
+
+  .admin .text-gray-900 {
+    color: #f3f4f6;
+  }
+
+  .admin .text-gray-800 {
+    color: #e5e7eb;
+  }
+
+  .admin .text-gray-700 {
+    color: #d1d5db;
+  }
+
+  .admin .text-gray-600,
+  .admin .text-gray-500 {
+    color: #9ca3af;
+  }
+
+  .admin .text-purple-700 {
+    color: #c4b5fd;
+  }
+
+  .admin .text-purple-600 {
+    color: #d8b4fe;
+  }
+
+  .admin .text-blue-800 {
+    color: #93c5fd;
+  }
+
+  .admin .border-gray-300 {
+    border-color: #404040;
+  }
+
+  .admin .border-purple-200 {
+    border-color: #3f2b5f;
+  }
+
+  .admin .border-gray-200,
+  .admin .border-b,
+  .admin .border-t {
+    border-color: #2d2d2d;
+  }
+
+  .admin .hover\:bg-gray-50:hover {
+    background-color: #1a1a1a;
+  }
+
+  .admin .hover\:bg-gray-300:hover {
+    background-color: #4b5563;
+  }
+
+  .admin .hover\:text-gray-900:hover {
+    color: #f3f4f6;
+  }
+
+  .admin .hover\:bg-purple-100:hover {
+    background-color: #35264a;
+  }
+
+  .admin .hover\:text-blue-800:hover {
+    color: #bfdbfe;
+  }
+}
