@@ -1,29 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import admin, { adminAuth, adminDb } from "../../../lib/firebase/admin";
+import admin, { adminDb } from "../../../lib/firebase/admin";
 import { writeAdminLog, pruneOldAdminLogs } from "../../../lib/admin/logs";
+import { checkAdminAuth } from "../../../lib/auth/admin-auth";
 
 type AuthLogBody = {
   action?: string;
 };
 
-async function checkAuth(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  try {
-    const token = authHeader.split("Bearer ")[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    return decodedToken;
-  } catch (error) {
-    console.error("Auth error:", error);
-    return null;
-  }
-}
-
 export async function POST(request: NextRequest) {
-  const user = await checkAuth(request);
+  const user = await checkAdminAuth(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -55,7 +40,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const user = await checkAuth(request);
+  const user = await checkAdminAuth(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
