@@ -33,9 +33,6 @@ const CATEGORIES = [
   "その他"
 ];
 
-const STATUSES = ["公開", "非公開"];
-const DEPLOY_STATUSES = ["公開中", "未公開"];
-
 export default function ProductSection() {
   const [products, setProducts] = useState<Product[]>([]);
   const [technologies, setTechnologies] = useState<string[]>([]);
@@ -44,9 +41,10 @@ export default function ProductSection() {
   // フィルター・ソート用のstate
   const [filterCategory, setFilterCategory] = useState("");
   const [filterTechnologies, setFilterTechnologies] = useState<string[]>([]);
-  const [filterStatus, setFilterStatus] = useState(""); // 一旦すべて表示
   const [filterYear, setFilterYear] = useState("");
+  const [filterDeployStatus, setFilterDeployStatus] = useState(""); // デプロイステータスフィルター
   const [sortBy, setSortBy] = useState("createdYear-desc"); // 新しい順に変更
+  const [isSortChanged, setIsSortChanged] = useState(false); // ソートが変更されたかを追跡
 
   useEffect(() => {
     fetchProducts();
@@ -64,9 +62,9 @@ export default function ProductSection() {
       if (data && Array.isArray(data.products)) {
         console.log("取得した作品データ:", data.products);
         console.log("作品数:", data.products.length);
-        // 各作品のstatusを確認
+        // 各作品のstatus/deployStatusを確認
         data.products.forEach((p: Product, index: number) => {
-          console.log(`作品${index + 1}: ${p.title}, status: ${p.status}`);
+          console.log(`作品${index + 1}: ${p.title}, status: ${p.status}, deployStatus: ${p.deployStatus}`);
         });
         setProducts(data.products);
       } else {
@@ -110,6 +108,18 @@ export default function ProductSection() {
 
     let filtered = [...products];
 
+    // statusで「公開」のもののみを表示（必須フィルター）
+    filtered = filtered.filter(p => p.status === "公開");
+
+    // デプロイステータスフィルター
+    if (filterDeployStatus) {
+      // ユーザーが明示的に選択した場合はそれを優先
+      filtered = filtered.filter(p => p.deployStatus === filterDeployStatus);
+    } else if (isSortChanged) {
+      // フィルター未選択かつソートが変更されている場合は「公開中」のみ表示
+      filtered = filtered.filter(p => p.deployStatus === "公開中");
+    }
+
     // カテゴリフィルター
     if (filterCategory) {
       filtered = filtered.filter(p => p.category === filterCategory);
@@ -120,11 +130,6 @@ export default function ProductSection() {
       filtered = filtered.filter(p =>
         p.technologies?.some(tech => filterTechnologies.includes(tech))
       );
-    }
-
-    // ステータスフィルター（デフォルトで公開中のみ）
-    if (filterStatus) {
-      filtered = filtered.filter(p => p.status === filterStatus);
     }
 
     // 作成年フィルター
@@ -161,11 +166,12 @@ export default function ProductSection() {
 
   const filteredProducts = getFilteredAndSortedProducts();
 
-  // 実際に存在する年を取得（全作品から）
+  // 実際に存在する年を取得（公開の作品から）
   const safeProducts = Array.isArray(products) ? products : [];
+  const publicProducts = safeProducts.filter(p => p.status === "公開");
   const availableYears = Array.from(
     new Set(
-      safeProducts
+      publicProducts
         .map(p => p.createdYear)
         .filter(Boolean)
     )
@@ -185,7 +191,7 @@ export default function ProductSection() {
     <SiteLayout>
       <FadeInSection>
         <section id="products">
-          <h2>制作物一覧</h2>
+          <h2>制作物一覧　{filteredProducts.length}件 / 全{publicProducts.length}件</h2>
 
           {/* フィルター・ソート */}
           <Accordion title="フィルター・ソート" defaultOpen={false}>
@@ -221,18 +227,17 @@ export default function ProductSection() {
                   </select>
                 </div>
 
-                {/* ステータスフィルター */}
+                {/* デプロイステータスフィルター */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">ステータス</label>
+                  <label className="block text-sm font-medium mb-1">デプロイ状況</label>
                   <select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    value={filterDeployStatus}
+                    onChange={(e) => setFilterDeployStatus(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="">すべて</option>
-                    {STATUSES.map((status) => (
-                      <option key={status} value={status}>{status}</option>
-                    ))}
+                    <option value="公開中">公開中</option>
+                    <option value="未公開">未公開</option>
                   </select>
                 </div>
 
@@ -241,7 +246,10 @@ export default function ProductSection() {
                   <label className="block text-sm font-medium mb-1">並び順</label>
                   <select
                     value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
+                    onChange={(e) => {
+                      setSortBy(e.target.value);
+                      setIsSortChanged(true);
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   >
                     <option value="createdYear-asc">作成年月（古い順）</option>
@@ -278,21 +286,22 @@ export default function ProductSection() {
               </div>
 
               {/* フィルタークリアボタン */}
-              <div className="mt-4">
+              <div className="mt-4 flex items-center gap-4">
                 <button
                   onClick={() => {
                     setFilterCategory("");
                     setFilterTechnologies([]);
-                    setFilterStatus("");
                     setFilterYear("");
+                    setFilterDeployStatus("");
                     setSortBy("createdYear-desc");
+                    setIsSortChanged(false);
                   }}
                   className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
                 >
                   フィルターをクリア
                 </button>
-                <span className="ml-4 text-sm text-gray-600">
-                  {filteredProducts.length}件 / 全{safeProducts.length}件
+                <span className="text-sm text-gray-600">
+                  {filteredProducts.length}件 / 全{publicProducts.length}件
                 </span>
               </div>
             </div>
