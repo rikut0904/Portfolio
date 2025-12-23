@@ -191,7 +191,7 @@ export default function ProductSection() {
   // フィルター変更時にページを1に戻す
   useEffect(() => {
     setCurrentPage(1);
-  }, [filterCategory, filterTechnologies, filterStatus, filterYear, sortBy]);
+  }, [filterCategory, filterTechnologies, filterDeployStatus, filterYear, sortBy, isSortChanged]);
 
   if (loading) {
     return (

@@ -141,11 +141,14 @@ export default function ProductCard({
 
   return (
     <div
-      className={`card ${primaryLink ? "cursor-pointer hover:shadow-lg transition-shadow" : ""}`}
+      className={`card ${primaryLink ? "cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-5px]" : "cursor-default"}`}
       onClick={primaryLink ? handleCardClick : undefined}
       onKeyDown={primaryLink ? handleKeyDown : undefined}
       role={primaryLink ? "link" : undefined}
       tabIndex={primaryLink ? 0 : undefined}
+      style={{
+        opacity: primaryLink ? 1 : 0.9,
+      }}
     >
       <CardContent />
     </div>
