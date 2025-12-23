@@ -149,7 +149,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
           <Accordion title={meta.displayName} defaultOpen={false}>
             <div className="flex flex-col gap-4">
               {histories.map((history: any, index: number) => (
-                <div key={index} className="card" style={{ backgroundColor: 'white' }}>
+                <div key={index} className="card">
                   <h3>{history.date}</h3>
                   <ul className="list-disc ml-5">
                     {history.details?.map((detail: string, detailIndex: number) => (

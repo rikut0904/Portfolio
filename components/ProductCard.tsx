@@ -29,7 +29,7 @@ export default function ProductCard({
   createdMonth
 }: ProductCardProps) {
 
-  const primaryLink = githubUrl || link;
+  const primaryLink = githubUrl;
 
   const handleCardClick = () => {
     if (!primaryLink) return;
@@ -61,26 +61,32 @@ export default function ProductCard({
         <h3 className="text-lg font-semibold flex-1">{title}</h3>
         {deployStatus && (
           <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${deployStatus === "公開中"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-orange-100 text-orange-700"
+            ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
+            : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
             }`}>
             {deployStatus}
           </span>
         )}
       </div>
 
-      <p className="text-sm text-gray-600 mb-3">{description}</p>
+      <p className="text-sm mb-3" style={{ color: 'var(--text-body)' }}>{description}</p>
 
       <div className="space-y-2">
         {(category || (createdYear && createdMonth)) && (
-          <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+          <div className="flex flex-wrap gap-2 text-xs" style={{ color: 'var(--text-body)' }}>
             {category && (
-              <span className="px-2 py-1 bg-gray-100 rounded">
+              <span className="px-2 py-1 rounded" style={{
+                backgroundColor: 'var(--button-background)',
+                color: 'var(--button-text)'
+              }}>
                 {category}
               </span>
             )}
             {createdYear && createdMonth && (
-              <span className="px-2 py-1 bg-gray-100 rounded">
+              <span className="px-2 py-1 rounded" style={{
+                backgroundColor: 'var(--button-background)',
+                color: 'var(--button-text)'
+              }}>
                 {createdYear}年{createdMonth}月
               </span>
             )}
@@ -92,7 +98,7 @@ export default function ProductCard({
             {technologies.map((tech, index) => (
               <span
                 key={index}
-                className="px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded"
+                className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
               >
                 {tech}
               </span>
@@ -100,39 +106,22 @@ export default function ProductCard({
           </div>
         )}
 
-        {(githubUrl || link) && (
+        {link && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {githubUrl && (
-              <a
-                href={githubUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold transition-colors"
-                style={{
-                  borderColor: "var(--primary-color)",
-                  color: "var(--primary-color)",
-                  backgroundColor: "var(--primary-light)"
-                }}
-              >
-                GitHub
-              </a>
-            )}
-            {link && (
-              <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold text-white transition-colors"
-                style={{
-                  borderColor: "var(--primary-color)",
-                  backgroundColor: "var(--primary-color)"
-                }}
-              >
-                プロダクトを見る
-              </a>
-            )}
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold transition-colors"
+              style={{
+                borderColor: "var(--primary-color)",
+                color: "var(--primary-color)",
+                backgroundColor: "var(--primary-light)"
+              }}
+            >
+              プロダクトを見る
+            </a>
           </div>
         )}
       </div>
