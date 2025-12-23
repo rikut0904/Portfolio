@@ -43,6 +43,7 @@ export async function DELETE(
       entity: "section",
       entityId: id,
       user,
+      level: "warn",
     });
 
     return NextResponse.json({ message: "Section deleted successfully" });

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "../../../lib/firebase/admin";
-import { writeAdminLog } from "../../../lib/admin/logs";
+import { adminAuth, adminDb } from "../../../lib/firebase/admin";
+import { writeAdminLog, pruneOldAdminLogs } from "../../../lib/admin/logs";
 
 type AuthLogBody = {
   action?: string;
@@ -51,5 +51,30 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error creating admin log:", error);
     return NextResponse.json({ error: "Failed to create admin log" }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  const user = await checkAuth(request);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    await pruneOldAdminLogs();
+    const snapshot = await adminDb
+      .collection("adminLogs")
+      .orderBy("createdAt", "desc")
+      .get();
+
+    const logs = snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return NextResponse.json({ logs });
+  } catch (error) {
+    console.error("Error fetching admin logs:", error);
+    return NextResponse.json({ error: "Failed to fetch admin logs" }, { status: 500 });
   }
 }

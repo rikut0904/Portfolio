@@ -106,6 +106,7 @@ export async function DELETE(
       entity: "activity",
       entityId: id,
       user,
+      level: "warn",
     });
 
     return NextResponse.json({
