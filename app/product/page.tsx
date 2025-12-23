@@ -211,15 +211,20 @@ export default function ProductSection() {
 
           {/* フィルター・ソート */}
           <Accordion title="フィルター・ソート" defaultOpen={false}>
-            <div className="bg-white p-6 rounded-lg shadow mb-8">
+            <div className="p-6 rounded-lg shadow mb-8" style={{ backgroundColor: 'var(--card-background)' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* カテゴリフィルター */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">カテゴリ</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>カテゴリ</label>
                   <select
                     value={filterCategory}
                     onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{
+                      backgroundColor: 'var(--input-background)',
+                      borderColor: 'var(--input-border)',
+                      color: 'var(--foreground)'
+                    }}
                   >
                     <option value="">すべて</option>
                     {CATEGORIES.map((cat) => (
@@ -230,11 +235,16 @@ export default function ProductSection() {
 
                 {/* 作成年フィルター */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">作成年</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>作成年</label>
                   <select
                     value={filterYear}
                     onChange={(e) => setFilterYear(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{
+                      backgroundColor: 'var(--input-background)',
+                      borderColor: 'var(--input-border)',
+                      color: 'var(--foreground)'
+                    }}
                   >
                     <option value="">すべて</option>
                     {availableYears.map((year) => (
@@ -245,11 +255,16 @@ export default function ProductSection() {
 
                 {/* デプロイステータスフィルター */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">デプロイ状況</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>デプロイ状況</label>
                   <select
                     value={filterDeployStatus}
                     onChange={(e) => setFilterDeployStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{
+                      backgroundColor: 'var(--input-background)',
+                      borderColor: 'var(--input-border)',
+                      color: 'var(--foreground)'
+                    }}
                   >
                     <option value="">すべて</option>
                     <option value="公開中">公開中</option>
@@ -259,14 +274,19 @@ export default function ProductSection() {
 
                 {/* ソート */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">並び順</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--foreground)' }}>並び順</label>
                   <select
                     value={sortBy}
                     onChange={(e) => {
                       setSortBy(e.target.value);
                       setIsSortChanged(true);
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border rounded-md"
+                    style={{
+                      backgroundColor: 'var(--input-background)',
+                      borderColor: 'var(--input-border)',
+                      color: 'var(--foreground)'
+                    }}
                   >
                     <option value="createdYear-asc">作成年月（古い順）</option>
                     <option value="createdYear-desc">作成年月（新しい順）</option>
@@ -277,7 +297,7 @@ export default function ProductSection() {
 
                 {/* 使用技術フィルター */}
                 <div className="lg:col-span-4">
-                  <label className="block text-sm font-medium mb-2">使用技術</label>
+                  <label className="block text-sm font-medium mb-2" style={{ color: 'var(--foreground)' }}>使用技術</label>
                   <div className="flex flex-wrap gap-2">
                     {technologies.map((tech) => (
                       <button
@@ -289,10 +309,17 @@ export default function ProductSection() {
                             setFilterTechnologies([...filterTechnologies, tech]);
                           }
                         }}
-                        className={`px-3 py-1 text-sm rounded-full transition-colors ${filterTechnologies.includes(tech)
-                          ? "bg-primary-color text-white"
-                          : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                          }`}
+                        className="px-3 py-1 text-sm rounded-full transition-colors"
+                        style={filterTechnologies.includes(tech)
+                          ? {
+                              backgroundColor: 'var(--primary-color)',
+                              color: 'white'
+                            }
+                          : {
+                              backgroundColor: 'var(--button-background)',
+                              color: 'var(--button-text)'
+                            }
+                        }
                       >
                         {tech}
                       </button>
@@ -312,11 +339,15 @@ export default function ProductSection() {
                     setSortBy("createdYear-desc");
                     setIsSortChanged(false);
                   }}
-                  className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                  className="px-4 py-2 text-sm rounded hover:opacity-80 transition-opacity"
+                  style={{
+                    backgroundColor: 'var(--button-background)',
+                    color: 'var(--button-text)'
+                  }}
                 >
                   フィルターをクリア
                 </button>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm" style={{ color: 'var(--text-body)' }}>
                   {filteredProducts.length}件 / 全{publicProducts.length}件
                 </span>
               </div>

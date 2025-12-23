@@ -6,18 +6,34 @@
   --foreground: #171717;
   --primary-color: #6B46C1;
   --primary-light: #F5EBFF;
-  --card-background: transparent;
+  --card-background: #FFFFFF;
   --card-border: #D1D5DB;
   --accordion-background: #F5EBFF;
-  --header-color: #6B46C1;
+  --header-color: var(--text-heading);
   --text-heading: #6B46C1;
   --text-body: #4B5563;
+  --input-background: #FFFFFF;
+  --input-border: #D1D5DB;
+  --button-background: #E5E7EB;
+  --button-text: #374151;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #121212;
+    --foreground: #b0b0b0;
+    --primary-color: #A78BFA;
+    --primary-light: #1a1625;
+    --card-background: #1e1e1e;
+    --card-border: #2d2d2d;
+    --accordion-background: #1a1625;
+    --header-color: var(--text-heading);
+    --text-heading: #C4B5FD;
+    --text-body: #9ca3af;
+    --input-background: #252525;
+    --input-border: #404040;
+    --button-background: #2d2d2d;
+    --button-text: #b0b0b0;
   }
 }
 
@@ -33,6 +49,12 @@ header {
   background-color: var(--primary-light);
   color: var(--header-color);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  header {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
 }
 
 /* ページ全体の大見出し h1 */
@@ -78,6 +100,12 @@ ul {
   border-radius: 0.5rem;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
 }
 
 /* ホバーエフェクトはコンポーネント側で制御 */

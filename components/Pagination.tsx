@@ -69,8 +69,8 @@ export default function Pagination({
     public: {
       base: "px-3 py-2 text-sm border rounded-lg transition-all duration-200 font-medium shadow-sm",
       active: "bg-[var(--primary-color)] text-white border-[var(--primary-color)] shadow-md",
-      inactive: "border-[var(--card-border)] bg-white hover:bg-[var(--primary-light)] hover:border-[var(--primary-color)] hover:shadow-md",
-      disabled: "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white disabled:hover:border-[var(--card-border)] disabled:hover:shadow-sm",
+      inactive: "border-[var(--card-border)] bg-[var(--card-background)] hover:bg-[var(--primary-light)] hover:border-[var(--primary-color)] hover:shadow-md",
+      disabled: "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[var(--card-background)] disabled:hover:border-[var(--card-border)] disabled:hover:shadow-sm",
     },
   };
 
