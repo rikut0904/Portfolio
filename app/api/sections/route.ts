@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminDb, adminAuth } from "../../../lib/firebase/admin";
+import { adminDb } from "../../../lib/firebase/admin";
 import { writeAdminLog } from "../../../lib/admin/logs";
-
-// 認証チェックヘルパー
-async function checkAuth(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-
-  try {
-    const token = authHeader.split("Bearer ")[1];
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    return decodedToken;
-  } catch (error) {
-    console.error("Auth error:", error);
-    return null;
-  }
-}
+import { checkAdminAuth } from "../../../lib/auth/admin-auth";
 
 // GET: 全セクションとメタデータを取得
 export async function GET() {
@@ -61,7 +45,7 @@ export async function GET() {
 
 // POST: 新しいセクションを追加（認証必要）
 export async function POST(request: NextRequest) {
-  const user = await checkAuth(request);
+  const user = await checkAdminAuth(request);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

@@ -20,32 +20,44 @@ function LogsContent() {
   const { user } = useAuth();
   const [logs, setLogs] = useState<AdminLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentCursor, setCurrentCursor] = useState<string | null>(null);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [cursorHistory, setCursorHistory] = useState<Array<string | null>>([]);
   const itemsPerPage = 10;
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        if (!user) return;
-        const token = await user.getIdToken();
-        const response = await fetch("/api/admin-logs", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) {
-          throw new Error("Failed to fetch logs");
-        }
-        const data = await response.json();
-        setLogs(data.logs || []);
-      } catch (error) {
-        console.error("Failed to fetch logs:", error);
-      } finally {
-        setLoading(false);
+  const fetchLogs = async (cursor: string | null) => {
+    try {
+      if (!user) return;
+      const token = await user.getIdToken();
+      const params = new URLSearchParams({ limit: String(itemsPerPage) });
+      if (cursor) {
+        params.set("cursor", cursor);
       }
-    };
+      const response = await fetch(`/api/admin-logs?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Failed to fetch logs");
+      }
+      const data = await response.json();
+      setLogs(data.logs || []);
+      setNextCursor(data.nextCursor || null);
+      setCurrentCursor(cursor);
+    } catch (error) {
+      console.error("Failed to fetch logs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchLogs();
+  useEffect(() => {
+    setLoading(true);
+    setCursorHistory([]);
+    setCurrentCursor(null);
+    setNextCursor(null);
+    fetchLogs(null);
   }, [user]);
 
   const formatDate = (value?: string) => {
@@ -95,9 +107,7 @@ function LogsContent() {
                   ログはありません。
                 </div>
               ) : (
-                logs
-                  .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                  .map((log) => (
+                logs.map((log) => (
                   <div key={log.id} className="px-3 py-3 sm:px-6 sm:py-4">
                     <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
                       <span className="text-gray-500 dark:text-gray-400">
@@ -127,28 +137,34 @@ function LogsContent() {
                 ))
               )}
             </div>
-            {logs.length > itemsPerPage && (
+            {(cursorHistory.length > 0 || nextCursor) && (
               <div className="px-3 py-3 sm:px-6 sm:py-4 border-t dark:border-gray-800 flex items-center justify-between text-xs sm:text-sm">
                 <span className="text-gray-500 dark:text-gray-400">
-                  {currentPage} / {Math.ceil(logs.length / itemsPerPage)} ページ
+                  {cursorHistory.length + 1} ページ
                 </span>
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
+                    onClick={() => {
+                      const previousCursor = cursorHistory[cursorHistory.length - 1] ?? null;
+                      setCursorHistory((prev) => prev.slice(0, -1));
+                      setLoading(true);
+                      fetchLogs(previousCursor);
+                    }}
+                    disabled={cursorHistory.length === 0}
                     className="px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     前へ
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      setCurrentPage((prev) =>
-                        Math.min(prev + 1, Math.ceil(logs.length / itemsPerPage))
-                      )
-                    }
-                    disabled={currentPage >= Math.ceil(logs.length / itemsPerPage)}
+                    onClick={() => {
+                      if (!nextCursor) return;
+                      setCursorHistory((prev) => [...prev, currentCursor]);
+                      setLoading(true);
+                      fetchLogs(nextCursor);
+                    }}
+                    disabled={!nextCursor}
                     className="px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
                   >
                     次へ
