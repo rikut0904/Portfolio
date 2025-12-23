@@ -8,12 +8,17 @@ export default function FadeInSection({ children }: { children: React.ReactNode 
     useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                setVisible(entry.isIntersecting);
+                // 一度表示されたら、その後は消えないようにする
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.unobserve(entry.target); // 一度表示されたら、その後は監視を停止
+                }
             });
         }, { rootMargin: "0px 0px -100px 0px", threshold: 0.1 });
 
-        if (domRef.current) observer.observe(domRef.current);
-        return () => { if (domRef.current) observer.unobserve(domRef.current); };
+        const currentRef = domRef.current;
+        if (currentRef) observer.observe(currentRef);
+        return () => { if (currentRef) observer.unobserve(currentRef); };
     }, []);
 
     return (
