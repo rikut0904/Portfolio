@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -87,6 +88,17 @@ export async function POST(request: NextRequest) {
     const docRef = await adminDb
       .collection("activityCategories")
       .add(categoryData);
+
+    await writeAdminLog({
+      action: "create",
+      entity: "activityCategory",
+      entityId: docRef.id,
+      user,
+      details: {
+        name,
+        order: categoryOrder,
+      },
+    });
 
     return NextResponse.json(
       {

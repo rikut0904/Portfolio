@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -58,6 +59,13 @@ export async function DELETE(
       });
     });
 
+    await writeAdminLog({
+      action: "delete",
+      entity: "activityCategory",
+      entityId: id,
+      user,
+    });
+
     return NextResponse.json({
       message: "Category and related activities deleted successfully",
     });
@@ -113,12 +121,32 @@ export async function PATCH(
         });
       });
 
+      await writeAdminLog({
+        action: "update",
+        entity: "activityCategory",
+        entityId: id,
+        user,
+        details: {
+          updates,
+        },
+      });
+
       return NextResponse.json({
         message: "Category and related activities updated successfully",
       });
     } else {
       // カテゴリ名以外の更新（順番変更など）の場合は通常通り更新
       await adminDb.collection("activityCategories").doc(id).update(updates);
+
+      await writeAdminLog({
+        action: "update",
+        entity: "activityCategory",
+        entityId: id,
+        user,
+        details: {
+          updates,
+        },
+      });
 
       return NextResponse.json({
         message: "Category updated successfully",

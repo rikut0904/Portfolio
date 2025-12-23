@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -67,6 +68,13 @@ export async function PUT(
 
     await adminDb.collection("activities").doc(id).update(updateData);
 
+    await writeAdminLog({
+      action: "update",
+      entity: "activity",
+      entityId: id,
+      user,
+    });
+
     return NextResponse.json({
       message: "Activity updated successfully",
     });
@@ -92,6 +100,13 @@ export async function DELETE(
   try {
     const { id } = await params;
     await adminDb.collection("activities").doc(id).delete();
+
+    await writeAdminLog({
+      action: "delete",
+      entity: "activity",
+      entityId: id,
+      user,
+    });
 
     return NextResponse.json({
       message: "Activity deleted successfully",
@@ -122,6 +137,16 @@ export async function PATCH(
     await adminDb.collection("activities").doc(id).update({
       ...updates,
       updatedAt: new Date().toISOString(),
+    });
+
+    await writeAdminLog({
+      action: "update",
+      entity: "activity",
+      entityId: id,
+      user,
+      details: {
+        updates,
+      },
     });
 
     return NextResponse.json({

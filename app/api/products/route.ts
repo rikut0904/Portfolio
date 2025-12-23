@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -169,6 +170,18 @@ export async function POST(request: NextRequest) {
       link: link || "",
       githubUrl: githubUrl || "",
     };
+
+    await writeAdminLog({
+      action: "create",
+      entity: "product",
+      entityId: docRef.id,
+      user,
+      details: {
+        title,
+        status: status || "公開",
+        deployStatus: deployStatus || "未公開",
+      },
+    });
 
     return NextResponse.json({ product: newProduct }, { status: 201 });
   } catch (error) {

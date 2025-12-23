@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminDb, adminAuth } from "../../../lib/firebase/admin";
+import { writeAdminLog } from "../../../lib/admin/logs";
 
 // 認証チェックヘルパー
 async function checkAuth(request: NextRequest) {
@@ -83,6 +84,17 @@ export async function POST(request: NextRequest) {
       category: category || "",
       createdAt: new Date().toISOString(),
     };
+
+    await writeAdminLog({
+      action: "create",
+      entity: "technology",
+      entityId: docRef.id,
+      user,
+      details: {
+        name: name.trim(),
+        category: category || "",
+      },
+    });
 
     return NextResponse.json({ technology: newTechnology }, { status: 201 });
   } catch (error) {
