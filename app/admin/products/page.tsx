@@ -8,6 +8,7 @@ import ProductFilters from "../../../components/admin/ProductFilters";
 import ProductListItem from "../../../components/admin/ProductListItem";
 import StatusModal from "../../../components/admin/StatusModal";
 import DeployStatusModal from "../../../components/admin/DeployStatusModal";
+import Pagination from "../../../components/Pagination";
 import { useProductManagement, Product } from "../../../hooks/useProductManagement";
 import { useTechnologyManagement } from "../../../hooks/useTechnologyManagement";
 import { useProductFilters } from "../../../hooks/useProductFilters";
@@ -71,6 +72,10 @@ function ProductsContent() {
   const [statusModalProduct, setStatusModalProduct] = useState<Product | null>(null);
   const [deployStatusModalProduct, setDeployStatusModalProduct] = useState<Product | null>(null);
 
+  // ページネーション用のstate
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && (isAddingNew || editingProduct)) {
@@ -85,6 +90,17 @@ function ProductsContent() {
   const safeProducts = Array.isArray(products) ? products : [];
   const availableYears = Array.from(new Set(safeProducts.map(p => p.createdYear).filter(Boolean))).sort((a, b) => b! - a!);
   const availableMonths = Array.from(new Set(safeProducts.map(p => p.createdMonth).filter(Boolean))).sort((a, b) => a! - b!);
+
+  // ページネーション計算
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentProducts = filteredProducts.slice(startIndex, endIndex);
+
+  // フィルター変更時にページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterCategory, filterTechnologies, filterStatus, filterDeployStatus, filterCreatedYear, filterCreatedMonth, sortBy]);
 
   if (loading) {
     return (
@@ -162,7 +178,7 @@ function ProductsContent() {
             <h2 className="text-base sm:text-xl font-semibold truncate">作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}件）</h2>
           </div>
           <div className="divide-y">
-            {filteredProducts.map((product) => (
+            {currentProducts.map((product) => (
               <ProductListItem
                 key={product.id}
                 product={product}
@@ -173,6 +189,18 @@ function ProductsContent() {
               />
             ))}
           </div>
+
+          {/* ページネーション */}
+          {filteredProducts.length > itemsPerPage && (
+            <div className="px-3 py-4 sm:px-6 sm:py-5 border-t">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                variant="admin"
+              />
+            </div>
+          )}
         </div>
 
         {statusModalProduct && (
