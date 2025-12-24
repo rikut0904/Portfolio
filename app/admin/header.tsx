@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useAuth } from "../../lib/auth/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import SlideInMenu from "../../components/SlideInMenu";
 
 export default function AdminHeader() {
     const [isOpen, setIsOpen] = useState(false);
     const { user, signOut } = useAuth();
     const router = useRouter();
+    const closeMenu = useCallback(() => setIsOpen(false), []);
 
     const handleSignOut = async () => {
         try {
@@ -20,7 +22,7 @@ export default function AdminHeader() {
     };
 
     return (
-        <header className="p-4 bg-primary-light shadow-md">
+        <header className="fixed inset-x-0 top-0 z-40 p-4 bg-primary-light shadow-md">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <Link href="/admin" className="text-xl font-bold text-header-color">
@@ -55,31 +57,29 @@ export default function AdminHeader() {
                 </nav>
             </div>
 
-            {isOpen && (
-                <nav className="md:hidden mt-4 flex flex-col space-y-4">
-                    <Link href="/admin" onClick={() => setIsOpen(false)}>
-                        ダッシュボード
-                    </Link>
-                    <Link href="/admin/products" onClick={() => setIsOpen(false)}>
-                        作品管理
-                    </Link>
-                    <Link href="/admin/sections" onClick={() => setIsOpen(false)}>
-                        セクション管理
-                    </Link>
-                    <Link href="/admin/images" onClick={() => setIsOpen(false)}>
-                        画像管理
-                    </Link>
-                    <Link href="/admin/logs" onClick={() => setIsOpen(false)}>
-                        ログ一覧
-                    </Link>
-                    <Link href="/" onClick={() => setIsOpen(false)} target="_blank">
-                        サイトを見る
-                    </Link>
-                    <button onClick={handleSignOut} className="text-left">
-                        ログアウト
-                    </button>
-                </nav>
-            )}
+            <SlideInMenu isOpen={isOpen} onClose={closeMenu} ariaLabel="管理メニュー">
+                <Link href="/admin" onClick={closeMenu}>
+                    ダッシュボード
+                </Link>
+                <Link href="/admin/products" onClick={closeMenu}>
+                    作品管理
+                </Link>
+                <Link href="/admin/sections" onClick={closeMenu}>
+                    セクション管理
+                </Link>
+                <Link href="/admin/images" onClick={closeMenu}>
+                    画像管理
+                </Link>
+                <Link href="/admin/logs" onClick={closeMenu}>
+                    ログ一覧
+                </Link>
+                <Link href="/" onClick={closeMenu} target="_blank">
+                    サイトを見る
+                </Link>
+                <button onClick={handleSignOut} className="text-left">
+                    ログアウト
+                </button>
+            </SlideInMenu>
         </header>
     );
 }
