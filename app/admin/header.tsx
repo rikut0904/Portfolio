@@ -97,7 +97,7 @@ export default function AdminHeader() {
                     <Link href="/" onClick={() => setIsOpen(false)} target="_blank">
                         サイトを見る
                     </Link>
-                    <button onClick={handleSignOut} className="text-left">
+                    <button onClick={() => { setIsOpen(false); handleSignOut(); }} className="text-left">
                         ログアウト
                     </button>
                 </nav>
