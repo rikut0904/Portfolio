@@ -20,7 +20,7 @@ export default function AdminHeader() {
     };
 
     return (
-        <header className="p-4 bg-primary-light shadow-md">
+        <header className="fixed inset-x-0 top-0 z-40 p-4 bg-primary-light shadow-md">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                     <Link href="/admin" className="text-xl font-bold text-header-color">
@@ -55,8 +55,30 @@ export default function AdminHeader() {
                 </nav>
             </div>
 
-            {isOpen && (
-                <nav className="md:hidden mt-4 flex flex-col space-y-4">
+            <div
+                className={`md:hidden fixed inset-0 z-50 transition-opacity duration-200 ${
+                    isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                }`}
+            >
+                <button
+                    type="button"
+                    className="absolute inset-0 bg-primary-color/15 backdrop-blur-sm"
+                    aria-label="メニューを閉じる"
+                    onClick={() => setIsOpen(false)}
+                />
+                <nav
+                    className={`absolute right-0 top-0 h-full w-80 bg-primary-light text-header-color shadow-lg pt-16 px-7 pb-7 flex flex-col space-y-6 text-xl transition-transform duration-200 ease-out ${
+                        isOpen ? "translate-x-0" : "translate-x-full"
+                    }`}
+                >
+                    <button
+                        type="button"
+                        className="absolute right-4 top-4 text-4xl text-header-color"
+                        aria-label="メニューを閉じる"
+                        onClick={() => setIsOpen(false)}
+                    >
+                        ×
+                    </button>
                     <Link href="/admin" onClick={() => setIsOpen(false)}>
                         ダッシュボード
                     </Link>
@@ -79,7 +101,7 @@ export default function AdminHeader() {
                         ログアウト
                     </button>
                 </nav>
-            )}
+            </div>
         </header>
     );
 }
