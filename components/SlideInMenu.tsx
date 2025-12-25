@@ -86,7 +86,7 @@ export default function SlideInMenu({ isOpen, onClose, ariaLabel, children }: Sl
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
-        className={`absolute right-0 top-0 h-full w-80 bg-primary-light text-header-color shadow-lg pt-16 px-7 pb-7 flex flex-col space-y-6 text-xl transition-transform duration-200 ease-out ${
+        className={`absolute right-0 top-0 h-full w-80 bg-[var(--card-background)] text-header-color shadow-lg pt-16 px-7 pb-7 flex flex-col space-y-6 text-xl transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
       >
