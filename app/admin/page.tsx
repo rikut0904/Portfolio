@@ -108,6 +108,34 @@ function DashboardContent() {
             </div>
           </Link>
 
+          {/* お問い合わせ管理 */}
+          <Link
+            href="/admin/inquiries"
+            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">お問い合わせ管理</h2>
+                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                  お問い合わせ内容の確認と返信
+                </p>
+              </div>
+              <svg
+                className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 10h8m-8 4h6m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h8l6 6v8a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+          </Link>
+
           {/* 画像管理 */}
           <Link
             href="/admin/images"

@@ -42,6 +42,9 @@ export default function AdminHeader() {
                     <Link href="/admin/sections">
                         セクション管理
                     </Link>
+                    <Link href="/admin/inquiries">
+                        お問い合わせ管理
+                    </Link>
                     <Link href="/admin/images">
                         画像管理
                     </Link>
@@ -66,6 +69,9 @@ export default function AdminHeader() {
                 </Link>
                 <Link href="/admin/sections" onClick={closeMenu}>
                     セクション管理
+                </Link>
+                <Link href="/admin/inquiries" onClick={closeMenu}>
+                    お問い合わせ管理
                 </Link>
                 <Link href="/admin/images" onClick={closeMenu}>
                     画像管理
