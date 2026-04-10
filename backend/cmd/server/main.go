@@ -11,7 +11,9 @@ import (
 	"portfolio-backend/internal/api"
 	"portfolio-backend/internal/auth"
 	"portfolio-backend/internal/config"
+	"portfolio-backend/internal/discord"
 	"portfolio-backend/internal/mail"
+	"portfolio-backend/internal/migrations"
 	"portfolio-backend/internal/store"
 )
 
@@ -29,6 +31,12 @@ func main() {
 		log.Fatalf("db error: %v", err)
 	}
 	defer st.Close()
+	if cfg.RunInquiryThreadMigration {
+		if err := migrations.RunInquiryThreads(ctx, st.Pool); err != nil {
+			log.Fatalf("migration error: %v", err)
+		}
+		log.Printf("applied inquiry thread migration")
+	}
 
 	verifier, err := auth.NewVerifier(ctx, cfg.FirebaseCredentials, cfg.FirebaseProjectID, cfg.AdminEmails, cfg.AdminUIDs)
 	if err != nil {
@@ -47,12 +55,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("mail error: %v", err)
 	}
+	discordClient := discord.New(cfg.DiscordWebhookURLs)
 
 	handler := api.NewHandler(
 		st,
 		verifier,
 		mailer,
+		discordClient,
 		cfg.FirebaseWebAPIKey,
+		cfg.AppBaseURL,
 		cfg.MailTo,
 		cfg.AppMode,
 		cfg.GitHubToken,

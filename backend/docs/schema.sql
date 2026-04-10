@@ -69,10 +69,22 @@ CREATE TABLE IF NOT EXISTS inquiries (
   message TEXT NOT NULL,
   contact_name TEXT NOT NULL DEFAULT '',
   contact_email TEXT NOT NULL,
+  thread_id TEXT NOT NULL DEFAULT gen_random_uuid()::text,
   status TEXT NOT NULL DEFAULT 'pending',
   replies JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS inquiry_replies (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  inquiry_id UUID NOT NULL REFERENCES inquiries(id) ON DELETE CASCADE,
+  thread_id TEXT NOT NULL,
+  sender_type TEXT NOT NULL,
+  sender_name TEXT NOT NULL DEFAULT '',
+  sender_email TEXT NOT NULL DEFAULT '',
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS admin_logs (
@@ -89,6 +101,9 @@ CREATE TABLE IF NOT EXISTS admin_logs (
 
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at_id ON admin_logs (created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries (created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_inquiries_thread_id ON inquiries (thread_id);
+CREATE INDEX IF NOT EXISTS idx_inquiry_replies_inquiry_id ON inquiry_replies (inquiry_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_inquiry_replies_thread_id ON inquiry_replies (thread_id, created_at ASC);
 CREATE INDEX IF NOT EXISTS idx_products_year_month ON products (created_year, created_month);
 CREATE INDEX IF NOT EXISTS idx_activities_order ON activities (order_no DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_categories_order ON activity_categories (order_no ASC);

@@ -35,17 +35,22 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
 - Set `PORT` (Railway usually injects automatically)
 - Set `APP_MODE` (`true` to enable `/admin/login` -> `/admin/signin` flow)
 - Set `DATABASE_URL` to Railway Postgres URL
+- Set `APP_BASE_URL` to the frontend public URL (used for inquiry thread links in emails)
+- Set `RUN_INQUIRY_THREAD_MIGRATION=true` only when you want the server to apply `002_inquiry_threads.sql` on startup
 - Set Firebase env vars
   - `FIREBASE_WEB_API_KEY` (for email/password login API)
 - Set SES env vars (for inquiry mail send/receive flow)
-  - `MAIL_FROM`
-  - `MAIL_TO` (comma-separated recipients for inquiry notifications)
+  - `MAIL_FROM` (optional. unsetならメール送信はスキップ)
+  - `MAIL_TO` (optional. comma-separated recipients for inquiry notifications)
   - `MAIL_RETRY_MAX` (default: `3`)
   - `MAIL_RETRY_INTERVAL_MS` (default: `500`)
   - `AWS_REGION`
   - `AWS_ACCESS_KEY_ID`
   - `AWS_SECRET_ACCESS_KEY`
   - `SES_CONFIGURATION_SET` (optional)
+- Set Discord env vars (optional for inquiry notifications)
+  - `DISCORD_WEBHOOK_URL`
+  - or `DISCORD_WEBHOOK_URLS` (comma-separated)
 - Set GitHub env vars (for image upload)
   - `GITHUB_TOKEN` (repo write permission)
   - `GITHUB_OWNER`
@@ -66,6 +71,7 @@ This backend is currently aligned to your migrated Railway schema:
 - `adminLogs`
 
 If `public.inquiries` does not exist, inquiry APIs return `501 Not Implemented` with a clear message.
+If the inquiry thread schema (`thread_id`, `inquiry_replies`) is missing, apply the latest inquiry migration.
 
 ## Create inquiries table
 Run this on Railway Postgres if `public.inquiries` is missing:
@@ -77,9 +83,19 @@ Run this on Railway Postgres if `public.inquiries` is missing:
 If you are inside a remote `psql` session where local file include is unavailable, copy and run the SQL directly from:
 `backend/docs/migrations/001_create_inquiries.sql`
 
+If `public.inquiries` already exists from the older schema, either run:
+`backend/docs/migrations/002_inquiry_threads.sql`
+or start the server once with `RUN_INQUIRY_THREAD_MIGRATION=true`.
+
 ## Inquiry mail behavior
 - `POST /api/inquiries`
-  - Sends notification mail to `MAIL_TO`
-  - Sends auto-reply to inquiry sender (`contact_email`)
+  - Sends notification mail to `MAIL_TO` if configured
+  - Sends Discord webhook notification if `DISCORD_WEBHOOK_URL` or `DISCORD_WEBHOOK_URLS` is configured
+  - Sends receipt mail to inquiry sender (`contact_email`) if mail sending is configured
+  - Returns `threadId` and uses the thread URL in notifications
+- `GET /api/inquiries/thread/{threadId}`
+  - Returns the inquiry thread for the public confirmation page
+- `POST /api/inquiries/thread/{threadId}/reply`
+  - Adds a follow-up message to the same inquiry thread
 - `POST /api/inquiries/{id}/reply`
-  - Sends reply mail to inquiry sender (`contact_email`)
+  - Sends reply mail to inquiry sender (`contact_email`) if mail sending is configured

@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/discord"
 	"portfolio-backend/internal/mail"
 	"portfolio-backend/internal/store"
 
@@ -29,7 +30,9 @@ type Handler struct {
 	store             *store.Store
 	verifier          *auth.Verifier
 	mailer            *mail.Client
+	discord           *discord.Client
 	firebaseWebAPIKey string
+	appBaseURL        string
 	mailTo            []string
 	appMode           bool
 	githubToken       string
@@ -42,7 +45,9 @@ func NewHandler(
 	store *store.Store,
 	verifier *auth.Verifier,
 	mailer *mail.Client,
+	discord *discord.Client,
 	firebaseWebAPIKey string,
+	appBaseURL string,
 	mailTo []string,
 	appMode bool,
 	githubToken string,
@@ -54,7 +59,9 @@ func NewHandler(
 		store:             store,
 		verifier:          verifier,
 		mailer:            mailer,
+		discord:           discord,
 		firebaseWebAPIKey: strings.TrimSpace(firebaseWebAPIKey),
+		appBaseURL:        strings.TrimRight(strings.TrimSpace(appBaseURL), "/"),
 		mailTo:            mailTo,
 		appMode:           appMode,
 		githubToken:       strings.TrimSpace(githubToken),
@@ -102,7 +109,17 @@ func (h *Handler) Register(r chi.Router) {
 		r.Delete("/technologies/{id}", h.withAdmin(h.deleteTechnology))
 		r.Post("/images/upload", h.withAdmin(h.uploadImage))
 
+		r.Post("/contact", h.createInquiry)
+		r.Get("/contact/thread/{threadId}", h.getInquiryThread)
+		r.Post("/contact/thread/{threadId}/reply", h.replyInquiryThread)
+		r.Get("/contact", h.withAdmin(h.getInquiries))
+		r.Get("/contact/{id}", h.withAdmin(h.getInquiry))
+		r.Patch("/contact/{id}", h.withAdmin(h.patchInquiryStatus))
+		r.Post("/contact/{id}/reply", h.withAdmin(h.replyInquiry))
+
 		r.Post("/inquiries", h.createInquiry)
+		r.Get("/inquiries/thread/{threadId}", h.getInquiryThread)
+		r.Post("/inquiries/thread/{threadId}/reply", h.replyInquiryThread)
 		r.Get("/inquiries", h.withAdmin(h.getInquiries))
 		r.Get("/inquiries/{id}", h.withAdmin(h.getInquiry))
 		r.Patch("/inquiries/{id}", h.withAdmin(h.patchInquiryStatus))
@@ -1634,16 +1651,83 @@ func normalize(v any) string {
 	return strings.TrimSpace(s)
 }
 
+type inquiryReplyItem struct {
+	ID          string `json:"id"`
+	InquiryID   string `json:"inquiryId"`
+	ThreadID    string `json:"threadId"`
+	SenderType  string `json:"senderType"`
+	SenderName  string `json:"senderName"`
+	SenderEmail string `json:"senderEmail,omitempty"`
+	Message     string `json:"message"`
+	CreatedAt   string `json:"createdAt"`
+}
+
 func (h *Handler) ensureInquiriesTable(w http.ResponseWriter, r *http.Request) bool {
-	var exists bool
-	err := h.store.Pool.QueryRow(r.Context(), `SELECT to_regclass('public.inquiries') IS NOT NULL`).Scan(&exists)
-	if err != nil || !exists {
+	var inquiriesExists bool
+	var repliesExists bool
+	var hasThreadID bool
+	err := h.store.Pool.QueryRow(r.Context(), `
+		SELECT
+			to_regclass('public.inquiries') IS NOT NULL,
+			to_regclass('public.inquiry_replies') IS NOT NULL,
+			EXISTS (
+				SELECT 1
+				FROM information_schema.columns
+				WHERE table_schema = 'public'
+				  AND table_name = 'inquiries'
+				  AND column_name = 'thread_id'
+			)
+	`).Scan(&inquiriesExists, &repliesExists, &hasThreadID)
+	if err != nil || !inquiriesExists || !repliesExists || !hasThreadID {
 		writeJSON(w, http.StatusNotImplemented, map[string]any{
-			"error": "inquiries table is not found. Please create public.inquiries first",
+			"error": "inquiry thread schema is not found. Please apply the latest inquiry migration first",
 		})
 		return false
 	}
 	return true
+}
+
+func (h *Handler) buildContactLink(threadID string) string {
+	threadID = strings.TrimSpace(threadID)
+	if threadID == "" || h.appBaseURL == "" {
+		return ""
+	}
+	return h.appBaseURL + "/contact/" + threadID
+}
+
+func (h *Handler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
+	rows, err := h.store.Pool.Query(ctx, `
+		SELECT id, inquiry_id, thread_id, sender_type, sender_name, sender_email, message, created_at
+		FROM inquiry_replies
+		WHERE inquiry_id = $1
+		ORDER BY created_at ASC, id ASC
+	`, inquiryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	replies := make([]inquiryReplyItem, 0)
+	for rows.Next() {
+		var item inquiryReplyItem
+		var createdAt time.Time
+		if err := rows.Scan(
+			&item.ID,
+			&item.InquiryID,
+			&item.ThreadID,
+			&item.SenderType,
+			&item.SenderName,
+			&item.SenderEmail,
+			&item.Message,
+			&createdAt,
+		); err != nil {
+			return nil, err
+		}
+		item.CreatedAt = toISO(createdAt)
+		replies = append(replies, item)
+	}
+
+	return replies, rows.Err()
 }
 
 func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
@@ -1665,54 +1749,38 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var id string
+	var threadID string
 	err := h.store.Pool.QueryRow(r.Context(), `
-		INSERT INTO inquiries (category, subject, message, contact_name, contact_email, status, replies, created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,'pending','[]'::jsonb,NOW(),NOW()) RETURNING id
-	`, category, subject, message, contactName, contactEmail).Scan(&id)
+		INSERT INTO inquiries (category, subject, message, contact_name, contact_email, thread_id, status, created_at, updated_at)
+		VALUES ($1,$2,$3,$4,$5,gen_random_uuid()::text,'pending',NOW(),NOW())
+		RETURNING id, thread_id
+	`, category, subject, message, contactName, contactEmail).Scan(&id, &threadID)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create inquiry"})
 		return
 	}
-	if h.mailer != nil {
-		subjectAdmin, bodyAdmin, tErr := mail.BuildInquiryNotification(mail.InquiryNotificationData{
-			ID:           id,
-			Category:     category,
-			Subject:      subject,
-			Message:      message,
-			ContactName:  contactName,
-			ContactEmail: contactEmail,
-		})
-		if tErr != nil {
-			fmt.Printf("mail template error (inquiry->admin): %v\n", tErr)
-		} else {
-			if err := h.mailer.SendText(
-				r.Context(),
-				h.mailTo,
-				subjectAdmin,
-				bodyAdmin,
-			); err != nil {
-				fmt.Printf("SES notify error (inquiry->admin): %v\n", err)
-			}
-		}
+	threadURL := h.buildContactLink(threadID)
+	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
+		ID:                id,
+		ThreadID:          threadID,
+		ThreadURL:         threadURL,
+		NotificationLabel: "新しいお問い合わせ",
+		Category:          category,
+		Subject:           subject,
+		Message:           message,
+		ContactName:       contactName,
+		ContactEmail:      contactEmail,
+	})
+	h.sendInquiryReceipt(r.Context(), mail.InquiryReceiptData{
+		Name:         contactName,
+		Category:     category,
+		Subject:      subject,
+		Message:      message,
+		ThreadURL:    threadURL,
+		ContactEmail: contactEmail,
+	})
 
-		subjectAuto, bodyAuto, tErr := mail.BuildInquiryAutoReply(mail.InquiryAutoReplyData{
-			Subject: subject,
-		})
-		if tErr != nil {
-			fmt.Printf("mail template error (auto-reply): %v\n", tErr)
-		} else {
-			if err := h.mailer.SendText(
-				r.Context(),
-				[]string{contactEmail},
-				subjectAuto,
-				bodyAuto,
-			); err != nil {
-				fmt.Printf("SES notify error (auto-reply): %v\n", err)
-			}
-		}
-	}
-
-	writeJSON(w, http.StatusCreated, map[string]any{"id": id})
+	writeJSON(w, http.StatusCreated, map[string]any{"id": id, "threadId": threadID, "threadUrl": threadURL})
 }
 
 func (h *Handler) getInquiries(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
@@ -1720,7 +1788,7 @@ func (h *Handler) getInquiries(w http.ResponseWriter, r *http.Request, user *aut
 		return
 	}
 	rows, err := h.store.Pool.Query(r.Context(), `
-		SELECT id, category, subject, message, contact_name, contact_email, status, replies, created_at, updated_at
+		SELECT id, thread_id, category, subject, message, contact_name, contact_email, status, created_at, updated_at
 		FROM inquiries ORDER BY created_at DESC
 	`)
 	if err != nil {
@@ -1730,17 +1798,16 @@ func (h *Handler) getInquiries(w http.ResponseWriter, r *http.Request, user *aut
 	defer rows.Close()
 	inquiries := make([]map[string]any, 0)
 	for rows.Next() {
-		var id, category, subject, message, contactName, contactEmail, status string
-		var replies []byte
+		var id, threadID, category, subject, message, contactName, contactEmail, status string
 		var ct, ut time.Time
-		if err := rows.Scan(&id, &category, &subject, &message, &contactName, &contactEmail, &status, &replies, &ct, &ut); err != nil {
+		if err := rows.Scan(&id, &threadID, &category, &subject, &message, &contactName, &contactEmail, &status, &ct, &ut); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiries"})
 			return
 		}
-		inquiries = append(inquiries, map[string]any{"id": id, "category": category, "subject": subject, "message": message, "contactName": contactName, "contactEmail": contactEmail, "status": status, "replies": json.RawMessage(replies), "createdAt": toISO(ct), "updatedAt": toISO(ut)})
+		inquiries = append(inquiries, map[string]any{"id": id, "threadId": threadID, "category": category, "subject": subject, "message": message, "contactName": contactName, "contactEmail": contactEmail, "status": status, "createdAt": toISO(ct), "updatedAt": toISO(ut)})
 	}
 	h.logAdmin(r.Context(), "read", "inquiries", "", "info", user, nil)
-	writeJSON(w, http.StatusOK, map[string]any{"inquiries": inquiries})
+	writeJSON(w, http.StatusOK, map[string]any{"contacts": inquiries, "inquiries": inquiries})
 }
 
 func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
@@ -1748,13 +1815,12 @@ func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.
 		return
 	}
 	id := chi.URLParam(r, "id")
-	var category, subject, message, contactName, contactEmail, status string
-	var replies []byte
+	var threadID, category, subject, message, contactName, contactEmail, status string
 	var ct, ut time.Time
 	err := h.store.Pool.QueryRow(r.Context(), `
-		SELECT category, subject, message, contact_name, contact_email, status, replies, created_at, updated_at
+		SELECT thread_id, category, subject, message, contact_name, contact_email, status, created_at, updated_at
 		FROM inquiries WHERE id=$1
-	`, id).Scan(&category, &subject, &message, &contactName, &contactEmail, &status, &replies, &ct, &ut)
+	`, id).Scan(&threadID, &category, &subject, &message, &contactName, &contactEmail, &status, &ct, &ut)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
@@ -1763,8 +1829,155 @@ func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
 		return
 	}
+	replies, err := h.fetchInquiryReplies(r.Context(), id)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
+		return
+	}
 	h.logAdmin(r.Context(), "read", "inquiry", id, "info", user, nil)
-	writeJSON(w, http.StatusOK, map[string]any{"inquiry": map[string]any{"id": id, "category": category, "subject": subject, "message": message, "contactName": contactName, "contactEmail": contactEmail, "status": status, "replies": json.RawMessage(replies), "createdAt": toISO(ct), "updatedAt": toISO(ut)}})
+	detail := map[string]any{"id": id, "threadId": threadID, "threadUrl": h.buildContactLink(threadID), "category": category, "subject": subject, "message": message, "contactName": contactName, "contactEmail": contactEmail, "status": status, "replies": replies, "createdAt": toISO(ct), "updatedAt": toISO(ut)}
+	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
+}
+
+func (h *Handler) getInquiryThread(w http.ResponseWriter, r *http.Request) {
+	if !h.ensureInquiriesTable(w, r) {
+		return
+	}
+	threadID := strings.TrimSpace(chi.URLParam(r, "threadId"))
+	if threadID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
+		return
+	}
+
+	var id, category, subject, message, contactName, contactEmail, status string
+	var ct, ut time.Time
+	err := h.store.Pool.QueryRow(r.Context(), `
+		SELECT id, category, subject, message, contact_name, contact_email, status, created_at, updated_at
+		FROM inquiries WHERE thread_id=$1
+	`, threadID).Scan(&id, &category, &subject, &message, &contactName, &contactEmail, &status, &ct, &ut)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
+		return
+	}
+	replies, err := h.fetchInquiryReplies(r.Context(), id)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
+		return
+	}
+
+	detail := map[string]any{
+		"id":           id,
+		"threadId":     threadID,
+		"threadUrl":    h.buildContactLink(threadID),
+		"category":     category,
+		"subject":      subject,
+		"message":      message,
+		"contactName":  contactName,
+		"contactEmail": contactEmail,
+		"status":       status,
+		"replies":      replies,
+		"createdAt":    toISO(ct),
+		"updatedAt":    toISO(ut),
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
+}
+
+func (h *Handler) replyInquiryThread(w http.ResponseWriter, r *http.Request) {
+	if !h.ensureInquiriesTable(w, r) {
+		return
+	}
+	threadID := strings.TrimSpace(chi.URLParam(r, "threadId"))
+	if threadID == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
+		return
+	}
+
+	var body map[string]any
+	if err := decodeBody(r, &body); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
+		return
+	}
+	message := normalize(body["message"])
+	if message == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "message is required"})
+		return
+	}
+
+	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
+	tx, err := h.store.Pool.Begin(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	var inquiryID string
+	var category string
+	var subject string
+	var currentStatus string
+	var contactName string
+	var contactEmail string
+	err = tx.QueryRow(r.Context(), `
+		SELECT id, category, subject, status, contact_name, contact_email
+		FROM inquiries
+		WHERE thread_id=$1
+		FOR UPDATE
+	`, threadID).Scan(&inquiryID, &category, &subject, &currentStatus, &contactName, &contactEmail)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
+			return
+		}
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+
+	_, err = tx.Exec(r.Context(), `
+		INSERT INTO inquiry_replies (id, inquiry_id, thread_id, sender_type, sender_name, sender_email, message, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+	`, replyID, inquiryID, threadID, "user", contactName, contactEmail, message)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+
+	nextStatus := currentStatus
+	if currentStatus == "resolved" {
+		nextStatus = "pending"
+	}
+	_, err = tx.Exec(r.Context(), `
+		UPDATE inquiries
+		SET status = $1,
+		    updated_at = NOW()
+		WHERE id = $2
+	`, nextStatus, inquiryID)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+
+	if err := tx.Commit(r.Context()); err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+
+	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
+		ID:                inquiryID,
+		ThreadID:          threadID,
+		ThreadURL:         h.buildContactLink(threadID),
+		NotificationLabel: "お問い合わせスレッドへの追加返信",
+		Category:          category,
+		Subject:           subject,
+		Message:           message,
+		ContactName:       contactName,
+		ContactEmail:      contactEmail,
+	})
+
+	writeJSON(w, http.StatusOK, map[string]any{"id": replyID})
 }
 
 func (h *Handler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
@@ -1831,8 +2044,11 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 	defer tx.Rollback(r.Context())
 
 	var currentStatus string
+	var inquirySubject string
+	var threadID string
+	var contactName string
 	var contactEmail string
-	err = tx.QueryRow(r.Context(), `SELECT status, contact_email FROM inquiries WHERE id=$1 FOR UPDATE`, id).Scan(&currentStatus, &contactEmail)
+	err = tx.QueryRow(r.Context(), `SELECT status, subject, thread_id, contact_name, contact_email FROM inquiries WHERE id=$1 FOR UPDATE`, id).Scan(&currentStatus, &inquirySubject, &threadID, &contactName, &contactEmail)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
@@ -1846,12 +2062,19 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 		nextStatus = "in_progress"
 	}
 	_, err = tx.Exec(r.Context(), `
+		INSERT INTO inquiry_replies (id, inquiry_id, thread_id, sender_type, sender_name, sender_email, message, created_at)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+	`, reply["id"], id, threadID, "admin", reply["senderName"], user.Email, message)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
+		return
+	}
+	_, err = tx.Exec(r.Context(), `
 		UPDATE inquiries
-		SET replies = COALESCE(replies, '[]'::jsonb) || $1::jsonb,
-		status = $2,
-		updated_at = NOW()
-		WHERE id=$3
-	`, mustJSON([]map[string]any{reply}), nextStatus, id)
+		SET status = $1,
+		    updated_at = NOW()
+		WHERE id=$2
+	`, nextStatus, id)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
 		return
@@ -1861,26 +2084,67 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 		return
 	}
 
-	if h.mailer != nil {
-		subjectReply, bodyReply, tErr := mail.BuildInquiryReply(mail.InquiryReplyData{
-			Message: message,
-		})
-		if tErr != nil {
-			fmt.Printf("mail template error (reply): %v\n", tErr)
-		} else {
-			if err := h.mailer.SendText(
-				r.Context(),
-				[]string{contactEmail},
-				subjectReply,
-				bodyReply,
-			); err != nil {
-				fmt.Printf("SES notify error (reply): %v\n", err)
-			}
-		}
-	}
+	h.sendInquiryReply(r.Context(), mail.InquiryReplyData{
+		Name:         contactName,
+		Subject:      inquirySubject,
+		Message:      message,
+		ThreadURL:    h.buildContactLink(threadID),
+		ContactEmail: contactEmail,
+	})
 
 	h.logAdmin(r.Context(), "reply", "inquiry", id, "info", user, map[string]any{"messageLength": len(message)})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func (h *Handler) notifyInquiryCreated(ctx context.Context, data mail.InquiryNotificationData) {
+	if strings.TrimSpace(data.NotificationLabel) == "" {
+		data.NotificationLabel = "新しいお問い合わせ"
+	}
+	if h.mailer != nil {
+		subjectAdmin, bodyAdmin, err := mail.BuildInquiryNotification(data)
+		if err != nil {
+			log.Printf("mail template error (inquiry->admin): %v", err)
+		} else if err := h.mailer.SendText(ctx, h.mailTo, subjectAdmin, bodyAdmin); err != nil {
+			log.Printf("SES notify error (inquiry->admin): %v", err)
+		}
+	}
+
+	if h.discord != nil {
+		body, err := mail.BuildInquiryDiscordNotification(data)
+		if err != nil {
+			log.Printf("discord template error (inquiry->admin): %v", err)
+		} else if err := h.discord.Send(ctx, body); err != nil {
+			log.Printf("discord notify error (inquiry->admin): %v", err)
+		}
+	}
+}
+
+func (h *Handler) sendInquiryReceipt(ctx context.Context, data mail.InquiryReceiptData) {
+	if h.mailer == nil {
+		return
+	}
+	subject, body, err := mail.BuildInquiryReceipt(data)
+	if err != nil {
+		log.Printf("mail template error (inquiry receipt): %v", err)
+		return
+	}
+	if err := h.mailer.SendText(ctx, []string{data.ContactEmail}, subject, body); err != nil {
+		log.Printf("SES notify error (inquiry receipt): %v", err)
+	}
+}
+
+func (h *Handler) sendInquiryReply(ctx context.Context, data mail.InquiryReplyData) {
+	if h.mailer == nil {
+		return
+	}
+	subject, body, err := mail.BuildInquiryReply(data)
+	if err != nil {
+		log.Printf("mail template error (reply): %v", err)
+		return
+	}
+	if err := h.mailer.SendText(ctx, []string{data.ContactEmail}, subject, body); err != nil {
+		log.Printf("SES notify error (reply): %v", err)
+	}
 }
 
 // admin logs
