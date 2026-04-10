@@ -9,6 +9,7 @@ type InquiryStatus = "pending" | "in_progress" | "resolved";
 
 type AdminInquiry = {
   id: string;
+  threadId?: string;
   category?: string;
   subject?: string;
   contactName?: string;
@@ -55,7 +56,7 @@ function InquiriesContent() {
       if (!user) return;
       try {
         const token = await user.getIdToken();
-        const response = await fetch("/api/inquiries", {
+        const response = await fetch("/api/contact", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -64,7 +65,7 @@ function InquiriesContent() {
           throw new Error("お問い合わせ一覧の取得に失敗しました");
         }
         const data = await response.json();
-        setItems(data.inquiries || []);
+        setItems(data.contacts || data.inquiries || []);
       } catch (err) {
         console.error("Failed to fetch inquiries", err);
         setError("お問い合わせ一覧の取得に失敗しました");
@@ -89,7 +90,7 @@ function InquiriesContent() {
       if (categoryFilter !== "all" && item.category !== categoryFilter)
         return false;
       if (!hasQuery) return true;
-      const target = [item.contactName, item.contactEmail, item.subject]
+      const target = [item.contactName, item.contactEmail, item.subject, item.threadId]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
@@ -242,7 +243,7 @@ function InquiriesContent() {
                       </td>
                       <td className="px-3 py-2">
                         <Link
-                          href={`/admin/inquiries/${item.id}`}
+                          href={`/admin/contact/${item.id}`}
                           className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
                           詳細

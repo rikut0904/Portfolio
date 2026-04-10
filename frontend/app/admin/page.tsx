@@ -116,7 +116,7 @@ function DashboardContent() {
 
           {/* お問い合わせ管理 */}
           <Link
-            href="/admin/inquiries"
+            href="/admin/contact"
             className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center justify-between gap-2">

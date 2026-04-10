@@ -18,6 +18,8 @@ type InquiryReply = {
 
 type InquiryDetail = {
   id: string;
+  threadId?: string;
+  threadUrl?: string;
   category?: string;
   subject?: string;
   message?: string;
@@ -69,7 +71,7 @@ function InquiryDetailContent() {
     try {
       setError(null);
       const token = await user.getIdToken();
-      const response = await fetch(`/api/inquiries/${inquiryId}`, {
+      const response = await fetch(`/api/contact/${inquiryId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -78,7 +80,7 @@ function InquiryDetailContent() {
         throw new Error("お問い合わせ詳細の取得に失敗しました");
       }
       const data = await response.json();
-      setDetail(data.inquiry || null);
+      setDetail(data.contact || data.inquiry || null);
     } catch (err) {
       console.error("Failed to fetch inquiry detail", err);
       setError("お問い合わせ詳細の取得に失敗しました");
@@ -96,7 +98,7 @@ function InquiryDetailContent() {
     try {
       setStatusLoading(true);
       const token = await user.getIdToken();
-      const response = await fetch(`/api/inquiries/${detail.id}`, {
+      const response = await fetch(`/api/contact/${detail.id}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -127,7 +129,7 @@ function InquiryDetailContent() {
     try {
       setReplyLoading(true);
       const token = await user.getIdToken();
-      const response = await fetch(`/api/inquiries/${detail.id}/reply`, {
+      const response = await fetch(`/api/contact/${detail.id}/reply`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -171,7 +173,7 @@ function InquiryDetailContent() {
               </p>
             </div>
             <Link
-              href="/admin/inquiries"
+              href="/admin/contact"
               className="text-sm text-blue-800 hover:text-gray-900"
             >
               一覧へ戻る
@@ -187,6 +189,7 @@ function InquiryDetailContent() {
                 <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                   <span>状態: {statusLabel(detail.status)}</span>
                   <span>受付日時: {formatDateTime(detail.createdAt)}</span>
+                  {detail.threadId && <span>スレッドID: {detail.threadId}</span>}
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   {detail.subject || "-"}
@@ -194,6 +197,18 @@ function InquiryDetailContent() {
                 <p className="text-sm text-gray-500">
                   カテゴリ: {detail.category || "-"}
                 </p>
+                {detail.threadUrl && (
+                  <p className="text-sm">
+                    <a
+                      href={detail.threadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-700 hover:text-blue-900"
+                    >
+                      公開スレッドを開く
+                    </a>
+                  </p>
+                )}
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-white p-4">
