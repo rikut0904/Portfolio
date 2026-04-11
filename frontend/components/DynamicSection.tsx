@@ -14,30 +14,97 @@ interface Section {
     editable: boolean;
     sortOrder?: "asc" | "desc";
   };
-  data: any;
+  data: SectionData;
 }
 
 interface DynamicSectionProps {
   section: Section;
 }
 
+type TextEntry = string | { text?: string };
+type HistoryDetailEntry = string | { text?: string; url?: string };
+
+interface ProfileData {
+  data?: Record<string, string>;
+  profileImage?: string;
+  imageUrl?: string;
+  name?: string;
+  hometown?: string;
+  from?: string;
+  hobbies?: string;
+  university?: string;
+  affiliation?: string;
+}
+
+interface GroupedCategorizedItem {
+  title?: string;
+  items?: TextEntry[];
+}
+
+interface FlatCategorizedItem {
+  category?: string;
+  name?: string;
+}
+
+interface ListBlock {
+  title?: string;
+  items?: TextEntry[];
+}
+
+interface HistoryBlock {
+  date?: string;
+  url?: string;
+  details?: HistoryDetailEntry[];
+}
+
+type SectionData = {
+  data?: Record<string, string>;
+  items?: GroupedCategorizedItem[] | FlatCategorizedItem[] | HistoryBlock[];
+  categories?: string[];
+  lists?: ListBlock[];
+  histories?: HistoryBlock[];
+} & ProfileData;
+
+const isGroupedCategorizedItem = (
+  item: GroupedCategorizedItem | FlatCategorizedItem | HistoryBlock,
+): item is GroupedCategorizedItem => "title" in item;
+
+const isFlatCategorizedItem = (
+  item: GroupedCategorizedItem | FlatCategorizedItem | HistoryBlock,
+): item is FlatCategorizedItem => "category" in item || "name" in item;
+
 export default function DynamicSection({ section }: DynamicSectionProps) {
   const { meta, data } = section;
+
+  const renderLinkedText = (text: string, url?: string) =>
+    !url ? (
+      text
+    ) : (
+      <a
+        href={url}
+        className="text-blue-700 underline underline-offset-4 hover:text-blue-900"
+        target={url.startsWith("http") ? "_blank" : undefined}
+        rel={url.startsWith("http") ? "noreferrer" : undefined}
+      >
+        {text}
+      </a>
+    );
 
   // 既存のFirebaseデータ構造（single, categorized, timeline）に対応
   // single: プロフィール
   const renderSingle = () => {
     const nested =
       data?.data && typeof data.data === "object" ? data.data : null;
-    const singleData = nested || data || {};
+    const singleData: ProfileData = nested || data || {};
+    const profileImageSrc = singleData.profileImage || singleData.imageUrl || "";
     return (
       <FadeInSection>
         <section id={section.id}>
           <h2>{meta.displayName}</h2>
           <div className="flex flex-col md:flex-row items-left gap-8 card">
-            {(singleData.profileImage || singleData.imageUrl) && (
+            {profileImageSrc && (
               <Image
-                src={singleData.profileImage || singleData.imageUrl}
+                src={profileImageSrc}
                 alt="プロフィール写真"
                 width={150}
                 height={150}
@@ -67,19 +134,21 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       data?.items &&
       Array.isArray(data.items) &&
       data.items.length > 0 &&
-      data.items[0].title
+      isGroupedCategorizedItem(data.items[0])
     ) {
       return (
         <FadeInSection>
           <section id={section.id}>
             <h2>{meta.displayName}</h2>
             <div className="grid-card">
-              {data.items.map((item: any, index: number) => (
+              {data.items.filter(isGroupedCategorizedItem).map((item, index: number) => (
                 <div key={index} className="card">
                   <h3>{item.title}</h3>
                   <ol>
-                    {item.items?.map((subItem: string, subIndex: number) => (
-                      <li key={subIndex}>{subItem}</li>
+                    {item.items?.map((subItem, subIndex: number) => (
+                      <li key={subIndex}>
+                        {typeof subItem === "string" ? subItem : subItem?.text || ""}
+                      </li>
                     ))}
                   </ol>
                 </div>
@@ -92,6 +161,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
     // 資格タイプ（categoriesとitems）
     if (data?.categories && data?.items) {
+      const flatItems = data.items.filter(isFlatCategorizedItem);
       return (
         <FadeInSection>
           <section id={section.id}>
@@ -101,9 +171,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
                 <div key={index} className="card">
                   <h3>{category}</h3>
                   <ol>
-                    {data.items
-                      .filter((item: any) => item.category === category)
-                      .map((item: any, itemIndex: number) => (
+                    {flatItems
+                      .filter((item) => item.category === category)
+                      .map((item, itemIndex: number) => (
                         <li key={itemIndex}>{item.name}</li>
                       ))}
                   </ol>
@@ -126,12 +196,14 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
         <section id={section.id}>
           <h2>{meta.displayName}</h2>
           <div className="grid-card">
-            {lists.map((list: any, index: number) => (
+            {lists.map((list, index: number) => (
               <div key={index} className="card">
                 <h3>{list.title}</h3>
                 <ol>
-                  {list.items?.map((item: string, itemIndex: number) => (
-                    <li key={itemIndex}>{item}</li>
+                  {list.items?.map((item, itemIndex: number) => (
+                    <li key={itemIndex}>
+                      {typeof item === "string" ? item : item?.text || ""}
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -146,11 +218,11 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     // データ構造が2種類ある:
     // 1. 新形式: { histories: [...] }
     // 2. 旧形式: { items: [...] } または { type: 'timeline', items: [...] }
-    let histories = data?.histories || [];
+    let histories: HistoryBlock[] = data?.histories || [];
 
     // 旧形式（items）の場合は変換
     if (histories.length === 0 && data?.items) {
-      histories = data.items;
+      histories = data.items as HistoryBlock[];
     }
 
     return (
@@ -158,13 +230,18 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
         <section id={section.id}>
           <Accordion title={meta.displayName} defaultOpen={false}>
             <div className="flex flex-col gap-4">
-              {histories.map((history: any, index: number) => (
+              {histories.map((history, index: number) => (
                 <div key={index} className="card">
-                  <h3>{history.date}</h3>
+                  <h3>{renderLinkedText(history.date || "", history.url)}</h3>
                   <ul className="list-disc ml-5">
                     {history.details?.map(
-                      (detail: string, detailIndex: number) => (
-                        <li key={detailIndex}>{detail}</li>
+                      (detail, detailIndex: number) => (
+                        <li key={detailIndex}>
+                          {renderLinkedText(
+                            typeof detail === "string" ? detail : detail?.text || "",
+                            typeof detail === "string" ? "" : detail?.url || "",
+                          )}
+                        </li>
                       ),
                     )}
                   </ul>

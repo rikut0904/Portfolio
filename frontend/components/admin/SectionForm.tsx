@@ -16,16 +16,17 @@ interface SectionFormProps {
       editable: boolean;
       sortOrder?: "asc" | "desc";
     };
-    data: any;
+    data: Record<string, unknown>;
   };
-  onSave: (data: any) => Promise<void>;
+  onSave: (data: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
-  onMetaUpdate?: (meta: any) => Promise<void>;
+  onMetaUpdate?: (meta: Record<string, string | number | boolean>) => Promise<void>;
 }
 
 interface HistoryItem {
   date: string;
-  details: string[];
+  url?: string;
+  details?: Array<string | { text?: string; url?: string }>;
 }
 
 export default function SectionForm({
@@ -45,7 +46,7 @@ export default function SectionForm({
     return data;
   };
 
-  const [formData, setFormData] = useState<any>(initializeFormData());
+  const [formData, setFormData] = useState<Record<string, unknown>>(initializeFormData());
   const [displayName, setDisplayName] = useState(section.meta.displayName);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     section.meta.sortOrder || "asc",
@@ -84,9 +85,12 @@ export default function SectionForm({
       }
       let dataToSave = formData;
       if (section.meta.type === "history" && formData.histories) {
+        const histories = Array.isArray(formData.histories)
+          ? (formData.histories as HistoryItem[])
+          : [];
         dataToSave = {
           ...formData,
-          histories: sortHistories(formData.histories, sortOrder),
+          histories: sortHistories(histories, sortOrder),
         };
       }
       await onSave(dataToSave);
@@ -107,17 +111,23 @@ export default function SectionForm({
       case "profile":
       case "single":
         return (
-          <ProfileSectionForm formData={formData} setFormData={setFormData} />
+          <ProfileSectionForm
+            formData={formData}
+            setFormData={(data) => setFormData(data as Record<string, unknown>)}
+          />
         );
       case "list":
         return (
-          <ListSectionForm formData={formData} setFormData={setFormData} />
+          <ListSectionForm
+            formData={formData}
+            setFormData={(data) => setFormData(data as Record<string, unknown>)}
+          />
         );
       case "history":
         return (
           <HistorySectionForm
             formData={formData}
-            setFormData={setFormData}
+            setFormData={(data) => setFormData(data as Record<string, unknown>)}
             sortOrder={sortOrder}
             onSortOrderChange={handleSortOrderChange}
             sortHistories={sortHistories}
@@ -127,7 +137,7 @@ export default function SectionForm({
         return (
           <CategorizedSectionForm
             formData={formData}
-            setFormData={setFormData}
+            setFormData={(data) => setFormData(data as Record<string, unknown>)}
           />
         );
       default:

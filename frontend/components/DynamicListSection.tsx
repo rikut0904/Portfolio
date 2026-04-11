@@ -5,13 +5,21 @@ import FadeInSection from "./FadeInSection";
 
 interface ListItem {
   title: string;
-  items: string[];
+  items: Array<string | { text?: string }>;
 }
 
 interface DynamicListSectionProps {
   sectionId: string;
   defaultTitle: string;
   defaultData: ListItem[];
+}
+
+interface SectionsResponse {
+  sections?: Array<{
+    id: string;
+    meta?: { displayName?: string };
+    data?: { lists?: ListItem[] };
+  }>;
 }
 
 export default function DynamicListSection({
@@ -26,11 +34,11 @@ export default function DynamicListSection({
     const fetchData = async () => {
       try {
         const response = await fetch("/api/sections");
-        const data = await response.json();
-        const section = data.sections?.find((s: any) => s.id === sectionId);
-        if (section && section.data.lists) {
+        const data: SectionsResponse = await response.json();
+        const section = data.sections?.find((s) => s.id === sectionId);
+        if (section?.data?.lists) {
           setListData(section.data.lists);
-          if (section.meta.displayName) {
+          if (section.meta?.displayName) {
             setTitle(section.meta.displayName);
           }
         }
@@ -51,7 +59,9 @@ export default function DynamicListSection({
               <h3>{list.title}</h3>
               <ol>
                 {list.items.map((item, itemIndex) => (
-                  <li key={itemIndex}>{item}</li>
+                  <li key={itemIndex}>
+                    {typeof item === "string" ? item : item?.text || ""}
+                  </li>
                 ))}
               </ol>
             </div>

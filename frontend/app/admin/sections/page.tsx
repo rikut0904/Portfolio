@@ -16,7 +16,15 @@ interface Section {
     order: number;
     editable: boolean;
   };
-  data: unknown;
+  data: Record<string, unknown>;
+}
+
+interface SectionPayload {
+  id: string;
+  displayName: string;
+  type: string;
+  sortOrder?: "asc" | "desc";
+  data: Record<string, unknown>;
 }
 
 function SectionsContent() {
@@ -53,7 +61,7 @@ function SectionsContent() {
     setEditingSection(section);
   };
 
-  const handleSave = async (data: any) => {
+  const handleSave = async (data: Record<string, unknown>) => {
     if (!user || !editingSection) return;
 
     try {
@@ -84,13 +92,7 @@ function SectionsContent() {
     setEditingSection(null);
   };
 
-  const handleCreate = async (sectionData: {
-    id: string;
-    displayName: string;
-    type: string;
-    sortOrder?: "asc" | "desc";
-    data: any;
-  }) => {
+  const handleCreate = async (sectionData: SectionPayload) => {
     if (!user) return;
 
     try {
@@ -118,7 +120,9 @@ function SectionsContent() {
     }
   };
 
-  const handleMetaUpdate = async (meta: any) => {
+  const handleMetaUpdate = async (
+    meta: Record<string, string | number | boolean>,
+  ) => {
     if (!user || !editingSection) return;
 
     try {
