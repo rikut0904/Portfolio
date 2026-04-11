@@ -46,6 +46,7 @@ export default function SectionForm({
   };
 
   const [formData, setFormData] = useState<any>(initializeFormData());
+  const [displayName, setDisplayName] = useState(section.meta.displayName);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     section.meta.sortOrder || "asc",
   );
@@ -78,6 +79,9 @@ export default function SectionForm({
     e.preventDefault();
     setLoading(true);
     try {
+      if (onMetaUpdate && displayName !== section.meta.displayName) {
+        await onMetaUpdate({ displayName });
+      }
       let dataToSave = formData;
       if (section.meta.type === "history" && formData.histories) {
         dataToSave = {
@@ -154,6 +158,44 @@ export default function SectionForm({
       <h2 className="text-xl font-semibold mb-4">
         {section.meta.displayName}を編集
       </h2>
+
+      <div className="space-y-4 mb-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            表示名
+          </label>
+          <input
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md"
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              セクションID
+            </label>
+            <input
+              type="text"
+              value={section.id}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              タイプ
+            </label>
+            <input
+              type="text"
+              value={section.meta.type}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-500"
+            />
+          </div>
+        </div>
+      </div>
 
       {renderFormContent()}
 

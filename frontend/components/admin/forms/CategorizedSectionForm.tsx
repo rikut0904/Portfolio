@@ -9,53 +9,65 @@ export default function CategorizedSectionForm({
   formData,
   setFormData,
 }: CategorizedSectionFormProps) {
-  if (
-    !formData.items ||
-    !Array.isArray(formData.items) ||
-    formData.items.length === 0 ||
-    formData.items[0]?.title === undefined
-  ) {
-    return (
-      <div>
-        <p className="text-gray-500">
-          この形式のデータは現在GUI編集に対応していません。
-        </p>
-      </div>
-    );
-  }
+  const usesGroupedItems =
+    Array.isArray(formData.items) &&
+    (formData.items.length === 0 || formData.items[0]?.title !== undefined);
 
-  const lists = formData.items;
+  const lists = usesGroupedItems
+    ? formData.items || []
+    : Array.isArray(formData.categories)
+      ? formData.categories.map((category: string) => ({
+          title: category,
+          items: Array.isArray(formData.items)
+            ? formData.items
+                .filter((item: any) => item?.category === category)
+                .map((item: any) => item?.name || "")
+            : [],
+        }))
+      : [];
 
-  const addList = () => {
+  const commitLists = (nextLists: Array<{ title?: string; items?: string[] }>) => {
+    if (usesGroupedItems) {
+      setFormData({ ...formData, items: nextLists });
+      return;
+    }
+
     setFormData({
       ...formData,
-      items: [...lists, { title: "", items: [""] }],
+      categories: nextLists.map((list) => list.title || ""),
+      items: nextLists.flatMap((list) =>
+        (list.items || []).map((item) => ({
+          category: list.title || "",
+          name: item,
+        })),
+      ),
     });
+  };
+
+  const addList = () => {
+    commitLists([...lists, { title: "", items: [""] }]);
   };
 
   const updateList = (index: number, field: "title" | "items", value: any) => {
     const newLists = [...lists];
     newLists[index] = { ...newLists[index], [field]: value };
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const removeList = (index: number) => {
-    setFormData({
-      ...formData,
-      items: lists.filter((_: any, i: number) => i !== index),
-    });
+    commitLists(lists.filter((_: any, i: number) => i !== index));
   };
 
   const addItem = (listIndex: number) => {
     const newLists = [...lists];
     newLists[listIndex].items.push("");
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const updateItem = (listIndex: number, itemIndex: number, value: string) => {
     const newLists = [...lists];
     newLists[listIndex].items[itemIndex] = value;
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const removeItem = (listIndex: number, itemIndex: number) => {
@@ -63,7 +75,7 @@ export default function CategorizedSectionForm({
     newLists[listIndex].items = newLists[listIndex].items.filter(
       (_: string, i: number) => i !== itemIndex,
     );
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const moveListUp = (index: number) => {
@@ -73,7 +85,7 @@ export default function CategorizedSectionForm({
       newLists[index],
       newLists[index - 1],
     ];
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const moveListDown = (index: number) => {
@@ -83,7 +95,7 @@ export default function CategorizedSectionForm({
       newLists[index + 1],
       newLists[index],
     ];
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const moveItemUp = (listIndex: number, itemIndex: number) => {
@@ -95,7 +107,7 @@ export default function CategorizedSectionForm({
       items[itemIndex - 1],
     ];
     newLists[listIndex].items = items;
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   const moveItemDown = (listIndex: number, itemIndex: number) => {
@@ -107,11 +119,16 @@ export default function CategorizedSectionForm({
       items[itemIndex],
     ];
     newLists[listIndex].items = items;
-    setFormData({ ...formData, items: newLists });
+    commitLists(newLists);
   };
 
   return (
     <div className="space-y-6">
+      {lists.length === 0 && (
+        <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-600">
+          まだカテゴリがありません。下のボタンから追加できます。
+        </div>
+      )}
       {lists.map((list: any, listIndex: number) => (
         <div
           key={listIndex}
