@@ -73,7 +73,6 @@ export default function ListSectionForm({
   const updateItem = (
     listIndex: number,
     itemIndex: number,
-    field: "text" | "url",
     value: string,
   ) => {
     const nextLists = lists.map(normalizeList);
@@ -124,9 +123,7 @@ export default function ListSectionForm({
                   <input
                     type="text"
                     value={item}
-                    onChange={(e) =>
-                      updateItem(listIndex, itemIndex, "text", e.target.value)
-                    }
+                    onChange={(e) => updateItem(listIndex, itemIndex, e.target.value)}
                     placeholder="項目を入力"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
                   />

@@ -114,7 +114,6 @@ export default function CategorizedSectionForm({
   const updateItem = (
     listIndex: number,
     itemIndex: number,
-    field: "text" | "url",
     value: string,
   ) => {
     const nextLists = [...lists];
@@ -317,9 +316,7 @@ export default function CategorizedSectionForm({
                         <input
                           type="text"
                           value={item.text || ""}
-                          onChange={(e) =>
-                            updateItem(listIndex, itemIndex, "text", e.target.value)
-                          }
+                          onChange={(e) => updateItem(listIndex, itemIndex, e.target.value)}
                           placeholder="項目"
                           className="flex-1 min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
                         />
