@@ -99,6 +99,14 @@ CREATE TABLE IF NOT EXISTS admin_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS calendar_preferences (
+  calendar_id TEXT PRIMARY KEY,
+  color TEXT NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at_id ON admin_logs (created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries (created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inquiries_thread_id ON inquiries (thread_id);

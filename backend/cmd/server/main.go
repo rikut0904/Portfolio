@@ -12,6 +12,7 @@ import (
 	"portfolio-backend/internal/auth"
 	"portfolio-backend/internal/config"
 	"portfolio-backend/internal/discord"
+	"portfolio-backend/internal/gcalendar"
 	"portfolio-backend/internal/mail"
 	"portfolio-backend/internal/migrations"
 	"portfolio-backend/internal/store"
@@ -31,6 +32,12 @@ func main() {
 		log.Fatalf("db error: %v", err)
 	}
 	defer st.Close()
+	if err := migrations.RunCalendarPreferences(ctx, st.Pool); err != nil {
+		log.Fatalf("migration error: %v", err)
+	}
+	if err := migrations.RunCalendarPreferencesLabel(ctx, st.Pool); err != nil {
+		log.Fatalf("migration error: %v", err)
+	}
 	if cfg.RunInquiryThreadMigration {
 		if err := migrations.RunInquiryThreads(ctx, st.Pool); err != nil {
 			log.Fatalf("migration error: %v", err)
@@ -56,11 +63,25 @@ func main() {
 		log.Fatalf("mail error: %v", err)
 	}
 	discordClient := discord.New(cfg.DiscordWebhookURLs)
+	calendarClient, err := gcalendar.New(ctx, gcalendar.Config{
+		CalendarIDs:     cfg.GoogleCalendarIDs,
+		Timezone:        cfg.GoogleCalendarTimezone,
+		CredentialsJSON: cfg.GoogleCalendarCredentials,
+	})
+	if err != nil {
+		log.Fatalf("google calendar error: %v", err)
+	}
 	log.Printf(
 		"discord webhook config: raw=%d valid=%d enabled=%t",
 		len(cfg.DiscordWebhookURLs),
 		discord.CountValidWebhookURLs(cfg.DiscordWebhookURLs),
 		discordClient != nil && discordClient.Count() > 0,
+	)
+	log.Printf(
+		"google calendar config: enabled=%t calendars=%d timezone=%q",
+		calendarClient != nil && calendarClient.Enabled(),
+		len(cfg.GoogleCalendarIDs),
+		cfg.GoogleCalendarTimezone,
 	)
 
 	handler := api.NewHandler(
@@ -76,6 +97,7 @@ func main() {
 		cfg.GitHubOwner,
 		cfg.GitHubRepo,
 		cfg.GitHubBranch,
+		calendarClient,
 	)
 	router := api.NewRouter(cfg, handler)
 

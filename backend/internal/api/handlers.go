@@ -18,6 +18,7 @@ import (
 
 	"portfolio-backend/internal/auth"
 	"portfolio-backend/internal/discord"
+	"portfolio-backend/internal/gcalendar"
 	"portfolio-backend/internal/mail"
 	"portfolio-backend/internal/store"
 
@@ -39,6 +40,7 @@ type Handler struct {
 	githubOwner       string
 	githubRepo        string
 	githubBranch      string
+	calendar          *gcalendar.Service
 }
 
 func NewHandler(
@@ -54,6 +56,7 @@ func NewHandler(
 	githubOwner string,
 	githubRepo string,
 	githubBranch string,
+	calendarClient *gcalendar.Service,
 ) *Handler {
 	return &Handler{
 		store:             store,
@@ -68,6 +71,7 @@ func NewHandler(
 		githubOwner:       strings.TrimSpace(githubOwner),
 		githubRepo:        strings.TrimSpace(githubRepo),
 		githubBranch:      strings.TrimSpace(githubBranch),
+		calendar:          calendarClient,
 	}
 }
 
@@ -76,6 +80,10 @@ func (h *Handler) Register(r chi.Router) {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/app-mode", h.getAppMode)
+		r.Get("/calendar/availability", h.getCalendarAvailability)
+		r.Get("/calendar/events", h.withAdmin(h.getCalendarEvents))
+		r.Get("/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
+		r.Patch("/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
 		r.Post("/auth/login", h.login)
 		r.Post("/auth/refresh", h.refreshToken)
 		r.Get("/auth/me", h.withAdmin(h.me))

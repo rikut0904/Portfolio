@@ -36,6 +36,8 @@ export default function AdminHeader() {
           <Link href="/admin">ダッシュボード</Link>
           <Link href="/admin/products">作品管理</Link>
           <Link href="/admin/sections">セクション管理</Link>
+          <Link href="/admin/calendar">予定管理</Link>
+          <Link href="/admin/calendar/settings">カレンダー設定</Link>
           <Link href="/admin/contact">お問い合わせ管理</Link>
           <Link href="/admin/images">画像管理</Link>
           <Link href="/admin/logs">ログ一覧</Link>
@@ -55,6 +57,12 @@ export default function AdminHeader() {
         </Link>
         <Link href="/admin/sections" onClick={closeMenu}>
           セクション管理
+        </Link>
+        <Link href="/admin/calendar" onClick={closeMenu}>
+          予定管理
+        </Link>
+        <Link href="/admin/calendar/settings" onClick={closeMenu}>
+          カレンダー設定
         </Link>
         <Link href="/admin/contact" onClick={closeMenu}>
           お問い合わせ管理

@@ -3,18 +3,22 @@
 import React, { useEffect, useState } from "react";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
+import { useAuth } from "../../lib/auth/AuthContext";
 
 interface Stats {
   productsCount: number;
   sectionsCount: number;
   publicProductsCount: number;
+  calendarEventsCount: number;
 }
 
 function DashboardContent() {
+  const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
     productsCount: 0,
     sectionsCount: 0,
     publicProductsCount: 0,
+    calendarEventsCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,10 +41,28 @@ function DashboardContent() {
       // 公開中の作品数
       const publicProducts = products.filter((p: any) => p.status === "公開");
 
+      let calendarEventsCount = 0;
+      try {
+        const today = new Date();
+        const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
+        const end = new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString();
+        const token = user ? await user.getIdToken() : "";
+        const calendarRes = await fetch(`/api/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (calendarRes.ok) {
+          const calendarData = await calendarRes.json();
+          calendarEventsCount = Array.isArray(calendarData.events) ? calendarData.events.length : 0;
+        }
+      } catch (error) {
+        console.error("Failed to fetch calendar stats:", error);
+      }
+
       setStats({
         productsCount: products.length,
         sectionsCount: sections.length,
         publicProductsCount: publicProducts.length,
+        calendarEventsCount,
       });
     } catch (error) {
       console.error("Failed to fetch stats:", error);
@@ -139,6 +161,38 @@ function DashboardContent() {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M8 10h8m-8 4h6m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h8l6 6v8a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/calendar"
+            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
+                  予定管理
+                </h2>
+                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                  Googleカレンダーの予定を日・週・月・年で確認
+                </p>
+                <p className="mt-3 text-xs font-semibold text-[var(--text-heading)]">
+                  今月 {stats.calendarEventsCount} 件
+                </p>
+              </div>
+              <svg
+                className="w-6 h-6 sm:w-8 sm:h-8 text-violet-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>
