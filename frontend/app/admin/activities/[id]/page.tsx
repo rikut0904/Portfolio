@@ -43,6 +43,22 @@ function CategoryActivitiesContent() {
     status: "公開",
   });
 
+  const normalizeActivityImage = (value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return "";
+    }
+    if (
+      trimmed.startsWith("/img/activity/") ||
+      trimmed.startsWith("http://") ||
+      trimmed.startsWith("https://") ||
+      trimmed.startsWith("/")
+    ) {
+      return trimmed;
+    }
+    return `/img/activity/${trimmed}`;
+  };
+
   const handleAddNew = () => {
     setIsAddingNew(true);
     setEditingActivity(null);
@@ -84,9 +100,10 @@ function CategoryActivitiesContent() {
 
     const dataToSave = {
       ...formData,
-      image: formData.image.startsWith("/img/activity/")
-        ? formData.image
-        : `/img/activity/${formData.image}`,
+      title: formData.title.trim(),
+      description: formData.description.trim(),
+      link: formData.link.trim(),
+      image: normalizeActivityImage(formData.image),
     };
 
     let success = false;
