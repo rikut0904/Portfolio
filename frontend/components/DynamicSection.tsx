@@ -24,6 +24,20 @@ interface DynamicSectionProps {
 export default function DynamicSection({ section }: DynamicSectionProps) {
   const { meta, data } = section;
 
+  const renderLinkedText = (text: string, url?: string) =>
+    !url ? (
+      text
+    ) : (
+      <a
+        href={url}
+        className="text-blue-700 underline underline-offset-4 hover:text-blue-900"
+        target={url.startsWith("http") ? "_blank" : undefined}
+        rel={url.startsWith("http") ? "noreferrer" : undefined}
+      >
+        {text}
+      </a>
+    );
+
   // 既存のFirebaseデータ構造（single, categorized, timeline）に対応
   // single: プロフィール
   const renderSingle = () => {
@@ -78,8 +92,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
                 <div key={index} className="card">
                   <h3>{item.title}</h3>
                   <ol>
-                    {item.items?.map((subItem: string, subIndex: number) => (
-                      <li key={subIndex}>{subItem}</li>
+                    {item.items?.map((subItem: any, subIndex: number) => (
+                      <li key={subIndex}>
+                        {typeof subItem === "string" ? subItem : subItem?.text || ""}
+                      </li>
                     ))}
                   </ol>
                 </div>
@@ -130,8 +146,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
               <div key={index} className="card">
                 <h3>{list.title}</h3>
                 <ol>
-                  {list.items?.map((item: string, itemIndex: number) => (
-                    <li key={itemIndex}>{item}</li>
+                  {list.items?.map((item: any, itemIndex: number) => (
+                    <li key={itemIndex}>
+                      {typeof item === "string" ? item : item?.text || ""}
+                    </li>
                   ))}
                 </ol>
               </div>
@@ -160,11 +178,16 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
             <div className="flex flex-col gap-4">
               {histories.map((history: any, index: number) => (
                 <div key={index} className="card">
-                  <h3>{history.date}</h3>
+                  <h3>{renderLinkedText(history.date, history.url)}</h3>
                   <ul className="list-disc ml-5">
                     {history.details?.map(
-                      (detail: string, detailIndex: number) => (
-                        <li key={detailIndex}>{detail}</li>
+                      (detail: any, detailIndex: number) => (
+                        <li key={detailIndex}>
+                          {renderLinkedText(
+                            typeof detail === "string" ? detail : detail?.text || "",
+                            typeof detail === "string" ? "" : detail?.url || "",
+                          )}
+                        </li>
                       ),
                     )}
                   </ul>

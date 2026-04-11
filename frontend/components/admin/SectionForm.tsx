@@ -25,7 +25,8 @@ interface SectionFormProps {
 
 interface HistoryItem {
   date: string;
-  details: string[];
+  url?: string;
+  details?: Array<string | { text?: string; url?: string }>;
 }
 
 export default function SectionForm({

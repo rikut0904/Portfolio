@@ -1,9 +1,46 @@
 import React from "react";
 
+interface LinkableText {
+  text?: string;
+}
+
+interface LinkableCategory {
+  title?: string;
+  items?: Array<string | LinkableText>;
+}
+
 interface CategorizedSectionFormProps {
   formData: any;
   setFormData: (data: any) => void;
 }
+
+const normalizeEntry = (entry: string | LinkableText) =>
+  typeof entry === "string"
+    ? { text: entry }
+    : { text: entry?.text || "" };
+
+const normalizeGroupedLists = (lists: any[]): LinkableCategory[] =>
+  lists.map((list) => ({
+    title: list?.title || "",
+    items: Array.isArray(list?.items) ? list.items.map(normalizeEntry) : [],
+  }));
+
+const normalizeFlatLists = (formData: any): LinkableCategory[] => {
+  if (!Array.isArray(formData.categories)) {
+    return [];
+  }
+  return formData.categories.map((category: string) => {
+    const relatedItems = Array.isArray(formData.items)
+      ? formData.items.filter((item: any) => item?.category === category)
+      : [];
+    return {
+      title: category,
+      items: relatedItems.map((item: any) => ({
+        text: item?.name || "",
+      })),
+    };
+  });
+};
 
 export default function CategorizedSectionForm({
   formData,
@@ -14,21 +51,18 @@ export default function CategorizedSectionForm({
     (formData.items.length === 0 || formData.items[0]?.title !== undefined);
 
   const lists = usesGroupedItems
-    ? formData.items || []
-    : Array.isArray(formData.categories)
-      ? formData.categories.map((category: string) => ({
-          title: category,
-          items: Array.isArray(formData.items)
-            ? formData.items
-                .filter((item: any) => item?.category === category)
-                .map((item: any) => item?.name || "")
-            : [],
-        }))
-      : [];
+    ? normalizeGroupedLists(Array.isArray(formData.items) ? formData.items : [])
+    : normalizeFlatLists(formData);
 
-  const commitLists = (nextLists: Array<{ title?: string; items?: string[] }>) => {
+  const commitLists = (nextLists: LinkableCategory[]) => {
     if (usesGroupedItems) {
-      setFormData({ ...formData, items: nextLists });
+      setFormData({
+        ...formData,
+        items: nextLists.map((list) => ({
+          title: list.title || "",
+          items: (list.items || []).map(normalizeEntry),
+        })),
+      });
       return;
     }
 
@@ -36,90 +70,112 @@ export default function CategorizedSectionForm({
       ...formData,
       categories: nextLists.map((list) => list.title || ""),
       items: nextLists.flatMap((list) =>
-        (list.items || []).map((item) => ({
-          category: list.title || "",
-          name: item,
-        })),
+        (list.items || []).map((item) => {
+          const normalized = normalizeEntry(item);
+          return {
+            category: list.title || "",
+            name: normalized.text,
+          };
+        }),
       ),
     });
   };
 
   const addList = () => {
-    commitLists([...lists, { title: "", items: [""] }]);
+    commitLists([
+      ...lists,
+      { title: "", items: [{ text: "" }] },
+    ]);
   };
 
-  const updateList = (index: number, field: "title" | "items", value: any) => {
-    const newLists = [...lists];
-    newLists[index] = { ...newLists[index], [field]: value };
-    commitLists(newLists);
+  const updateList = (
+    index: number,
+    field: "title" | "items",
+    value: string | LinkableText[],
+  ) => {
+    const nextLists = [...lists];
+    nextLists[index] = { ...nextLists[index], [field]: value };
+    commitLists(nextLists);
   };
 
   const removeList = (index: number) => {
-    commitLists(lists.filter((_: any, i: number) => i !== index));
+    commitLists(lists.filter((_: LinkableCategory, i: number) => i !== index));
   };
 
   const addItem = (listIndex: number) => {
-    const newLists = [...lists];
-    newLists[listIndex].items.push("");
-    commitLists(newLists);
+    const nextLists = [...lists];
+    nextLists[listIndex] = {
+      ...nextLists[listIndex],
+      items: [...(nextLists[listIndex].items || []), { text: "" }],
+    };
+    commitLists(nextLists);
   };
 
-  const updateItem = (listIndex: number, itemIndex: number, value: string) => {
-    const newLists = [...lists];
-    newLists[listIndex].items[itemIndex] = value;
-    commitLists(newLists);
+  const updateItem = (
+    listIndex: number,
+    itemIndex: number,
+    field: "text" | "url",
+    value: string,
+  ) => {
+    const nextLists = [...lists];
+    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    nextItems[itemIndex] = { ...nextItems[itemIndex], text: value };
+    updateList(listIndex, "items", nextItems);
   };
 
   const removeItem = (listIndex: number, itemIndex: number) => {
-    const newLists = [...lists];
-    newLists[listIndex].items = newLists[listIndex].items.filter(
-      (_: string, i: number) => i !== itemIndex,
-    );
-    commitLists(newLists);
+    const nextLists = [...lists];
+    nextLists[listIndex] = {
+      ...nextLists[listIndex],
+      items: (nextLists[listIndex].items || []).filter(
+        (_: string | LinkableText, i: number) => i !== itemIndex,
+      ),
+    };
+    commitLists(nextLists);
   };
 
   const moveListUp = (index: number) => {
     if (index === 0) return;
-    const newLists = [...lists];
-    [newLists[index - 1], newLists[index]] = [
-      newLists[index],
-      newLists[index - 1],
+    const nextLists = [...lists];
+    [nextLists[index - 1], nextLists[index]] = [
+      nextLists[index],
+      nextLists[index - 1],
     ];
-    commitLists(newLists);
+    commitLists(nextLists);
   };
 
   const moveListDown = (index: number) => {
     if (index === lists.length - 1) return;
-    const newLists = [...lists];
-    [newLists[index], newLists[index + 1]] = [
-      newLists[index + 1],
-      newLists[index],
+    const nextLists = [...lists];
+    [nextLists[index], nextLists[index + 1]] = [
+      nextLists[index + 1],
+      nextLists[index],
     ];
-    commitLists(newLists);
+    commitLists(nextLists);
   };
 
   const moveItemUp = (listIndex: number, itemIndex: number) => {
     if (itemIndex === 0) return;
-    const newLists = [...lists];
-    const items = [...newLists[listIndex].items];
-    [items[itemIndex - 1], items[itemIndex]] = [
-      items[itemIndex],
-      items[itemIndex - 1],
+    const nextLists = [...lists];
+    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    [nextItems[itemIndex - 1], nextItems[itemIndex]] = [
+      nextItems[itemIndex],
+      nextItems[itemIndex - 1],
     ];
-    newLists[listIndex].items = items;
-    commitLists(newLists);
+    nextLists[listIndex] = { ...nextLists[listIndex], items: nextItems };
+    commitLists(nextLists);
   };
 
   const moveItemDown = (listIndex: number, itemIndex: number) => {
-    const newLists = [...lists];
-    if (itemIndex === newLists[listIndex].items.length - 1) return;
-    const items = [...newLists[listIndex].items];
-    [items[itemIndex], items[itemIndex + 1]] = [
-      items[itemIndex + 1],
-      items[itemIndex],
+    const nextLists = [...lists];
+    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    if (itemIndex === nextItems.length - 1) return;
+    [nextItems[itemIndex], nextItems[itemIndex + 1]] = [
+      nextItems[itemIndex + 1],
+      nextItems[itemIndex],
     ];
-    newLists[listIndex].items = items;
-    commitLists(newLists);
+    nextLists[listIndex] = { ...nextLists[listIndex], items: nextItems };
+    commitLists(nextLists);
   };
 
   return (
@@ -129,7 +185,7 @@ export default function CategorizedSectionForm({
           まだカテゴリがありません。下のボタンから追加できます。
         </div>
       )}
-      {lists.map((list: any, listIndex: number) => (
+      {lists.map((list, listIndex: number) => (
         <div
           key={listIndex}
           className="border border-gray-300 rounded-lg p-2 sm:p-4 bg-gray-50"
@@ -198,9 +254,7 @@ export default function CategorizedSectionForm({
                 <input
                   type="text"
                   value={list.title || ""}
-                  onChange={(e) =>
-                    updateList(listIndex, "title", e.target.value)
-                  }
+                  onChange={(e) => updateList(listIndex, "title", e.target.value)}
                   placeholder="カテゴリ名"
                   className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
                 />
@@ -208,70 +262,78 @@ export default function CategorizedSectionForm({
 
               <div className="space-y-1.5 sm:space-y-2">
                 <h3 className="text-xs sm:text-base font-medium">項目</h3>
-                {list.items?.map((item: string, itemIndex: number) => (
-                  <div key={itemIndex} className="flex items-center gap-1">
-                    <div className="flex flex-col gap-0.5 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => moveItemUp(listIndex, itemIndex)}
-                        disabled={itemIndex === 0}
-                        className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="上に移動"
-                      >
-                        <svg
-                          className="w-2 h-2 sm:w-3 sm:h-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => moveItemDown(listIndex, itemIndex)}
-                        disabled={itemIndex === list.items.length - 1}
-                        className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="下に移動"
-                      >
-                        <svg
-                          className="w-2 h-2 sm:w-3 sm:h-3"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <input
-                      type="text"
-                      value={item}
-                      onChange={(e) =>
-                        updateItem(listIndex, itemIndex, e.target.value)
-                      }
-                      placeholder="項目"
-                      className="flex-1 min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeItem(listIndex, itemIndex)}
-                      className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm flex-shrink-0"
+                {(list.items || []).map((rawItem, itemIndex: number) => {
+                  const item = normalizeEntry(rawItem);
+                  return (
+                    <div
+                      key={itemIndex}
+                      className="rounded-md border border-gray-200 bg-white p-2"
                     >
-                      ×
-                    </button>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-1">
+                        <div className="flex flex-col gap-0.5 flex-shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => moveItemUp(listIndex, itemIndex)}
+                            disabled={itemIndex === 0}
+                            className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="上に移動"
+                          >
+                            <svg
+                              className="w-2 h-2 sm:w-3 sm:h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 15l7-7 7 7"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveItemDown(listIndex, itemIndex)}
+                            disabled={itemIndex === (list.items || []).length - 1}
+                            className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="下に移動"
+                          >
+                            <svg
+                              className="w-2 h-2 sm:w-3 sm:h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={item.text || ""}
+                          onChange={(e) =>
+                            updateItem(listIndex, itemIndex, "text", e.target.value)
+                          }
+                          placeholder="項目"
+                          className="flex-1 min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeItem(listIndex, itemIndex)}
+                          className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm flex-shrink-0"
+                        >
+                          ×
+                        </button>
+                      </div>
+                      </div>
+                  );
+                })}
                 <button
                   type="button"
                   onClick={() => addItem(listIndex)}

@@ -5,7 +5,7 @@ import FadeInSection from "./FadeInSection";
 
 interface ListItem {
   title: string;
-  items: string[];
+  items: Array<string | { text?: string }>;
 }
 
 interface DynamicListSectionProps {
@@ -51,7 +51,9 @@ export default function DynamicListSection({
               <h3>{list.title}</h3>
               <ol>
                 {list.items.map((item, itemIndex) => (
-                  <li key={itemIndex}>{item}</li>
+                  <li key={itemIndex}>
+                    {typeof item === "string" ? item : item?.text || ""}
+                  </li>
                 ))}
               </ol>
             </div>
