@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -27,6 +29,13 @@ func New(webhookURLs []string) *Client {
 	}
 }
 
+func (c *Client) Count() int {
+	if c == nil {
+		return 0
+	}
+	return len(c.webhookURLs)
+}
+
 func (c *Client) Send(ctx context.Context, content string) error {
 	if c == nil {
 		return nil
@@ -45,19 +54,20 @@ func (c *Client) Send(ctx context.Context, content string) error {
 	for _, webhookURL := range c.webhookURLs {
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, webhookURL, bytes.NewBuffer(payload))
 		if err != nil {
-			errs = append(errs, errors.New("discord webhook failed"))
+			errs = append(errs, fmt.Errorf("discord webhook request build failed: %w", err))
 			continue
 		}
 		req.Header.Set("Content-Type", "application/json")
 
 		res, err := c.httpClient.Do(req)
 		if err != nil {
-			errs = append(errs, errors.New("discord webhook failed"))
+			errs = append(errs, fmt.Errorf("discord webhook request failed: %w", err))
 			continue
 		}
+		body, _ := io.ReadAll(io.LimitReader(res.Body, 2048))
 		res.Body.Close()
 		if res.StatusCode < 200 || res.StatusCode >= 300 {
-			errs = append(errs, errors.New("discord webhook failed"))
+			errs = append(errs, fmt.Errorf("discord webhook failed: status=%d body=%q", res.StatusCode, strings.TrimSpace(string(body))))
 		}
 	}
 
@@ -82,6 +92,10 @@ func normalizeWebhookURLs(values []string) []string {
 		result = append(result, cleaned)
 	}
 	return result
+}
+
+func CountValidWebhookURLs(values []string) int {
+	return len(normalizeWebhookURLs(values))
 }
 
 func isAllowedWebhookURL(raw string) bool {

@@ -2113,8 +2113,13 @@ func (h *Handler) notifyInquiryCreated(ctx context.Context, data mail.InquiryNot
 		body, err := mail.BuildInquiryDiscordNotification(data)
 		if err != nil {
 			log.Printf("discord template error (inquiry->admin): %v", err)
-		} else if err := h.discord.Send(ctx, body); err != nil {
-			log.Printf("discord notify error (inquiry->admin): %v", err)
+		} else {
+			log.Printf("discord notify start (inquiry->admin): thread_id=%s label=%s", data.ThreadID, data.NotificationLabel)
+			if err := h.discord.Send(ctx, body); err != nil {
+				log.Printf("discord notify error (inquiry->admin): %v", err)
+			} else {
+				log.Printf("discord notify success (inquiry->admin): thread_id=%s", data.ThreadID)
+			}
 		}
 	}
 }

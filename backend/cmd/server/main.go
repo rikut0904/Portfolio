@@ -56,6 +56,12 @@ func main() {
 		log.Fatalf("mail error: %v", err)
 	}
 	discordClient := discord.New(cfg.DiscordWebhookURLs)
+	log.Printf(
+		"discord webhook config: raw=%d valid=%d enabled=%t",
+		len(cfg.DiscordWebhookURLs),
+		discord.CountValidWebhookURLs(cfg.DiscordWebhookURLs),
+		discordClient != nil && discordClient.Count() > 0,
+	)
 
 	handler := api.NewHandler(
 		st,
