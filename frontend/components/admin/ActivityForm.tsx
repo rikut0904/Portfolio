@@ -44,10 +44,9 @@ export default function ActivityForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            説明 *
+            説明
           </label>
           <textarea
-            required
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })

@@ -117,7 +117,7 @@ export function useCategoryActivities(categoryId: string) {
     try {
       const token = await user.getIdToken();
       const response = await fetch(`/api/activities/${activityId}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
