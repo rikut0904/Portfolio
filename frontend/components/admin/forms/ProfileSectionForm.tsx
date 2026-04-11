@@ -1,8 +1,16 @@
 import React from "react";
 
 interface ProfileSectionFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: {
+    data?: Record<string, string | undefined>;
+    [key: string]: unknown;
+  };
+  setFormData: (
+    data: {
+      data?: Record<string, string | undefined>;
+      [key: string]: unknown;
+    },
+  ) => void;
 }
 
 export default function ProfileSectionForm({
@@ -10,12 +18,20 @@ export default function ProfileSectionForm({
   setFormData,
 }: ProfileSectionFormProps) {
   const rawProfileData = formData.data || formData;
-  const profileData = {
-    ...rawProfileData,
-    hometown: rawProfileData?.hometown || rawProfileData?.from || "",
-    university: rawProfileData?.university || rawProfileData?.affiliation || "",
+  const getString = (value: unknown) =>
+    typeof value === "string" ? value : undefined;
+  const profileData: Record<string, string | undefined> = {
+    name: getString(rawProfileData?.name) || "",
+    hometown: getString(rawProfileData?.hometown) || getString(rawProfileData?.from) || "",
+    hobbies: getString(rawProfileData?.hobbies) || "",
+    university:
+      getString(rawProfileData?.university) ||
+      getString(rawProfileData?.affiliation) ||
+      "",
     profileImage:
-      rawProfileData?.profileImage || rawProfileData?.imageUrl || "",
+      getString(rawProfileData?.profileImage) ||
+      getString(rawProfileData?.imageUrl) ||
+      "",
   };
 
   const updateProfileData = (field: string, value: string) => {

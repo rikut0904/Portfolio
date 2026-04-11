@@ -12,8 +12,8 @@ interface HistoryItem {
 }
 
 interface HistorySectionFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: { histories?: HistoryItem[] };
+  setFormData: (data: { histories?: HistoryItem[] }) => void;
   sortOrder: "asc" | "desc";
   onSortOrderChange: (order: "asc" | "desc") => Promise<void>;
   sortHistories: (

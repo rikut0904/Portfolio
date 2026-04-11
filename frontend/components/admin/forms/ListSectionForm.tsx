@@ -6,8 +6,8 @@ interface ListItem {
 }
 
 interface ListSectionFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: { lists?: ListItem[] };
+  setFormData: (data: { lists?: ListItem[] }) => void;
 }
 
 const normalizeItems = (items: Array<string | { text?: string }> = []): string[] =>

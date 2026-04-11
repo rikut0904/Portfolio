@@ -9,9 +9,19 @@ interface LinkableCategory {
   items?: Array<string | LinkableText>;
 }
 
+interface FlatCategorizedItem {
+  category?: string;
+  name?: string;
+}
+
+interface CategorizedFormData {
+  items?: LinkableCategory[] | FlatCategorizedItem[];
+  categories?: string[];
+}
+
 interface CategorizedSectionFormProps {
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: CategorizedFormData;
+  setFormData: (data: CategorizedFormData) => void;
 }
 
 const normalizeEntry = (entry: string | LinkableText) =>
@@ -19,28 +29,34 @@ const normalizeEntry = (entry: string | LinkableText) =>
     ? { text: entry }
     : { text: entry?.text || "" };
 
-const normalizeGroupedLists = (lists: any[]): LinkableCategory[] =>
+const normalizeGroupedLists = (lists: LinkableCategory[]): LinkableCategory[] =>
   lists.map((list) => ({
     title: list?.title || "",
     items: Array.isArray(list?.items) ? list.items.map(normalizeEntry) : [],
   }));
 
-const normalizeFlatLists = (formData: any): LinkableCategory[] => {
+const normalizeFlatLists = (formData: CategorizedFormData): LinkableCategory[] => {
   if (!Array.isArray(formData.categories)) {
     return [];
   }
   return formData.categories.map((category: string) => {
     const relatedItems = Array.isArray(formData.items)
-      ? formData.items.filter((item: any) => item?.category === category)
+      ? (formData.items as FlatCategorizedItem[]).filter(
+          (item) => item?.category === category,
+        )
       : [];
     return {
       title: category,
-      items: relatedItems.map((item: any) => ({
+      items: relatedItems.map((item) => ({
         text: item?.name || "",
       })),
     };
   });
 };
+
+const isLinkableCategory = (
+  item: LinkableCategory | FlatCategorizedItem,
+): item is LinkableCategory => "title" in item;
 
 export default function CategorizedSectionForm({
   formData,
@@ -48,10 +64,12 @@ export default function CategorizedSectionForm({
 }: CategorizedSectionFormProps) {
   const usesGroupedItems =
     Array.isArray(formData.items) &&
-    (formData.items.length === 0 || formData.items[0]?.title !== undefined);
+    (formData.items.length === 0 || isLinkableCategory(formData.items[0]));
 
   const lists = usesGroupedItems
-    ? normalizeGroupedLists(Array.isArray(formData.items) ? formData.items : [])
+    ? normalizeGroupedLists(
+        Array.isArray(formData.items) ? (formData.items as LinkableCategory[]) : [],
+      )
     : normalizeFlatLists(formData);
 
   const commitLists = (nextLists: LinkableCategory[]) => {
