@@ -9,16 +9,32 @@ export default function ProfileSectionForm({
   formData,
   setFormData,
 }: ProfileSectionFormProps) {
-  const profileData = formData.data || formData;
+  const rawProfileData = formData.data || formData;
+  const profileData = {
+    ...rawProfileData,
+    hometown: rawProfileData?.hometown || rawProfileData?.from || "",
+    university: rawProfileData?.university || rawProfileData?.affiliation || "",
+    profileImage:
+      rawProfileData?.profileImage || rawProfileData?.imageUrl || "",
+  };
 
   const updateProfileData = (field: string, value: string) => {
+    const normalizedPatch =
+      field === "hometown"
+        ? { hometown: value, from: value }
+        : field === "university"
+          ? { university: value, affiliation: value }
+          : field === "profileImage"
+            ? { profileImage: value, imageUrl: value }
+            : { [field]: value };
+
     if (formData.data) {
       setFormData({
         ...formData,
-        data: { ...formData.data, [field]: value },
+        data: { ...formData.data, ...normalizedPatch },
       });
     } else {
-      setFormData({ ...formData, [field]: value });
+      setFormData({ ...formData, ...normalizedPatch });
     }
   };
 
@@ -42,12 +58,7 @@ export default function ProfileSectionForm({
         <input
           type="text"
           value={profileData.hometown || profileData.from || ""}
-          onChange={(e) =>
-            updateProfileData(
-              formData.data ? "hometown" : "from",
-              e.target.value,
-            )
-          }
+          onChange={(e) => updateProfileData("hometown", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         />
       </div>
@@ -69,12 +80,7 @@ export default function ProfileSectionForm({
         <input
           type="text"
           value={profileData.university || profileData.affiliation || ""}
-          onChange={(e) =>
-            updateProfileData(
-              formData.data ? "university" : "affiliation",
-              e.target.value,
-            )
-          }
+          onChange={(e) => updateProfileData("university", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         />
       </div>
@@ -85,12 +91,7 @@ export default function ProfileSectionForm({
         <input
           type="text"
           value={profileData.profileImage || profileData.imageUrl || ""}
-          onChange={(e) =>
-            updateProfileData(
-              formData.data ? "profileImage" : "imageUrl",
-              e.target.value,
-            )
-          }
+          onChange={(e) => updateProfileData("profileImage", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
           placeholder="/img/profile.jpg"
         />

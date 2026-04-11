@@ -426,22 +426,22 @@ function SectionsContent() {
                   </div>
 
                   {/* 編集・削除ボタン（縦並び） */}
-                  {section.meta.editable && (
-                    <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleEdit(section)}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
-                      >
-                        編集
-                      </button>
+                  <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => handleEdit(section)}
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
+                    >
+                      編集
+                    </button>
+                    {section.meta.editable && (
                       <button
                         onClick={() => handleDeleteClick(section)}
                         className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base whitespace-nowrap"
                       >
                         削除
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

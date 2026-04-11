@@ -35,9 +35,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
         <section id={section.id}>
           <h2>{meta.displayName}</h2>
           <div className="flex flex-col md:flex-row items-left gap-8 card">
-            {singleData.profileImage && (
+            {(singleData.profileImage || singleData.imageUrl) && (
               <Image
-                src={singleData.profileImage}
+                src={singleData.profileImage || singleData.imageUrl}
                 alt="プロフィール写真"
                 width={150}
                 height={150}
@@ -46,9 +46,13 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
             )}
             <div>
               {singleData.name && <h3>名前：{singleData.name}</h3>}
-              {singleData.hometown && <p>出身：{singleData.hometown}</p>}
+              {(singleData.hometown || singleData.from) && (
+                <p>出身：{singleData.hometown || singleData.from}</p>
+              )}
               {singleData.hobbies && <p>趣味：{singleData.hobbies}</p>}
-              {singleData.university && <p>{singleData.university}</p>}
+              {(singleData.university || singleData.affiliation) && (
+                <p>{singleData.university || singleData.affiliation}</p>
+              )}
             </div>
           </div>
         </section>
