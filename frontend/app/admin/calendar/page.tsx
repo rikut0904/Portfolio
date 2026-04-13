@@ -9,6 +9,7 @@ import {
   type CalendarDisplayNameMap,
   type CalendarEvent,
   type CalendarEventsResponse,
+  type CalendarPreferencesResponse,
   enumerateDays,
   formatHeaderRange,
   formatMonthDay,
@@ -82,13 +83,6 @@ function dayTimestamp(d: Date) {
 function isInSelectedWeek(day: Date, rangeStart: Date, rangeEnd: Date) {
   const t = dayTimestamp(day);
   return t >= rangeStart.getTime() && t < rangeEnd.getTime();
-}
-
-function areSameStringArray(a: string[], b: string[]) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  return a.every((value, index) => value === b[index]);
 }
 
 /** 区間が共通部分を持つ（端点で接するだけは重ならない） */
@@ -296,15 +290,13 @@ function WeekPickerModal({
                   onPickDay(day);
                   onClose();
                 }}
-                className={`flex aspect-square min-h-[2.5rem] items-center justify-center rounded-lg text-sm transition ${
-                  inWeek
-                    ? "bg-[var(--primary-color)] font-semibold text-white"
-                    : inMonth
-                      ? "border border-[var(--card-border)] bg-white/90 text-[var(--text-heading)] hover:bg-[var(--primary-light)]"
-                      : "border border-transparent text-gray-400 hover:bg-white/50"
-                } ${isToday && !inWeek ? "ring-2 ring-[var(--primary-color)] ring-offset-1" : ""} ${
-                  isToday && inWeek ? "ring-2 ring-white/80 ring-offset-1 ring-offset-[var(--primary-color)]" : ""
-                }`}
+                className={`flex aspect-square min-h-[2.5rem] items-center justify-center rounded-lg text-sm transition ${inWeek
+                  ? "bg-[var(--primary-color)] font-semibold text-white"
+                  : inMonth
+                    ? "border border-[var(--card-border)] bg-white/90 text-[var(--text-heading)] hover:bg-[var(--primary-light)]"
+                    : "border border-transparent text-gray-400 hover:bg-white/50"
+                  } ${isToday && !inWeek ? "ring-2 ring-[var(--primary-color)] ring-offset-1" : ""} ${isToday && inWeek ? "ring-2 ring-white/80 ring-offset-1 ring-offset-[var(--primary-color)]" : ""
+                  }`}
               >
                 {day.getDate()}
               </button>
@@ -352,9 +344,8 @@ function CalendarModalFrame({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[100%] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] ${
-          wide ? "max-w-[min(100%,48rem)] md:max-w-[min(100%,56rem)] lg:max-w-[min(100%,64rem)]" : "max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)] md:max-w-[min(100%,32rem)] lg:max-w-[min(100%,36rem)]"
-        }`}
+        className={`relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[100%] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] ${wide ? "max-w-[min(100%,48rem)] md:max-w-[min(100%,56rem)] lg:max-w-[min(100%,64rem)]" : "max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)] md:max-w-[min(100%,32rem)] lg:max-w-[min(100%,36rem)]"
+          }`}
       >
         {children}
       </div>
@@ -492,7 +483,7 @@ function WeekCalendarGrid({
         </div>
 
         <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
-          <div className="flex min-h-14 items-start rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 sm:min-h-0 sm:items-center sm:px-1">
+          <div className="flex min-h-14 items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center sm:min-h-0 sm:px-1">
             <span className="text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--text-body)] sm:text-xs">
               終日
             </span>
@@ -610,11 +601,32 @@ function CalendarAdminContent() {
   const { user } = useAuth();
   const [anchor, setAnchor] = useState(new Date());
   const [data, setData] = useState<CalendarEventsResponse | null>(null);
-  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([]);
+  const [preferences, setPreferences] = useState<CalendarPreferencesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
+
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const token = user ? await user.getIdToken() : "";
+        const res = await fetch("/api/calendar/preferences", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        const body = (await res.json().catch(() => ({}))) as
+          | CalendarPreferencesResponse
+          | { error?: string };
+        if (!res.ok) {
+          throw new Error(body && "error" in body ? body.error || "取得に失敗しました" : "取得に失敗しました");
+        }
+        setPreferences(body as CalendarPreferencesResponse);
+      } catch (err) {
+        setPreferences(null);
+      }
+    };
+    void fetchPreferences();
+  }, [user]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -627,9 +639,6 @@ function CalendarAdminContent() {
           from: toApiDateTime(range.start),
           to: toApiDateTime(range.end),
         });
-        for (const calendarId of selectedCalendarIds) {
-          query.append("calendarId", calendarId);
-        }
         const res = await fetch(`/api/calendar/events?${query.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -648,37 +657,12 @@ function CalendarAdminContent() {
       }
     };
     void fetchEvents();
-  }, [anchor, selectedCalendarIds, user]);
-
-  useEffect(() => {
-    if (!data?.calendarIds?.length) {
-      return;
-    }
-    setSelectedCalendarIds((current) => {
-      const fallback = data.calendarIds || [];
-      if (current.length > 0) {
-        const next = current.filter((calendarId) => data.calendarIds?.includes(calendarId));
-        return areSameStringArray(current, next) ? current : next;
-      }
-      return areSameStringArray(current, fallback) ? current : fallback;
-    });
-  }, [data?.calendarIds]);
+  }, [anchor, user]);
 
   const events = useMemo(() => (data?.events || []).map(normalizeEvent), [data]);
   const range = useMemo(() => getViewRange(WEEK_VIEW, anchor), [anchor]);
-  const allCalendarIds = data?.calendarIds || [];
-  const calendarColors = data?.calendarColors || {};
-  const calendarDisplayNames = data?.calendarDisplayNames || {};
-
-  const toggleCalendarId = (calendarId: string) => {
-    setSelectedCalendarIds((current) => {
-      if (current.includes(calendarId)) {
-        const next = current.filter((value) => value !== calendarId);
-        return next.length > 0 ? next : current;
-      }
-      return [...current, calendarId];
-    });
-  };
+  const calendarColors = preferences?.calendarColors || data?.calendarColors || {};
+  const calendarDisplayNames = preferences?.calendarDisplayNames || data?.calendarDisplayNames || {};
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -693,10 +677,6 @@ function CalendarAdminContent() {
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">Google Calendar</p>
                 <h1 className="mb-3 border-none pl-0">予定管理</h1>
-                <p className="max-w-3xl text-sm text-[var(--text-body)]">
-                  週単位の時間軸カレンダー（0:00〜24:00）で、予定のある時間帯をカレンダー色の枠で示します。各枠にはタイトルを1行だけ表示し、押すと詳細モーダルが開きます。参加を辞退した予定は一覧に含めません。週は下のボタンやカレンダーから選べます。内容の見え方は
-                  Google カレンダーの共有設定に従います。
-                </p>
               </div>
               <Link
                 href="/admin/calendar/settings"
@@ -745,45 +725,6 @@ function CalendarAdminContent() {
           </div>
 
           <div className="px-3 py-4 sm:px-5 sm:py-6">
-            {allCalendarIds.length > 0 ? (
-              <section className="mb-5 rounded-2xl border border-[var(--card-border)] bg-white/85 p-3 sm:rounded-3xl sm:p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                  <div className="min-w-0">
-                    <h2 className="my-0 border-none pl-0 text-base sm:text-lg">表示カレンダー</h2>
-                    <p className="mt-1.5 text-xs leading-relaxed text-[var(--text-body)] sm:mt-2 sm:text-sm">
-                      選択中のカレンダーだけを backend から取得します。最低 1 件は選択されたままです。
-                    </p>
-                  </div>
-                  <p className="shrink-0 rounded-full bg-[var(--primary-light)] px-3 py-1 text-center text-xs text-[var(--text-heading)] sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:text-[var(--text-body)]">
-                    {selectedCalendarIds.length} / {allCalendarIds.length}
-                  </p>
-                </div>
-                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 pt-0.5 [-webkit-overflow-scrolling:touch] sm:mt-4 sm:flex-wrap sm:overflow-visible">
-                  {allCalendarIds.map((calendarId) => {
-                    const active = selectedCalendarIds.includes(calendarId);
-                    const style = getCalendarColorStyle(calendarColors[calendarId]);
-                    return (
-                      <button
-                        key={calendarId}
-                        type="button"
-                        onClick={() => toggleCalendarId(calendarId)}
-                        className={`shrink-0 rounded-xl border px-3 py-2 text-left text-xs transition sm:rounded-full ${
-                          active
-                            ? "border-transparent"
-                            : "border-[var(--card-border)] bg-white text-[var(--text-body)]"
-                        }`}
-                        style={active ? style : undefined}
-                      >
-                        <span className="line-clamp-2 max-w-[14rem] sm:line-clamp-none sm:max-w-none">
-                          {calendarDisplayNames[calendarId] || calendarId}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            ) : null}
-
             {loading ? (
               <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">読み込み中...</div>
             ) : error ? (
