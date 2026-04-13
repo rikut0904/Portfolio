@@ -6,20 +6,26 @@ import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import {
   type CalendarColorMap,
+  type CalendarDisplayNameMap,
   type CalendarEvent,
   type CalendarEventsResponse,
   enumerateDays,
   formatHeaderRange,
   formatMonthDay,
-  formatTime,
   getCalendarColorStyle,
   getViewRange,
+  isSameDay,
   shiftAnchor,
   startOfDay,
   toApiDateTime,
 } from "../../../lib/calendar";
 
 const WEEK_VIEW = "week" as const;
+/** 1日の表示範囲 00:00〜24:00（24時間分の高さ） */
+const DAY_HOURS = 24;
+const HOURS = Array.from({ length: DAY_HOURS }, (_, index) => index);
+const HOUR_HEIGHT = 56;
+const DAY_GRID_HEIGHT = DAY_HOURS * HOUR_HEIGHT;
 
 type NormalizedEvent = CalendarEvent & {
   startDate: Date;
@@ -30,6 +36,25 @@ function normalizeEvent(event: CalendarEvent): NormalizedEvent {
   const startDate = event.isAllDay ? new Date(`${event.start}T00:00:00`) : new Date(event.start);
   const endDate = event.isAllDay ? new Date(`${event.end}T00:00:00`) : new Date(event.end);
   return { ...event, startDate, endDate };
+}
+
+function formatEventScheduleText(event: NormalizedEvent): string {
+  const fmtD = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+  const fmtT = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  if (event.isAllDay) {
+    const startStr = fmtD.format(event.startDate);
+    const lastDay = new Date(event.endDate);
+    lastDay.setDate(lastDay.getDate() - 1);
+    const endStr = fmtD.format(lastDay);
+    if (startStr === endStr) {
+      return `${startStr}（終日）`;
+    }
+    return `${startStr} 〜 ${endStr}（終日）`;
+  }
+  if (isSameDay(event.startDate, event.endDate)) {
+    return `${fmtD.format(event.startDate)} ${fmtT.format(event.startDate)} 〜 ${fmtT.format(event.endDate)}`;
+  }
+  return `${fmtD.format(event.startDate)} ${fmtT.format(event.startDate)} 〜 ${fmtD.format(event.endDate)} ${fmtT.format(event.endDate)}`;
 }
 
 function intersectsDay(event: NormalizedEvent, day: Date) {
@@ -64,6 +89,94 @@ function areSameStringArray(a: string[], b: string[]) {
     return false;
   }
   return a.every((value, index) => value === b[index]);
+}
+
+/** 区間が共通部分を持つ（端点で接するだけは重ならない） */
+function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
+  return aStart < bEnd && aEnd > bStart;
+}
+
+type ClippedTimed = {
+  event: NormalizedEvent;
+  clipped: { start: Date; end: Date };
+};
+
+function layoutTimedEventsForDay(day: Date, events: NormalizedEvent[]): Map<string, { column: number; columnCount: number }> {
+  const clippedList: ClippedTimed[] = events
+    .filter((event) => intersectsDay(event, day))
+    .map((event) => ({ event, clipped: clipEventToDay(event, day) }));
+
+  const result = new Map<string, { column: number; columnCount: number }>();
+  if (clippedList.length === 0) {
+    return result;
+  }
+
+  const n = clippedList.length;
+  const adj: number[][] = Array.from({ length: n }, () => []);
+  for (let i = 0; i < n; i++) {
+    const ai = clippedList[i].clipped;
+    for (let j = i + 1; j < n; j++) {
+      const bj = clippedList[j].clipped;
+      if (rangesOverlap(ai.start, ai.end, bj.start, bj.end)) {
+        adj[i].push(j);
+        adj[j].push(i);
+      }
+    }
+  }
+
+  const visited = new Array(n).fill(false);
+  for (let i = 0; i < n; i++) {
+    if (visited[i]) {
+      continue;
+    }
+    const stack = [i];
+    visited[i] = true;
+    const cluster: number[] = [];
+    while (stack.length > 0) {
+      const v = stack.pop()!;
+      cluster.push(v);
+      for (const w of adj[v]) {
+        if (!visited[w]) {
+          visited[w] = true;
+          stack.push(w);
+        }
+      }
+    }
+
+    const clusterClipped = cluster.map((idx) => clippedList[idx]);
+    clusterClipped.sort((a, b) => {
+      const ds = a.clipped.start.getTime() - b.clipped.start.getTime();
+      if (ds !== 0) {
+        return ds;
+      }
+      return b.clipped.end.getTime() - a.clipped.end.getTime();
+    });
+
+    const columnEnds: number[] = [];
+    const columnById: { id: string; column: number }[] = [];
+    for (const { event, clipped } of clusterClipped) {
+      const startMs = clipped.start.getTime();
+      let column = -1;
+      for (let c = 0; c < columnEnds.length; c++) {
+        if (columnEnds[c] <= startMs) {
+          column = c;
+          columnEnds[c] = clipped.end.getTime();
+          break;
+        }
+      }
+      if (column < 0) {
+        column = columnEnds.length;
+        columnEnds.push(clipped.end.getTime());
+      }
+      columnById.push({ id: event.id, column });
+    }
+    const columnCount = columnEnds.length;
+    for (const { id, column } of columnById) {
+      result.set(id, { column, columnCount });
+    }
+  }
+
+  return result;
 }
 
 function useModalBodyLock(active: boolean) {
@@ -210,62 +323,285 @@ function WeekPickerModal({
   );
 }
 
-function WeekTimeList({
+function CalendarModalFrame({
+  children,
+  onClose,
+  titleId,
+  wide,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  titleId: string;
+  wide?: boolean;
+}) {
+  useModalBodyLock(true);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-3 md:p-4">
+      <button type="button" className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" aria-label="閉じる" onClick={onClose} />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[100%] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] ${
+          wide ? "max-w-[min(100%,48rem)] md:max-w-[min(100%,56rem)] lg:max-w-[min(100%,64rem)]" : "max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)] md:max-w-[min(100%,32rem)] lg:max-w-[min(100%,36rem)]"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function EventDetailModal({
+  event,
+  onClose,
+  calendarDisplayNames,
+}: {
+  event: NormalizedEvent | null;
+  onClose: () => void;
+  calendarDisplayNames: CalendarDisplayNameMap;
+}) {
+  const titleId = "calendar-event-detail-title";
+  if (!event) {
+    return null;
+  }
+
+  const calendarLabel = event.calendarId ? calendarDisplayNames[event.calendarId] || event.calendarId : null;
+  const hasDescription = Boolean(event.description?.trim());
+  const hasLocation = Boolean(event.location?.trim());
+  const hasStatus = Boolean(event.status?.trim());
+
+  return (
+    <CalendarModalFrame onClose={onClose} titleId={titleId} wide>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <header className="relative shrink-0 border-b border-[var(--card-border)] px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5 md:px-8 md:pb-5 md:pt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-full p-2 text-[var(--text-body)] hover:bg-[var(--primary-light)] sm:right-4 sm:top-4"
+            aria-label="閉じる"
+          >
+            <span className="text-xl leading-none" aria-hidden>
+              ×
+            </span>
+          </button>
+          <h2 id={titleId} className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl">
+            {event.summary || "（タイトルなし）"}
+          </h2>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+          <dl className="space-y-4 text-sm sm:text-[15px]">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">日時</dt>
+              <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{formatEventScheduleText(event)}</dd>
+            </div>
+            {calendarLabel ? (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
+                <dd className="mt-1.5 break-all text-[var(--text-heading)]">{calendarLabel}</dd>
+              </div>
+            ) : null}
+            {hasLocation ? (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">場所</dt>
+                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.location}</dd>
+              </div>
+            ) : null}
+            {hasDescription ? (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
+                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.description}</dd>
+              </div>
+            ) : null}
+            {hasStatus ? (
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">ステータス</dt>
+                <dd className="mt-1.5 text-[var(--text-heading)]">{event.status}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </div>
+        <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--card-border)] px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5">
+          {event.htmlLink ? (
+            <a
+              href={event.htmlLink}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-[var(--card-border)] bg-white px-4 py-2.5 text-sm font-medium text-[var(--text-heading)] hover:bg-[var(--primary-light)] sm:min-h-0 sm:px-5"
+            >
+              Google Calendar で開く
+            </a>
+          ) : null}
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--primary-color)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-95 sm:min-h-0"
+          >
+            閉じる
+          </button>
+        </footer>
+      </div>
+    </CalendarModalFrame>
+  );
+}
+
+function WeekCalendarGrid({
   range,
   events,
+  calendarColors,
+  onEventClick,
 }: {
   range: { start: Date; end: Date };
   events: NormalizedEvent[];
+  calendarColors: CalendarColorMap;
+  onEventClick: (event: NormalizedEvent) => void;
 }) {
   const days = enumerateDays(range.start, range.end);
+  const allDayEvents = events.filter((event) => event.isAllDay);
+  const timedEvents = events.filter((event) => !event.isAllDay);
+  const gridCols = `72px repeat(${days.length}, minmax(0, 1fr))`;
 
   return (
-    <div className="space-y-4">
-      {days.map((day) => {
-        const dayTimed: { start: Date; end: Date }[] = [];
-        const dayAllDayCount = events.filter((e) => e.isAllDay && intersectsDay(e, day)).length;
+    <div className="-mx-3 overflow-x-auto overflow-y-visible px-3 sm:-mx-5 sm:px-5">
+      <div className="min-w-[900px] space-y-3 sm:space-y-4">
+        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+          <div className="min-h-[3rem] rounded-2xl border border-[var(--card-border)] bg-white/85 sm:min-h-0 sm:border-0 sm:bg-transparent" />
+          {days.map((day) => (
+            <div
+              key={day.toISOString()}
+              className="rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center sm:rounded-3xl sm:px-3 sm:py-2.5"
+            >
+              <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--text-body)] sm:text-xs sm:tracking-[0.2em]">
+                {new Intl.DateTimeFormat("ja-JP", { weekday: "short" }).format(day)}
+              </p>
+              <p className="mt-0.5 text-xs font-semibold leading-tight text-[var(--text-heading)] sm:text-sm">
+                {formatMonthDay(day)}
+              </p>
+            </div>
+          ))}
+        </div>
 
-        for (const event of events) {
-          if (event.isAllDay) {
-            continue;
-          }
-          if (!intersectsDay(event, day)) {
-            continue;
-          }
-          dayTimed.push(clipEventToDay(event, day));
-        }
+        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+          <div className="flex min-h-14 items-start rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 sm:min-h-0 sm:items-center sm:px-1">
+            <span className="text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--text-body)] sm:text-xs">
+              終日
+            </span>
+          </div>
+          {days.map((day) => (
+            <div
+              key={day.toISOString()}
+              className="min-h-14 rounded-2xl border border-[var(--card-border)] bg-white/85 p-2 sm:min-h-14 sm:rounded-3xl"
+            >
+              <div className="space-y-1.5">
+                {allDayEvents
+                  .filter((event) => intersectsDay(event, day))
+                  .map((event) => (
+                    <button
+                      key={event.id}
+                      type="button"
+                      onClick={() => onEventClick(event)}
+                      className="block w-full truncate rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold sm:text-xs"
+                      style={getCalendarColorStyle(calendarColors[event.calendarId || ""])}
+                    >
+                      {event.summary || "（タイトルなし）"}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-        dayTimed.sort((a, b) => a.start.getTime() - b.start.getTime());
-
-        const hasAny = dayAllDayCount > 0 || dayTimed.length > 0;
-
-        return (
-          <section
-            key={day.toISOString()}
-            className="rounded-2xl border border-[var(--card-border)] bg-white/85 p-4 sm:rounded-3xl sm:p-5"
+        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+          <div
+            className="relative rounded-2xl border border-[var(--card-border)] bg-white/85 sm:rounded-none sm:border-0 sm:bg-transparent"
+            style={{ height: DAY_GRID_HEIGHT }}
           >
-            <h3 className="border-b border-[var(--card-border)] pb-2 text-sm font-semibold text-[var(--text-heading)] sm:text-base">
-              {formatMonthDay(day)}
-            </h3>
-            {!hasAny ? (
-              <p className="mt-3 text-sm text-[var(--text-body)]">予定はありません</p>
-            ) : (
-              <ul className="mt-3 list-none space-y-2 text-sm text-[var(--text-heading)]">
-                {Array.from({ length: dayAllDayCount }, (_, i) => (
-                  <li key={`allday-${i}`} className="rounded-lg bg-[var(--primary-light)]/40 px-3 py-2 font-medium">
-                    終日
-                  </li>
+            {HOURS.map((hour) => (
+              <div
+                key={hour}
+                className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)] text-[10px] text-[var(--text-body)] first:border-t-0 sm:text-xs sm:first:border-t"
+                style={{ top: hour * HOUR_HEIGHT }}
+              >
+                <span className="-translate-y-1/2 rounded bg-gray-100 px-1">{`${hour.toString().padStart(2, "0")}:00`}</span>
+              </div>
+            ))}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
+            <div className="pointer-events-none absolute bottom-0 left-0 z-[1] flex -translate-y-1/2 items-center">
+              <span className="rounded bg-gray-100 px-1 text-[10px] text-[var(--text-body)] shadow-sm sm:text-xs">24:00</span>
+            </div>
+          </div>
+          {days.map((day) => {
+            const dayLayout = layoutTimedEventsForDay(day, timedEvents);
+            return (
+              <div
+                key={day.toISOString()}
+                className="relative rounded-3xl border border-[var(--card-border)] bg-white/85"
+                style={{ height: DAY_GRID_HEIGHT }}
+              >
+                {HOURS.map((hour) => (
+                  <div
+                    key={hour}
+                    className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)]"
+                    style={{ top: hour * HOUR_HEIGHT }}
+                  />
                 ))}
-                {dayTimed.map((slot, i) => (
-                  <li key={`${slot.start.getTime()}-${slot.end.getTime()}-${i}`} className="rounded-lg border border-[var(--card-border)] px-3 py-2">
-                    {formatTime(slot.start.toISOString())} – {formatTime(slot.end.toISOString())}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        );
-      })}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
+                {timedEvents
+                  .filter((event) => intersectsDay(event, day))
+                  .map((event) => {
+                    const clipped = clipEventToDay(event, day);
+                    const top = (clipped.start.getHours() + clipped.start.getMinutes() / 60) * HOUR_HEIGHT;
+                    const rawHeight =
+                      ((clipped.end.getTime() - clipped.start.getTime()) / (1000 * 60 * 60)) * HOUR_HEIGHT;
+                    /** 30分=28px でも文字が収まるよう最小は低め。極端に短い枠だけ少し確保 */
+                    const height = Math.max(22, rawHeight);
+                    const { column, columnCount } = dayLayout.get(event.id) ?? { column: 0, columnCount: 1 };
+                    const gapPx = columnCount > 1 ? 2 : 0;
+                    const leftStyle =
+                      columnCount === 1
+                        ? "0.5rem"
+                        : `calc(0.5rem + ${column} * (((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount}) + ${gapPx}px))`;
+                    const widthStyle =
+                      columnCount === 1
+                        ? "calc(100% - 1rem)"
+                        : `calc((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount})`;
+                    return (
+                      <button
+                        key={`${event.id}-${day.toISOString()}`}
+                        type="button"
+                        onClick={() => onEventClick(event)}
+                        className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
+                        style={{
+                          top,
+                          height,
+                          left: leftStyle,
+                          width: widthStyle,
+                          right: "auto",
+                          ...getCalendarColorStyle(calendarColors[event.calendarId || ""]),
+                        }}
+                        aria-label={event.summary || "予定"}
+                      >
+                        <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
+                          {event.summary || "（タイトルなし）"}
+                        </span>
+                      </button>
+                    );
+                  })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
@@ -278,6 +614,7 @@ function CalendarAdminContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
+  const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -357,8 +694,8 @@ function CalendarAdminContent() {
                 <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">Google Calendar</p>
                 <h1 className="mb-3 border-none pl-0">予定管理</h1>
                 <p className="max-w-3xl text-sm text-[var(--text-body)]">
-                  週単位で予定の時間枠だけを確認できます。カレンダーから週を選ぶと過去・未来の週も表示できます。予定の詳細表示は Google
-                  カレンダーの共有設定に従います。
+                  週単位の時間軸カレンダー（0:00〜24:00）で、予定のある時間帯をカレンダー色の枠で示します。各枠にはタイトルを1行だけ表示し、押すと詳細モーダルが開きます。参加を辞退した予定は一覧に含めません。週は下のボタンやカレンダーから選べます。内容の見え方は
+                  Google カレンダーの共有設定に従います。
                 </p>
               </div>
               <Link
@@ -452,7 +789,12 @@ function CalendarAdminContent() {
             ) : error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
             ) : (
-              <WeekTimeList range={range} events={events} />
+              <WeekCalendarGrid
+                range={range}
+                events={events}
+                calendarColors={calendarColors}
+                onEventClick={setDetailEvent}
+              />
             )}
           </div>
         </section>
@@ -463,6 +805,11 @@ function CalendarAdminContent() {
         anchor={anchor}
         onClose={() => setWeekPickerOpen(false)}
         onPickDay={(day) => setAnchor(day)}
+      />
+      <EventDetailModal
+        event={detailEvent}
+        onClose={() => setDetailEvent(null)}
+        calendarDisplayNames={calendarDisplayNames}
       />
     </div>
   );

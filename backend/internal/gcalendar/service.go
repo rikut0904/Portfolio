@@ -222,6 +222,9 @@ func (s *Service) fetchCalendarEvents(ctx context.Context, calendarID string, st
 	}
 	events := make([]Event, 0, len(resp.Items))
 	for _, item := range resp.Items {
+		if eventDeclinedBySelf(item) {
+			continue
+		}
 		startText, endText, isAllDay := parseEventRange(item)
 		events = append(events, Event{
 			ID:          item.Id,
@@ -361,6 +364,19 @@ func freeWithinRange(dayStart, dayEnd time.Time, busy []timeRange) []timeRange {
 		slots = append(slots, timeRange{start: cursor, end: dayEnd})
 	}
 	return slots
+}
+
+// eventDeclinedBySelf は、自分の参加回答が「辞退」の予定なら true（一覧に出さない）。
+func eventDeclinedBySelf(item *calendar.Event) bool {
+	if item == nil || len(item.Attendees) == 0 {
+		return false
+	}
+	for _, a := range item.Attendees {
+		if a.Self && strings.EqualFold(a.ResponseStatus, "declined") {
+			return true
+		}
+	}
+	return false
 }
 
 func parseEventRange(item *calendar.Event) (string, string, bool) {
