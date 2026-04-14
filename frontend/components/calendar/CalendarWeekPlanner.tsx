@@ -19,6 +19,12 @@ import {
   startOfDay,
   toApiDateTime,
 } from "../../lib/calendar";
+import {
+  getWeekDateHeaderVariant,
+  weekDateHeaderContainerClass,
+  weekDateHeaderDateClass,
+  weekDateHeaderWeekdayClass,
+} from "../../lib/japaneseDayHeader";
 
 export type CalendarWeekPlannerVariant = "admin" | "public";
 
@@ -674,19 +680,17 @@ function WeekCalendarGrid({
       <div className="min-w-[900px] space-y-3 sm:space-y-4">
         <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
           <div className="min-h-[3rem] rounded-2xl border border-[var(--card-border)] bg-white/85 sm:min-h-0 sm:border-0 sm:bg-transparent" />
-          {days.map((day) => (
-            <div
-              key={day.toISOString()}
-              className="rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center sm:rounded-3xl sm:px-3 sm:py-2.5"
-            >
-              <p className="text-[10px] uppercase tracking-[0.15em] text-[var(--text-body)] sm:text-xs sm:tracking-[0.2em]">
-                {new Intl.DateTimeFormat("ja-JP", { weekday: "short" }).format(day)}
-              </p>
-              <p className="mt-0.5 text-xs font-semibold leading-tight text-[var(--text-heading)] sm:text-sm">
-                {formatMonthDay(day)}
-              </p>
-            </div>
-          ))}
+          {days.map((day) => {
+            const headerVar = getWeekDateHeaderVariant(day);
+            return (
+              <div key={day.toISOString()} className={weekDateHeaderContainerClass(headerVar)}>
+                <p className={weekDateHeaderWeekdayClass(headerVar)}>
+                  {new Intl.DateTimeFormat("ja-JP", { weekday: "short" }).format(day)}
+                </p>
+                <p className={weekDateHeaderDateClass(headerVar)}>{formatMonthDay(day)}</p>
+              </div>
+            );
+          })}
         </div>
 
         <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
