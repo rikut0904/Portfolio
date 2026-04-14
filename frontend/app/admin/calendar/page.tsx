@@ -438,7 +438,6 @@ function EventDetailModal({
   const descriptionText = formatEventDescriptionText(event.description || "");
   const hasDescription = Boolean(descriptionText);
   const hasLocation = Boolean(event.location?.trim());
-  const hasStatus = Boolean(event.status?.trim());
 
   return (
     <CalendarModalFrame onClose={onClose} titleId={titleId} wide>
@@ -480,12 +479,6 @@ function EventDetailModal({
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
                 <dd className="mt-1.5 break-words text-black">{renderLinkedText(descriptionText)}</dd>
-              </div>
-            ) : null}
-            {hasStatus ? (
-              <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">ステータス</dt>
-                <dd className="mt-1.5 text-black">{event.status}</dd>
               </div>
             ) : null}
           </dl>
@@ -670,7 +663,13 @@ function WeekCalendarGrid({
                 <button
                   key={day.toISOString()}
                   type="button"
-                  onClick={() => onAllDayEventsClick(day, dayEvents)}
+                  onClick={() => {
+                    if (dayEvents.length === 1) {
+                      onEventClick(firstEvent);
+                      return;
+                    }
+                    onAllDayEventsClick(day, dayEvents);
+                  }}
                   className="flex min-h-14 w-full flex-col items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center transition hover:bg-[var(--primary-light)]/35 sm:min-h-14 sm:rounded-3xl"
                 >
                   {dayEvents.length === 1 ? (
