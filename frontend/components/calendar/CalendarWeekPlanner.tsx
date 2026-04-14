@@ -23,11 +23,35 @@ import {
 export type CalendarWeekPlannerVariant = "admin" | "public";
 
 const WEEK_VIEW = "week" as const;
-/** 1日の表示範囲 00:00〜24:00（24時間分の高さ） */
-const DAY_HOURS = 24;
-const HOURS = Array.from({ length: DAY_HOURS }, (_, index) => index);
+
+/** 週グリッドで最初に表示する時刻（0〜23）。例: 7 なら 7:00 が一番上 */
+const GRID_DISPLAY_START_HOUR = 7;
+/** 表示の終端（通常 24 = 24:00） */
+const GRID_DISPLAY_END_HOUR = 24;
+
+const VISIBLE_HOURS = GRID_DISPLAY_END_HOUR - GRID_DISPLAY_START_HOUR;
+const HOUR_LABELS = Array.from({ length: VISIBLE_HOURS }, (_, i) => GRID_DISPLAY_START_HOUR + i);
 const HOUR_HEIGHT = 56;
-const DAY_GRID_HEIGHT = DAY_HOURS * HOUR_HEIGHT;
+const DAY_GRID_HEIGHT = VISIBLE_HOURS * HOUR_HEIGHT;
+
+function offsetHours(date: Date) {
+  return date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+}
+
+/** 1日列内の予定ブロックを、表示中の時間帯に収まる部分だけ描画用に変換する。範囲外なら null */
+function timedBlockPositionInGrid(clipped: { start: Date; end: Date }) {
+  const startH = offsetHours(clipped.start);
+  const endH = offsetHours(clipped.end);
+  const v0 = Math.max(startH, GRID_DISPLAY_START_HOUR);
+  const v1 = Math.min(endH, GRID_DISPLAY_END_HOUR);
+  if (v1 <= v0) {
+    return null;
+  }
+  const top = (v0 - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT;
+  const rawH = (v1 - v0) * HOUR_HEIGHT;
+  const height = Math.max(22, rawH);
+  return { top, height };
+}
 
 type NormalizedEvent = CalendarEvent & {
   startDate: Date;
@@ -746,18 +770,20 @@ function WeekCalendarGrid({
             className="relative rounded-2xl border border-[var(--card-border)] bg-white/85 sm:rounded-none sm:border-0 sm:bg-transparent"
             style={{ height: DAY_GRID_HEIGHT }}
           >
-            {HOURS.map((hour) => (
+            {HOUR_LABELS.map((hour) => (
               <div
                 key={hour}
                 className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)] text-[10px] text-[var(--text-body)] first:border-t-0 sm:text-xs sm:first:border-t"
-                style={{ top: hour * HOUR_HEIGHT }}
+                style={{ top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT }}
               >
                 <span className="-translate-y-1/2 rounded bg-gray-100 px-1">{`${hour.toString().padStart(2, "0")}:00`}</span>
               </div>
             ))}
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
             <div className="pointer-events-none absolute bottom-0 left-0 z-[1] flex -translate-y-1/2 items-center">
-              <span className="rounded bg-gray-100 px-1 text-[10px] text-[var(--text-body)] shadow-sm sm:text-xs">24:00</span>
+              <span className="rounded bg-gray-100 px-1 text-[10px] text-[var(--text-body)] shadow-sm sm:text-xs">
+                {`${GRID_DISPLAY_END_HOUR.toString().padStart(2, "0")}:00`}
+              </span>
             </div>
           </div>
           {days.map((day) => {
@@ -768,11 +794,11 @@ function WeekCalendarGrid({
                 className="relative rounded-3xl border border-[var(--card-border)] bg-white/85"
                 style={{ height: DAY_GRID_HEIGHT }}
               >
-                {HOURS.map((hour) => (
+                {HOUR_LABELS.map((hour) => (
                   <div
                     key={hour}
                     className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)]"
-                    style={{ top: hour * HOUR_HEIGHT }}
+                    style={{ top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT }}
                   />
                 ))}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
@@ -780,11 +806,11 @@ function WeekCalendarGrid({
                   .filter((event) => intersectsDay(event, day))
                   .map((event) => {
                     const clipped = clipEventToDay(event, day);
-                    const top = (clipped.start.getHours() + clipped.start.getMinutes() / 60) * HOUR_HEIGHT;
-                    const rawHeight =
-                      ((clipped.end.getTime() - clipped.start.getTime()) / (1000 * 60 * 60)) * HOUR_HEIGHT;
-                    /** 30分=28px でも文字が収まるよう最小は低め。極端に短い枠だけ少し確保 */
-                    const height = Math.max(22, rawHeight);
+                    const gridPos = timedBlockPositionInGrid(clipped);
+                    if (!gridPos) {
+                      return null;
+                    }
+                    const { top, height } = gridPos;
                     const { column, columnCount } = dayLayout.get(event.id) ?? { column: 0, columnCount: 1 };
                     const gapPx = columnCount > 1 ? 2 : 0;
                     const leftStyle =
