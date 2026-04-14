@@ -97,6 +97,34 @@ function formatEventDescriptionText(value: string): string {
     .trim();
 }
 
+function renderLinkedText(value: string) {
+  const lines = value.split("\n");
+  return lines.map((line, lineIndex) => {
+    const parts = line.split(/(https?:\/\/[^\s]+)/g);
+    return (
+      <span key={`line-${lineIndex}`}>
+        {parts.map((part, partIndex) => {
+          if (/^https?:\/\/[^\s]+$/.test(part)) {
+            return (
+              <a
+                key={`part-${lineIndex}-${partIndex}`}
+                href={part}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[var(--primary-color)] underline decoration-[var(--primary-color)] underline-offset-2 hover:opacity-80"
+              >
+                {part}
+              </a>
+            );
+          }
+          return <span key={`part-${lineIndex}-${partIndex}`}>{part}</span>;
+        })}
+        {lineIndex < lines.length - 1 ? <br /> : null}
+      </span>
+    );
+  });
+}
+
 function intersectsDay(event: NormalizedEvent, day: Date) {
   const dayStart = startOfDay(day);
   const dayEnd = new Date(dayStart);
@@ -430,34 +458,34 @@ function EventDetailModal({
             {event.summary || "（タイトルなし）"}
           </h2>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
           <dl className="space-y-4 text-sm sm:text-[15px]">
             <div>
               <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">日時</dt>
-              <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{formatEventScheduleText(event)}</dd>
+              <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">{formatEventScheduleText(event)}</dd>
             </div>
             {calendarLabel ? (
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
-                <dd className="mt-1.5 break-all text-[var(--text-heading)]">{calendarLabel}</dd>
+                <dd className="mt-1.5 break-all text-black">{calendarLabel}</dd>
               </div>
             ) : null}
             {hasLocation ? (
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">場所</dt>
-                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.location}</dd>
+                <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">{event.location}</dd>
               </div>
             ) : null}
             {hasDescription ? (
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
-                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{descriptionText}</dd>
+                <dd className="mt-1.5 break-words text-black">{renderLinkedText(descriptionText)}</dd>
               </div>
             ) : null}
             {hasStatus ? (
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">ステータス</dt>
-                <dd className="mt-1.5 text-[var(--text-heading)]">{event.status}</dd>
+                <dd className="mt-1.5 text-black">{event.status}</dd>
               </div>
             ) : null}
           </dl>
@@ -528,9 +556,9 @@ function AllDayEventsModal({
           <h2 id={titleId} className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl">
             {dayLabel} の終日予定
           </h2>
-          <p className="mt-2 text-sm text-[var(--text-body)]">{events.length}件の予定をまとめて表示しています。</p>
+          <p className="mt-2 text-sm text-black/80">{events.length}件の予定をまとめて表示しています。</p>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
           <div className="space-y-4">
             {events.map((event) => {
               const calendarLabel = event.calendarId ? calendarDisplayNames[event.calendarId] || event.calendarId : null;
@@ -557,7 +585,7 @@ function AllDayEventsModal({
                       {calendarLabel ? (
                         <div>
                           <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
-                          <dd className="mt-1.5 text-[var(--text-heading)]">{calendarLabel}</dd>
+                          <dd className="mt-1.5 text-black">{calendarLabel}</dd>
                         </div>
                       ) : null}
                     </dl>
