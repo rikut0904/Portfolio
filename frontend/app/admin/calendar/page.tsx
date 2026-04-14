@@ -908,7 +908,6 @@ function CalendarAdminContent() {
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <p className="text-sm font-semibold text-[var(--text-heading)]">{formatHeaderRange(WEEK_VIEW, anchor)}</p>
-              <span className="rounded-full bg-[var(--primary-light)] px-3 py-1 text-xs text-[var(--text-heading)]">{events.length} 件</span>
             </div>
           </div>
 
