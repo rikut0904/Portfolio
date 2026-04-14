@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
@@ -123,6 +123,11 @@ function renderLinkedText(value: string) {
       </span>
     );
   });
+}
+
+function getWeekCacheKey(anchor: Date) {
+  const range = getViewRange(WEEK_VIEW, anchor);
+  return `${range.start.toISOString()}__${range.end.toISOString()}`;
 }
 
 function intersectsDay(event: NormalizedEvent, day: Date) {
@@ -794,6 +799,8 @@ function CalendarAdminContent() {
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
   const [allDayModal, setAllDayModal] = useState<{ day: Date; events: NormalizedEvent[] } | null>(null);
+  const eventsCacheRef = useRef<Map<string, CalendarEventsResponse>>(new Map());
+  const eventsInFlightRef = useRef<Map<string, Promise<CalendarEventsResponse>>>(new Map());
 
   useEffect(() => {
     const fetchPreferences = async () => {
@@ -817,12 +824,21 @@ function CalendarAdminContent() {
   }, [user]);
 
   useEffect(() => {
-    const fetchEvents = async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const range = getViewRange(WEEK_VIEW, anchor);
-        const token = user ? await user.getIdToken() : "";
+    let active = true;
+
+    const fetchWeekEvents = async (targetAnchor: Date, token: string) => {
+      const range = getViewRange(WEEK_VIEW, targetAnchor);
+      const key = getWeekCacheKey(targetAnchor);
+      const cachedResponse = eventsCacheRef.current.get(key);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      const pending = eventsInFlightRef.current.get(key);
+      if (pending) {
+        return pending;
+      }
+
+      const request = (async () => {
         const query = new URLSearchParams({
           from: toApiDateTime(range.start),
           to: toApiDateTime(range.end),
@@ -836,15 +852,57 @@ function CalendarAdminContent() {
         if (!res.ok) {
           throw new Error(body && "error" in body ? body.error || "取得に失敗しました" : "取得に失敗しました");
         }
-        setData(body as CalendarEventsResponse);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "取得に失敗しました");
-        setData(null);
+        const response = body as CalendarEventsResponse;
+        eventsCacheRef.current.set(key, response);
+        return response;
+      })();
+
+      eventsInFlightRef.current.set(key, request);
+      try {
+        return await request;
       } finally {
-        setLoading(false);
+        eventsInFlightRef.current.delete(key);
       }
     };
+
+    const fetchEvents = async () => {
+      const cacheKey = getWeekCacheKey(anchor);
+      const cached = eventsCacheRef.current.get(cacheKey);
+      if (cached) {
+        setData(cached);
+        setLoading(false);
+        setError("");
+      } else {
+        setLoading(true);
+        setError("");
+      }
+      try {
+        const token = user ? await user.getIdToken() : "";
+        const currentWeek = await fetchWeekEvents(anchor, token);
+        if (active) {
+          setData(currentWeek);
+          setError("");
+        }
+
+        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, -1), token).catch(() => undefined);
+        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, 1), token).catch(() => undefined);
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "取得に失敗しました");
+          setData(null);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
     void fetchEvents();
+
+    return () => {
+      active = false;
+    };
   }, [anchor, user]);
 
   const events = useMemo(() => (data?.events || []).map(normalizeEvent), [data]);

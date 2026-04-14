@@ -5,11 +5,14 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"portfolio-backend/internal/auth"
 )
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
+
+const calendarPreferencesCacheTTL = 5 * time.Minute
 
 type calendarPreferencesResponse struct {
 	CalendarIds         []string          `json:"calendarIds"`
@@ -24,11 +27,18 @@ func (h *Handler) getCalendarPreferences(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	cacheKey := strings.Join(h.calendar.CalendarIDs(), ",")
+	if cached, ok := h.calendarCache.getPreferences(cacheKey); ok {
+		writeJSON(w, http.StatusOK, cached.response)
+		return
+	}
+
 	preferences, err := h.resolveCalendarPreferences(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
 		return
 	}
+	h.calendarCache.setPreferences(cacheKey, cachedCalendarPreferences{response: preferences}, calendarPreferencesCacheTTL)
 	writeJSON(w, http.StatusOK, preferences)
 }
 
@@ -134,6 +144,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		"colors": updatedColors,
 		"labels": updatedLabels,
 	})
+	h.calendarCache.clearPreferences()
 	writeJSON(w, http.StatusOK, preferences)
 }
 

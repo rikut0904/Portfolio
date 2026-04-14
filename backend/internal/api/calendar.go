@@ -3,6 +3,7 @@ package api
 import (
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"portfolio-backend/internal/auth"
@@ -13,6 +14,8 @@ type calendarResponse struct {
 	From     string `json:"from"`
 	To       string `json:"to"`
 }
+
+const calendarEventsCacheTTL = 45 * time.Second
 
 func (h *Handler) getCalendarAvailability(w http.ResponseWriter, r *http.Request) {
 	if h.calendar == nil || !h.calendar.Enabled() {
@@ -61,6 +64,24 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 		return
 	}
 	selectedCalendarIDs := parseCalendarIDFilter(r)
+
+	cacheKey := buildCalendarEventsCacheKey(start, end, selectedCalendarIDs)
+	if cached, ok := h.calendarCache.getEvents(cacheKey); ok {
+		filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
+		writeCacheHeader(w)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"timezone":             h.calendar.Timezone(),
+			"calendarIds":          filteredIDs,
+			"calendarColors":       filterCalendarMap(cached.response.CalendarColors, filteredIDs),
+			"calendarLabels":       filterCalendarMap(cached.response.CalendarLabels, filteredIDs),
+			"calendarDisplayNames": filterCalendarMap(cached.response.CalendarDisplayName, filteredIDs),
+			"from":                 cached.from,
+			"to":                   cached.to,
+			"events":               cached.events,
+		})
+		return
+	}
+
 	events, err := h.calendar.ListEvents(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
 		log.Printf("calendar events fetch error: %v", err)
@@ -73,6 +94,14 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 		return
 	}
 	filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
+	fromText := start.Format(time.RFC3339)
+	toText := end.Format(time.RFC3339)
+	h.calendarCache.setEvents(cacheKey, cachedCalendarEventsResponse{
+		response: preferences,
+		events:   events,
+		from:     fromText,
+		to:       toText,
+	}, calendarEventsCacheTTL)
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"timezone":             h.calendar.Timezone(),
@@ -80,10 +109,14 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 		"calendarColors":       filterCalendarMap(preferences.CalendarColors, filteredIDs),
 		"calendarLabels":       filterCalendarMap(preferences.CalendarLabels, filteredIDs),
 		"calendarDisplayNames": filterCalendarMap(preferences.CalendarDisplayName, filteredIDs),
-		"from":                 start.Format(time.RFC3339),
-		"to":                   end.Format(time.RFC3339),
+		"from":                 fromText,
+		"to":                   toText,
 		"events":               events,
 	})
+}
+
+func buildCalendarEventsCacheKey(start, end time.Time, selected []string) string {
+	return start.Format(time.RFC3339) + "|" + end.Format(time.RFC3339) + "|" + strings.Join(selected, ",")
 }
 
 func parseCalendarRange(r *http.Request, timezone string) (time.Time, time.Time, error) {

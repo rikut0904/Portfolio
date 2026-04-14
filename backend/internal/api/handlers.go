@@ -14,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"portfolio-backend/internal/auth"
@@ -41,6 +42,7 @@ type Handler struct {
 	githubRepo        string
 	githubBranch      string
 	calendar          *gcalendar.Service
+	calendarCache     *calendarAPICache
 }
 
 func NewHandler(
@@ -72,7 +74,91 @@ func NewHandler(
 		githubRepo:        strings.TrimSpace(githubRepo),
 		githubBranch:      strings.TrimSpace(githubBranch),
 		calendar:          calendarClient,
+		calendarCache:     newCalendarAPICache(),
 	}
+}
+
+type cachedCalendarEventsResponse struct {
+	response calendarPreferencesResponse
+	events   []gcalendar.Event
+	from     string
+	to       string
+}
+
+type cachedCalendarPreferences struct {
+	response calendarPreferencesResponse
+}
+
+type calendarCacheEntry[T any] struct {
+	value     T
+	expiresAt time.Time
+}
+
+type calendarAPICache struct {
+	mu           sync.RWMutex
+	events       map[string]calendarCacheEntry[cachedCalendarEventsResponse]
+	preferences  map[string]calendarCacheEntry[cachedCalendarPreferences]
+}
+
+func newCalendarAPICache() *calendarAPICache {
+	return &calendarAPICache{
+		events:      make(map[string]calendarCacheEntry[cachedCalendarEventsResponse]),
+		preferences: make(map[string]calendarCacheEntry[cachedCalendarPreferences]),
+	}
+}
+
+func (c *calendarAPICache) getEvents(key string) (cachedCalendarEventsResponse, bool) {
+	c.mu.RLock()
+	entry, ok := c.events[key]
+	c.mu.RUnlock()
+	if !ok || time.Now().After(entry.expiresAt) {
+		if ok {
+			c.mu.Lock()
+			delete(c.events, key)
+			c.mu.Unlock()
+		}
+		return cachedCalendarEventsResponse{}, false
+	}
+	return entry.value, true
+}
+
+func (c *calendarAPICache) setEvents(key string, value cachedCalendarEventsResponse, ttl time.Duration) {
+	c.mu.Lock()
+	c.events[key] = calendarCacheEntry[cachedCalendarEventsResponse]{
+		value:     value,
+		expiresAt: time.Now().Add(ttl),
+	}
+	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) getPreferences(key string) (cachedCalendarPreferences, bool) {
+	c.mu.RLock()
+	entry, ok := c.preferences[key]
+	c.mu.RUnlock()
+	if !ok || time.Now().After(entry.expiresAt) {
+		if ok {
+			c.mu.Lock()
+			delete(c.preferences, key)
+			c.mu.Unlock()
+		}
+		return cachedCalendarPreferences{}, false
+	}
+	return entry.value, true
+}
+
+func (c *calendarAPICache) setPreferences(key string, value cachedCalendarPreferences, ttl time.Duration) {
+	c.mu.Lock()
+	c.preferences[key] = calendarCacheEntry[cachedCalendarPreferences]{
+		value:     value,
+		expiresAt: time.Now().Add(ttl),
+	}
+	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) clearPreferences() {
+	c.mu.Lock()
+	clear(c.preferences)
+	c.mu.Unlock()
 }
 
 func (h *Handler) Register(r chi.Router) {
