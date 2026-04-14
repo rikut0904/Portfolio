@@ -52,17 +52,6 @@ type Event struct {
 	IsAllDay    bool   `json:"isAllDay"`
 }
 
-type BusySlot struct {
-	Start string `json:"start"`
-	End   string `json:"end"`
-}
-
-type AvailabilityDay struct {
-	Date      string     `json:"date"`
-	Weekday   string     `json:"weekday"`
-	FreeSlots []BusySlot `json:"freeSlots"`
-}
-
 func New(ctx context.Context, cfg Config) (*Service, error) {
 	calendarIDs := normalizeCalendarIDs(cfg.CalendarIDs)
 	if len(calendarIDs) == 0 || strings.TrimSpace(cfg.CredentialsJSON) == "" {
@@ -163,49 +152,6 @@ func (s *Service) ListEvents(ctx context.Context, start, end time.Time, selected
 	return events, nil
 }
 
-func (s *Service) GetAvailability(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) ([]AvailabilityDay, error) {
-	if !s.Enabled() {
-		return nil, errors.New("google calendar is not configured")
-	}
-	calendarIDs := s.filterCalendarIDs(selectedCalendarIDs)
-	if len(calendarIDs) == 0 {
-		return []AvailabilityDay{}, nil
-	}
-	loc, err := time.LoadLocation(s.Timezone())
-	if err != nil {
-		loc = time.FixedZone("calendar", 9*60*60)
-	}
-	var (
-		mu       sync.Mutex
-		wg       sync.WaitGroup
-		busy     = make([]timeRange, 0)
-		failures = make([]string, 0)
-	)
-	for _, calendarID := range calendarIDs {
-		wg.Add(1)
-		go func(calendarID string) {
-			defer wg.Done()
-			slots, err := s.fetchCalendarBusySlots(ctx, calendarID, start, end, loc)
-			mu.Lock()
-			defer mu.Unlock()
-			if err != nil {
-				log.Printf("google calendar freebusy warning: calendar=%q err=%v", calendarID, err)
-				failures = append(failures, fmt.Sprintf("%s: %v", calendarID, err))
-				return
-			}
-			busy = append(busy, slots...)
-		}(calendarID)
-	}
-	wg.Wait()
-	sort.Slice(busy, func(i, j int) bool {
-		return busy[i].start.Before(busy[j].start)
-	})
-	if len(busy) == 0 && len(failures) > 0 {
-		return nil, fmt.Errorf("all calendar availability fetches failed: %s", strings.Join(failures, "; "))
-	}
-	return s.collectFreeSlots(start.In(loc), end.In(loc), busy), nil
-}
-
 func (s *Service) fetchCalendarEvents(ctx context.Context, calendarID string, start, end time.Time) ([]Event, error) {
 	call := s.api.Events.List(calendarID).
 		Context(ctx).
@@ -242,36 +188,6 @@ func (s *Service) fetchCalendarEvents(ctx context.Context, calendarID string, st
 	return events, nil
 }
 
-func (s *Service) fetchCalendarBusySlots(ctx context.Context, calendarID string, start, end time.Time, loc *time.Location) ([]timeRange, error) {
-	query := &calendar.FreeBusyRequest{
-		TimeMin:  start.Format(time.RFC3339),
-		TimeMax:  end.Format(time.RFC3339),
-		TimeZone: s.Timezone(),
-		Items:    []*calendar.FreeBusyRequestItem{{Id: calendarID}},
-	}
-	resp, err := s.api.Freebusy.Query(query).Context(ctx).Do()
-	if err != nil {
-		return nil, err
-	}
-	cal, ok := resp.Calendars[calendarID]
-	if !ok {
-		return nil, nil
-	}
-	if len(cal.Errors) > 0 {
-		return nil, fmt.Errorf("%v", cal.Errors)
-	}
-	busy := make([]timeRange, 0, len(cal.Busy))
-	for _, slot := range cal.Busy {
-		from, err1 := time.Parse(time.RFC3339, slot.Start)
-		to, err2 := time.Parse(time.RFC3339, slot.End)
-		if err1 != nil || err2 != nil || !to.After(from) {
-			continue
-		}
-		busy = append(busy, timeRange{start: from.In(loc), end: to.In(loc)})
-	}
-	return busy, nil
-}
-
 func (s *Service) filterCalendarIDs(selected []string) []string {
 	if len(selected) == 0 {
 		return s.CalendarIDs()
@@ -299,73 +215,6 @@ func (s *Service) filterCalendarIDs(selected []string) []string {
 	return filtered
 }
 
-type timeRange struct {
-	start time.Time
-	end   time.Time
-}
-
-func (s *Service) collectFreeSlots(start, end time.Time, busy []timeRange) []AvailabilityDay {
-	days := make([]AvailabilityDay, 0)
-	for cursor := truncateDay(start); cursor.Before(end); cursor = cursor.AddDate(0, 0, 1) {
-		dayStart := time.Date(cursor.Year(), cursor.Month(), cursor.Day(), 0, 0, 0, 0, cursor.Location())
-		dayEnd := dayStart.Add(24 * time.Hour)
-		if dayEnd.Before(start) || !dayStart.Before(end) {
-			continue
-		}
-		if dayStart.Before(start) {
-			dayStart = start
-		}
-		if dayEnd.After(end) {
-			dayEnd = end
-		}
-		if !dayEnd.After(dayStart) {
-			continue
-		}
-		slots := freeWithinRange(dayStart, dayEnd, busy)
-		formatted := make([]BusySlot, 0, len(slots))
-		for _, slot := range slots {
-			if !slot.end.After(slot.start) {
-				continue
-			}
-			formatted = append(formatted, BusySlot{
-				Start: slot.start.Format(time.RFC3339),
-				End:   slot.end.Format(time.RFC3339),
-			})
-		}
-		days = append(days, AvailabilityDay{
-			Date:      cursor.Format("2006-01-02"),
-			Weekday:   cursor.Weekday().String(),
-			FreeSlots: formatted,
-		})
-	}
-	return days
-}
-
-func freeWithinRange(dayStart, dayEnd time.Time, busy []timeRange) []timeRange {
-	slots := make([]timeRange, 0)
-	cursor := dayStart
-	for _, block := range busy {
-		if !block.end.After(dayStart) || !block.start.Before(dayEnd) {
-			continue
-		}
-		start := maxTime(block.start, dayStart)
-		end := minTime(block.end, dayEnd)
-		if start.After(cursor) {
-			slots = append(slots, timeRange{start: cursor, end: start})
-		}
-		if end.After(cursor) {
-			cursor = end
-		}
-		if !cursor.Before(dayEnd) {
-			break
-		}
-	}
-	if cursor.Before(dayEnd) {
-		slots = append(slots, timeRange{start: cursor, end: dayEnd})
-	}
-	return slots
-}
-
 // eventDeclinedBySelf は、自分の参加回答が「辞退」の予定なら true（一覧に出さない）。
 func eventDeclinedBySelf(item *calendar.Event) bool {
 	if item == nil || len(item.Attendees) == 0 {
@@ -390,24 +239,6 @@ func parseEventRange(item *calendar.Event) (string, string, bool) {
 		return item.Start.DateTime, item.End.DateTime, false
 	}
 	return "", "", false
-}
-
-func truncateDay(t time.Time) time.Time {
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-}
-
-func maxTime(a, b time.Time) time.Time {
-	if a.After(b) {
-		return a
-	}
-	return b
-}
-
-func minTime(a, b time.Time) time.Time {
-	if a.Before(b) {
-		return a
-	}
-	return b
 }
 
 func normalizeCalendarIDs(values []string) []string {

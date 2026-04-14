@@ -28,7 +28,7 @@ function CalendarSettingsContent() {
       setError("");
       try {
         const token = user ? await user.getIdToken() : "";
-        const res = await fetch("/api/calendar/preferences", {
+        const res = await fetch("/api/admin/calendar/preferences", {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const body = (await res.json().catch(() => ({}))) as
@@ -77,7 +77,7 @@ function CalendarSettingsContent() {
         payloadColors[calendarId] = getCalendarColor(colors[calendarId]);
         payloadLabels[calendarId] = (labels[calendarId] || "").trim();
       }
-      const res = await fetch("/api/calendar/preferences", {
+      const res = await fetch("/api/admin/calendar/preferences", {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,

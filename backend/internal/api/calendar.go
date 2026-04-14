@@ -1,23 +1,23 @@
 package api
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/gcalendar"
 )
 
-type calendarResponse struct {
-	Timezone string `json:"timezone"`
-	From     string `json:"from"`
-	To       string `json:"to"`
-}
+const publicCalendarEventLabel = "予定あり"
 
 const calendarEventsCacheTTL = 45 * time.Second
 
-func (h *Handler) getCalendarAvailability(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) getCalendarPublicEvents(w http.ResponseWriter, r *http.Request) {
 	if h.calendar == nil || !h.calendar.Enabled() {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
 		return
@@ -28,28 +28,28 @@ func (h *Handler) getCalendarAvailability(w http.ResponseWriter, r *http.Request
 		return
 	}
 	selectedCalendarIDs := parseCalendarIDFilter(r)
-	days, err := h.calendar.GetAvailability(r.Context(), start, end, selectedCalendarIDs)
+
+	events, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
-		log.Printf("calendar availability fetch error: %v", err)
-		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar availability"})
+		log.Printf("calendar public events fetch error: %v", err)
+		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
-	preferences, err := h.resolveCalendarPreferences(r.Context())
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
-		return
-	}
+	events = filterEventsForPublicCalendar(events)
+	publicEvents := sanitizeEventsForPublicResponse(events)
 	filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
+	fromText := start.Format(time.RFC3339)
+	toText := end.Format(time.RFC3339)
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"timezone":             h.calendar.Timezone(),
 		"calendarIds":          filteredIDs,
-		"calendarColors":       filterCalendarMap(preferences.CalendarColors, filteredIDs),
-		"calendarLabels":       filterCalendarMap(preferences.CalendarLabels, filteredIDs),
-		"calendarDisplayNames": filterCalendarMap(preferences.CalendarDisplayName, filteredIDs),
-		"from":                 start.Format(time.RFC3339),
-		"to":                   end.Format(time.RFC3339),
-		"days":                 days,
+		"calendarColors":       publicGrayCalendarColors(filteredIDs),
+		"calendarLabels":       emptyCalendarStringMap(filteredIDs),
+		"calendarDisplayNames": emptyCalendarStringMap(filteredIDs),
+		"from":                 fromText,
+		"to":                   toText,
+		"events":               publicEvents,
 	})
 }
 
@@ -82,7 +82,7 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 		return
 	}
 
-	events, err := h.calendar.ListEvents(r.Context(), start, end, selectedCalendarIDs)
+	events, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
 		log.Printf("calendar events fetch error: %v", err)
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
@@ -117,6 +117,29 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 
 func buildCalendarEventsCacheKey(start, end time.Time, selected []string) string {
 	return start.Format(time.RFC3339) + "|" + end.Format(time.RFC3339) + "|" + strings.Join(selected, ",")
+}
+
+func (h *Handler) listCalendarEventsWithCache(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) ([]gcalendar.Event, error) {
+	cacheKey := buildCalendarEventsCacheKey(start, end, selectedCalendarIDs)
+	if cached, ok := h.calendarCache.getEvents(cacheKey); ok {
+		return cached.events, nil
+	}
+
+	events, err := h.calendar.ListEvents(ctx, start, end, selectedCalendarIDs)
+	if err != nil {
+		return nil, err
+	}
+	preferences, err := h.resolveCalendarPreferences(ctx)
+	if err != nil {
+		return nil, err
+	}
+	h.calendarCache.setEvents(cacheKey, cachedCalendarEventsResponse{
+		response: preferences,
+		events:   events,
+		from:     start.Format(time.RFC3339),
+		to:       end.Format(time.RFC3339),
+	}, calendarEventsCacheTTL)
+	return events, nil
 }
 
 func parseCalendarRange(r *http.Request, timezone string) (time.Time, time.Time, error) {
@@ -196,6 +219,54 @@ func filterCalendarMap(values map[string]string, calendarIDs []string) map[strin
 		filtered[calendarID] = values[calendarID]
 	}
 	return filtered
+}
+
+// filterEventsForPublicCalendar は公開 API で返す・空き計算に使うイベントを絞り込む。
+// 今後、タグや公開フラグなどの条件をここに追加する。
+func filterEventsForPublicCalendar(events []gcalendar.Event) []gcalendar.Event {
+	return events
+}
+
+func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event {
+	out := make([]gcalendar.Event, 0, len(events))
+	for _, e := range events {
+		out = append(out, gcalendar.Event{
+			ID:          publicOpaqueEventID(e.CalendarID, e.ID),
+			CalendarID:  e.CalendarID,
+			Summary:     publicCalendarEventLabel,
+			Description: "",
+			Location:    "",
+			HTMLLink:    "",
+			Status:      "",
+			Start:       e.Start,
+			End:         e.End,
+			IsAllDay:    e.IsAllDay,
+		})
+	}
+	return out
+}
+
+func publicOpaqueEventID(calendarID, googleEventID string) string {
+	sum := sha256.Sum256([]byte("pub-event\x00" + calendarID + "\x00" + googleEventID))
+	return "p-" + hex.EncodeToString(sum[:12])
+}
+
+func emptyCalendarStringMap(calendarIDs []string) map[string]string {
+	out := make(map[string]string, len(calendarIDs))
+	for _, id := range calendarIDs {
+		out[id] = ""
+	}
+	return out
+}
+
+// publicGrayCalendarColors は公開 UI ではカレンダーごとの色を出さないため、一律のグレーにそろえる。
+func publicGrayCalendarColors(calendarIDs []string) map[string]string {
+	const gray = "#9CA3AF"
+	out := make(map[string]string, len(calendarIDs))
+	for _, id := range calendarIDs {
+		out[id] = gray
+	}
+	return out
 }
 
 type badRequestError struct{ message string }

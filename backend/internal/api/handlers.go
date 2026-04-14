@@ -166,10 +166,11 @@ func (h *Handler) Register(r chi.Router) {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/app-mode", h.getAppMode)
-		r.Get("/calendar/availability", h.getCalendarAvailability)
-		r.Get("/calendar/events", h.withAdmin(h.getCalendarEvents))
-		r.Get("/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
-		r.Patch("/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
+		r.Get("/calendar/events", h.getCalendarPublicEvents)
+
+		r.Get("/admin/calendar/events", h.withAdmin(h.getCalendarEvents))
+		r.Get("/admin/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
+		r.Patch("/admin/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
 		r.Post("/auth/login", h.login)
 		r.Post("/auth/refresh", h.refreshToken)
 		r.Get("/auth/me", h.withAdmin(h.me))

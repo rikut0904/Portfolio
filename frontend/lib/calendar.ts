@@ -18,17 +18,6 @@ export interface CalendarEvent {
   isAllDay: boolean;
 }
 
-export interface AvailabilitySlot {
-  start: string;
-  end: string;
-}
-
-export interface AvailabilityDay {
-  date: string;
-  weekday: string;
-  freeSlots: AvailabilitySlot[];
-}
-
 export interface CalendarEventsResponse {
   timezone: string;
   calendarIds?: string[];
@@ -38,17 +27,6 @@ export interface CalendarEventsResponse {
   from: string;
   to: string;
   events: CalendarEvent[];
-}
-
-export interface CalendarAvailabilityResponse {
-  timezone: string;
-  calendarIds?: string[];
-  calendarColors?: CalendarColorMap;
-  calendarLabels?: CalendarLabelMap;
-  calendarDisplayNames?: CalendarDisplayNameMap;
-  from: string;
-  to: string;
-  days: AvailabilityDay[];
 }
 
 export interface CalendarPreferencesResponse {

@@ -47,7 +47,7 @@ function DashboardContent() {
         const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
         const end = new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString();
         const token = user ? await user.getIdToken() : "";
-        const calendarRes = await fetch(`/api/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`, {
+        const calendarRes = await fetch(`/api/admin/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (calendarRes.ok) {
