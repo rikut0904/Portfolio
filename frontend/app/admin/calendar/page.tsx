@@ -494,9 +494,6 @@ function AllDayEventsModal({
           <div className="space-y-4">
             {events.map((event) => {
               const calendarLabel = event.calendarId ? calendarDisplayNames[event.calendarId] || event.calendarId : null;
-              const hasDescription = Boolean(event.description?.trim());
-              const hasLocation = Boolean(event.location?.trim());
-              const hasStatus = Boolean(event.status?.trim());
               return (
                 <article key={event.id} className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-white/92">
                   <div className="border-b border-[var(--card-border)] px-4 py-3 sm:px-5 sm:py-4">
@@ -505,7 +502,6 @@ function AllDayEventsModal({
                         <h3 className="text-sm font-semibold text-[var(--text-heading)] sm:text-base">
                           {event.summary || "（タイトルなし）"}
                         </h3>
-                        <p className="mt-1 text-xs text-[var(--text-body)]">{formatEventScheduleText(event)}</p>
                       </div>
                       <button
                         type="button"
@@ -518,34 +514,10 @@ function AllDayEventsModal({
                   </div>
                   <div className="px-4 py-4 sm:px-5 sm:py-5">
                     <dl className="space-y-4 text-sm">
-                      <div>
-                        <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">日時</dt>
-                        <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">
-                          {formatEventScheduleText(event)}
-                        </dd>
-                      </div>
                       {calendarLabel ? (
                         <div>
                           <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
                           <dd className="mt-1.5 text-[var(--text-heading)]">{calendarLabel}</dd>
-                        </div>
-                      ) : null}
-                      {hasLocation ? (
-                        <div>
-                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">場所</dt>
-                          <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.location}</dd>
-                        </div>
-                      ) : null}
-                      {hasDescription ? (
-                        <div>
-                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
-                          <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.description}</dd>
-                        </div>
-                      ) : null}
-                      {hasStatus ? (
-                        <div>
-                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">ステータス</dt>
-                          <dd className="mt-1.5 text-[var(--text-heading)]">{event.status}</dd>
                         </div>
                       ) : null}
                     </dl>
@@ -651,12 +623,7 @@ function WeekCalendarGrid({
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
                         他 {dayEvents.length - 1} 件の終日予定
                       </span>
-                      <span
-                        className="mt-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
-                        style={firstStyle}
-                      >
-                        終日予定
-                      </span>
+                      <span className="mt-1 h-1.5 w-10 rounded-full" style={{ backgroundColor: firstStyle.borderColor as string }} />
                     </>
                   )}
                 </button>
