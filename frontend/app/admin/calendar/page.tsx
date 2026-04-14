@@ -861,17 +861,27 @@ function CalendarAdminContent() {
 
         <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
           <div className="border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="flex flex-col gap-5">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">Google Calendar</p>
-                <h1 className="mb-3 border-none pl-0">予定管理</h1>
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h1 className="mb-0 border-none pl-0">予定管理</h1>
+                  <Link
+                    href="/admin/calendar/settings"
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--card-border)] bg-white text-[var(--text-body)] hover:bg-[var(--primary-light)]"
+                    aria-label="設定"
+                    title="設定"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 -960 960 960"
+                      className="h-5 w-5 fill-current"
+                    >
+                      <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 49-85-147 103-78q-2-14-2-29t2-29l-103-78 85-147 119 49q11-8 22.5-15t24.5-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-49 85 147-103 78q2 14 2 29t-2 29l103 78-85 147-119-49q-11 8-22.5 15T606-208L590-80H370Zm110-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
-              <Link
-                href="/admin/calendar/settings"
-                className="rounded-full border border-[var(--card-border)] bg-white px-4 py-2 text-sm font-medium text-[var(--text-body)] hover:bg-[var(--primary-light)]"
-              >
-                設定
-              </Link>
             </div>
           </div>
 
