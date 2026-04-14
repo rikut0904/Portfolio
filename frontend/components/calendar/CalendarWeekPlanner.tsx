@@ -1119,6 +1119,26 @@ function CalendarWeekPlannerContent({
     Map<string, Promise<CalendarEventsResponse>>
   >(new Map());
 
+  /** fetch の JSON を BOM 耐性・events 必ず配列に正規化 */
+  const normalizeCalendarFetchPayload = (
+    parsed: unknown,
+  ): CalendarEventsResponse => {
+    const o =
+      parsed && typeof parsed === "object"
+        ? (parsed as Partial<CalendarEventsResponse>)
+        : {};
+    return {
+      timezone: typeof o.timezone === "string" ? o.timezone : "Asia/Tokyo",
+      from: typeof o.from === "string" ? o.from : "",
+      to: typeof o.to === "string" ? o.to : "",
+      events: Array.isArray(o.events) ? o.events : [],
+      calendarIds: Array.isArray(o.calendarIds) ? o.calendarIds : undefined,
+      calendarColors: o.calendarColors,
+      calendarLabels: o.calendarLabels,
+      calendarDisplayNames: o.calendarDisplayNames,
+    };
+  };
+
   useEffect(() => {
     if (!slotBusyHint) {
       return;
@@ -1184,17 +1204,22 @@ function CalendarWeekPlannerContent({
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const raw = await res.text();
-        let body: CalendarEventsResponse | { error?: string } = {};
-        try {
-          body = raw
-            ? (JSON.parse(raw) as CalendarEventsResponse | { error?: string })
-            : {};
-        } catch {
-          body = {};
+        const trimmed = raw.replace(/^\uFEFF/, "").trim();
+        let parsed: unknown = null;
+        if (trimmed) {
+          try {
+            parsed = JSON.parse(trimmed);
+          } catch {
+            parsed = null;
+          }
         }
         if (!res.ok) {
+          const errPayload =
+            parsed && typeof parsed === "object" && parsed !== null
+              ? (parsed as { error?: string })
+              : {};
           const apiErr =
-            "error" in body && typeof body.error === "string" ? body.error : "";
+            typeof errPayload.error === "string" ? errPayload.error : "";
           if (apiErr) {
             throw new Error(apiErr);
           }
@@ -1203,14 +1228,19 @@ function CalendarWeekPlannerContent({
               "APIに接続できません。frontend の BACKEND_API_URL とバックエンドの起動を確認してください。",
             );
           }
-          const snippet = raw.replace(/\s+/g, " ").trim().slice(0, 120);
+          const snippet = trimmed.replace(/\s+/g, " ").slice(0, 120);
           throw new Error(
             snippet
               ? `取得に失敗しました（${res.status}）: ${snippet}`
               : `取得に失敗しました（HTTP ${res.status}）`,
           );
         }
-        const response = body as CalendarEventsResponse;
+        if (parsed === null || typeof parsed !== "object" || parsed === null) {
+          throw new Error(
+            "サーバーからの応答を解析できませんでした。しばらくしてから再度お試しください。",
+          );
+        }
+        const response = normalizeCalendarFetchPayload(parsed);
         eventsCacheRef.current.set(key, response);
         return response;
       })();
@@ -1268,10 +1298,13 @@ function CalendarWeekPlannerContent({
     };
   }, [anchor, user, variant]);
 
-  const events = useMemo(
-    () => (data?.events || []).map(normalizeEvent),
-    [data],
-  );
+  const events = useMemo(() => {
+    const list = data?.events;
+    if (!Array.isArray(list)) {
+      return [];
+    }
+    return list.map(normalizeEvent);
+  }, [data]);
   const range = useMemo(() => getViewRange(WEEK_VIEW, anchor), [anchor]);
   const calendarColors =
     preferences?.calendarColors || data?.calendarColors || {};
@@ -1285,9 +1318,8 @@ function CalendarWeekPlannerContent({
           {variant === "public" ? (
             <div>
               <h1 className="mb-0 border-none pl-0">スケジュール</h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--text-body)]">
-                MTG
-                や打ち合わせのご希望は、下の週表示で空いている時間帯をクリックしてお送りください。表示されている時間の範囲内から、長さと開始時刻を選べます。内容を確認のうえ、メールにてご連絡します。
+              <p className="mt-3 w-full min-w-0 text-sm leading-relaxed text-[var(--text-body)]">
+                MTGや打ち合わせのご希望は、下の週表示で空いている時間帯を選んでお送りください。
               </p>
             </div>
           ) : (
