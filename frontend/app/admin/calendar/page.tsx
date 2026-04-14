@@ -58,6 +58,45 @@ function formatEventScheduleText(event: NormalizedEvent): string {
   return `${fmtD.format(event.startDate)} ${fmtT.format(event.startDate)} 〜 ${fmtD.format(event.endDate)} ${fmtT.format(event.endDate)}`;
 }
 
+function formatEventDescriptionText(value: string): string {
+  const raw = value.trim();
+  if (!raw) {
+    return "";
+  }
+  if (!/[<&>]/.test(raw)) {
+    return raw;
+  }
+
+  if (typeof window !== "undefined" && typeof DOMParser !== "undefined") {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(raw, "text/html");
+    for (const node of Array.from(doc.querySelectorAll("br"))) {
+      node.replaceWith("\n");
+    }
+    for (const node of Array.from(doc.querySelectorAll("p, div, section, article, li, ul, ol, h1, h2, h3, h4, h5, h6"))) {
+      node.insertAdjacentText("beforebegin", "\n");
+      node.insertAdjacentText("afterend", "\n");
+    }
+    return (doc.body.textContent || "")
+      .replace(/\u00A0/g, " ")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  return raw
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|section|article|li|ul|ol|h1|h2|h3|h4|h5|h6)>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, "\"")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 function intersectsDay(event: NormalizedEvent, day: Date) {
   const dayStart = startOfDay(day);
   const dayEnd = new Date(dayStart);
@@ -368,7 +407,8 @@ function EventDetailModal({
   }
 
   const calendarLabel = event.calendarId ? calendarDisplayNames[event.calendarId] || event.calendarId : null;
-  const hasDescription = Boolean(event.description?.trim());
+  const descriptionText = formatEventDescriptionText(event.description || "");
+  const hasDescription = Boolean(descriptionText);
   const hasLocation = Boolean(event.location?.trim());
   const hasStatus = Boolean(event.status?.trim());
 
@@ -411,7 +451,7 @@ function EventDetailModal({
             {hasDescription ? (
               <div>
                 <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
-                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.description}</dd>
+                <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{descriptionText}</dd>
               </div>
             ) : null}
             {hasStatus ? (
@@ -621,7 +661,7 @@ function WeekCalendarGrid({
                         {firstEvent.summary || "（タイトルなし）"}
                       </span>
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
-                        他 {dayEvents.length - 1} 件の終日予定
+                        他 {dayEvents.length - 1} 件の予定
                       </span>
                       <span className="mt-1 h-1.5 w-10 rounded-full" style={{ backgroundColor: firstStyle.borderColor as string }} />
                     </>
