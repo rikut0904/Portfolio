@@ -20,20 +20,23 @@ import {
   toApiDateTime,
 } from "../../lib/calendar";
 import {
+  hasAnyFreeSlotInDisplayRange,
+} from "../../lib/calendarAvailability";
+import {
+  CALENDAR_GRID_DISPLAY_END_HOUR as GRID_DISPLAY_END_HOUR,
+  CALENDAR_GRID_DISPLAY_START_HOUR as GRID_DISPLAY_START_HOUR,
+} from "../../lib/calendarGridConfig";
+import {
   getWeekDateHeaderVariant,
   weekDateHeaderContainerClass,
   weekDateHeaderDateClass,
   weekDateHeaderWeekdayClass,
 } from "../../lib/japaneseDayHeader";
+import MeetingRequestModal from "./MeetingRequestModal";
 
 export type CalendarWeekPlannerVariant = "admin" | "public";
 
 const WEEK_VIEW = "week" as const;
-
-/** 週グリッドで最初に表示する時刻（0〜23）。例: 7 なら 7:00 が一番上 */
-const GRID_DISPLAY_START_HOUR = 7;
-/** 表示の終端（通常 24 = 24:00） */
-const GRID_DISPLAY_END_HOUR = 24;
 
 const VISIBLE_HOURS = GRID_DISPLAY_END_HOUR - GRID_DISPLAY_START_HOUR;
 const HOUR_LABELS = Array.from({ length: VISIBLE_HOURS }, (_, i) => GRID_DISPLAY_START_HOUR + i);
@@ -191,6 +194,45 @@ function isInSelectedWeek(day: Date, rangeStart: Date, rangeEnd: Date) {
 /** 区間が共通部分を持つ（端点で接するだけは重ならない） */
 function rangesOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date) {
   return aStart < bEnd && aEnd > bStart;
+}
+
+/** グリッド上のクリックから、その日のおおよその時刻（30分単位にスナップ） */
+function computeApproximateTimeFromGridClick(day: Date, offsetY: number): Date {
+  const y = Math.max(0, Math.min(offsetY, DAY_GRID_HEIGHT));
+  const hourFraction = GRID_DISPLAY_START_HOUR + y / HOUR_HEIGHT;
+  const totalMinutes = hourFraction * 60;
+  let snappedMinutes = Math.round(totalMinutes / 30) * 30;
+  const minM = GRID_DISPLAY_START_HOUR * 60;
+  /** 30分枠の開始として有効な最終時刻（23:30） */
+  const maxHalfHourStartM = 23 * 60 + 30;
+  snappedMinutes = Math.max(minM, Math.min(snappedMinutes, maxHalfHourStartM));
+  const dayStart = startOfDay(day);
+  return new Date(dayStart.getTime() + snappedMinutes * 60 * 1000);
+}
+
+function hasAllDayOnDay(day: Date, allDayEvents: NormalizedEvent[]): boolean {
+  return allDayEvents.some((e) => intersectsDay(e, day));
+}
+
+function timedSlotOverlapsBusy(
+  slotStart: Date,
+  slotEnd: Date,
+  day: Date,
+  timedEvents: NormalizedEvent[],
+): boolean {
+  for (const ev of timedEvents) {
+    if (ev.isAllDay) {
+      continue;
+    }
+    if (!intersectsDay(ev, day)) {
+      continue;
+    }
+    const clipped = clipEventToDay(ev, day);
+    if (rangesOverlap(slotStart, slotEnd, clipped.start, clipped.end)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 type ClippedTimed = {
@@ -657,6 +699,8 @@ function WeekCalendarGrid({
   onEventClick,
   onAllDayEventsClick,
   variant,
+  onPublicSlotRequest,
+  onPublicSlotBlocked,
 }: {
   range: { start: Date; end: Date };
   events: NormalizedEvent[];
@@ -664,6 +708,13 @@ function WeekCalendarGrid({
   onEventClick: (event: NormalizedEvent) => void;
   onAllDayEventsClick: (day: Date, events: NormalizedEvent[]) => void;
   variant: CalendarWeekPlannerVariant;
+  onPublicSlotRequest?: (payload: {
+    day: Date;
+    preferredHint: Date;
+    timedEvents: NormalizedEvent[];
+    allDayEvents: NormalizedEvent[];
+  }) => void;
+  onPublicSlotBlocked?: (reason: "overlap" | "allday" | "invalid" | "no_slots") => void;
 }) {
   const days = enumerateDays(range.start, range.end);
   const allDayEvents = events.filter((event) => event.isAllDay);
@@ -798,10 +849,40 @@ function WeekCalendarGrid({
                 className="relative rounded-3xl border border-[var(--card-border)] bg-white/85"
                 style={{ height: DAY_GRID_HEIGHT }}
               >
+                {variant === "public" && onPublicSlotRequest ? (
+                  <button
+                    type="button"
+                    tabIndex={0}
+                    className="absolute inset-0 z-0 cursor-pointer border-0 bg-transparent p-0"
+                    aria-label="空き時間に打ち合わせを依頼"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const y = e.clientY - rect.top;
+                      if (hasAllDayOnDay(day, allDayEvents)) {
+                        onPublicSlotBlocked?.("allday");
+                        return;
+                      }
+                      const preferredHint = computeApproximateTimeFromGridClick(day, y);
+                      if (
+                        !hasAnyFreeSlotInDisplayRange(
+                          day,
+                          timedEvents,
+                          allDayEvents,
+                          GRID_DISPLAY_START_HOUR,
+                          GRID_DISPLAY_END_HOUR,
+                        )
+                      ) {
+                        onPublicSlotBlocked?.("no_slots");
+                        return;
+                      }
+                      onPublicSlotRequest({ day, preferredHint, timedEvents, allDayEvents });
+                    }}
+                  />
+                ) : null}
                 {HOUR_LABELS.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)]"
+                    className="pointer-events-none absolute inset-x-0 border-t border-dashed border-[var(--card-border)]"
                     style={{ top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT }}
                   />
                 ))}
@@ -838,7 +919,7 @@ function WeekCalendarGrid({
                       return (
                         <div
                           key={`${event.id}-${day.toISOString()}`}
-                          className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
+                          className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
                           style={blockStyle}
                           aria-label="予定あり"
                         >
@@ -882,8 +963,23 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
   const [allDayModal, setAllDayModal] = useState<{ day: Date; events: NormalizedEvent[] } | null>(null);
+  const [meetingRequest, setMeetingRequest] = useState<{
+    day: Date;
+    preferredHint: Date;
+    timedEvents: NormalizedEvent[];
+    allDayEvents: NormalizedEvent[];
+  } | null>(null);
+  const [slotBusyHint, setSlotBusyHint] = useState<string | null>(null);
   const eventsCacheRef = useRef<Map<string, CalendarEventsResponse>>(new Map());
   const eventsInFlightRef = useRef<Map<string, Promise<CalendarEventsResponse>>>(new Map());
+
+  useEffect(() => {
+    if (!slotBusyHint) {
+      return;
+    }
+    const t = setTimeout(() => setSlotBusyHint(null), 3800);
+    return () => clearTimeout(t);
+  }, [slotBusyHint]);
 
   useEffect(() => {
     if (variant !== "admin") {
@@ -935,11 +1031,29 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
         const res = await fetch(`${eventsPath}?${query.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
-        const body = (await res.json().catch(() => ({}))) as
-          | CalendarEventsResponse
-          | { error?: string };
+        const raw = await res.text();
+        let body: CalendarEventsResponse | { error?: string } = {};
+        try {
+          body = raw ? (JSON.parse(raw) as CalendarEventsResponse | { error?: string }) : {};
+        } catch {
+          body = {};
+        }
         if (!res.ok) {
-          throw new Error(body && "error" in body ? body.error || "取得に失敗しました" : "取得に失敗しました");
+          const apiErr = "error" in body && typeof body.error === "string" ? body.error : "";
+          if (apiErr) {
+            throw new Error(apiErr);
+          }
+          if (res.status === 404) {
+            throw new Error(
+              "APIに接続できません。frontend の BACKEND_API_URL とバックエンドの起動を確認してください。",
+            );
+          }
+          const snippet = raw.replace(/\s+/g, " ").trim().slice(0, 120);
+          throw new Error(
+            snippet
+              ? `取得に失敗しました（${res.status}）: ${snippet}`
+              : `取得に失敗しました（HTTP ${res.status}）`,
+          );
         }
         const response = body as CalendarEventsResponse;
         eventsCacheRef.current.set(key, response);
@@ -1006,6 +1120,9 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
           {variant === "public" ? (
             <div>
               <h1 className="mb-0 border-none pl-0">スケジュール</h1>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--text-body)]">
+                MTG や打ち合わせのご希望は、下の週表示で空いている時間帯をクリックしてお送りください。表示されている時間の範囲内から、長さと開始時刻を選べます。内容を確認のうえ、メールにてご連絡します。
+              </p>
             </div>
           ) : (
             <div>
@@ -1077,6 +1194,22 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
             variant={variant}
             onEventClick={setDetailEvent}
             onAllDayEventsClick={(day, dayEvents) => setAllDayModal({ day, events: dayEvents })}
+            onPublicSlotRequest={variant === "public" ? (payload) => setMeetingRequest(payload) : undefined}
+            onPublicSlotBlocked={
+              variant === "public"
+                ? (reason) => {
+                    setSlotBusyHint(
+                      reason === "overlap"
+                        ? "この時間は予定と重なっています。空いている時間を選んでください。"
+                        : reason === "allday"
+                          ? "終日の予定がある日は、ここからは依頼できません。"
+                          : reason === "no_slots"
+                            ? "表示している時間帯内に、空きの候補がありません。"
+                            : "この位置では依頼できません。",
+                    );
+                  }
+                : undefined
+            }
           />
         )}
       </div>
@@ -1111,7 +1244,18 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
             showCalendarMeta
           />
         </>
-      ) : null}
+      ) : (
+        <MeetingRequestModal
+          open={meetingRequest !== null}
+          onClose={() => setMeetingRequest(null)}
+          day={meetingRequest?.day ?? null}
+          preferredHint={meetingRequest?.preferredHint ?? null}
+          timedEvents={meetingRequest?.timedEvents ?? []}
+          allDayEvents={meetingRequest?.allDayEvents ?? []}
+          displayStartHour={GRID_DISPLAY_START_HOUR}
+          displayEndHour={GRID_DISPLAY_END_HOUR}
+        />
+      )}
     </>
   );
 
@@ -1133,6 +1277,14 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
           {modals}
         </>
       )}
+      {slotBusyHint ? (
+        <div
+          role="status"
+          className="fixed bottom-6 left-1/2 z-[110] max-w-[min(100%,24rem)] -translate-x-1/2 rounded-2xl border border-amber-200/90 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950 shadow-lg"
+        >
+          {slotBusyHint}
+        </div>
+      ) : null}
     </>
   );
 }

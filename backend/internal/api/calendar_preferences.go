@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -175,7 +176,8 @@ func (h *Handler) resolveCalendarPreferences(ctx context.Context) (calendarPrefe
 		WHERE calendar_id = ANY($1)
 	`, allIDs)
 	if err != nil {
-		return calendarPreferencesResponse{}, err
+		log.Printf("calendar_preferences: query failed (using defaults): %v", err)
+		return response, nil
 	}
 	defer rows.Close()
 
