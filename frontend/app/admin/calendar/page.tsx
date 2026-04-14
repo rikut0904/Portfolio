@@ -446,16 +446,141 @@ function EventDetailModal({
   );
 }
 
+function AllDayEventsModal({
+  day,
+  events,
+  onClose,
+  onEventClick,
+  calendarDisplayNames,
+}: {
+  day: Date | null;
+  events: NormalizedEvent[];
+  onClose: () => void;
+  onEventClick: (event: NormalizedEvent) => void;
+  calendarDisplayNames: CalendarDisplayNameMap;
+}) {
+  const titleId = "calendar-all-day-events-title";
+  if (!day || events.length === 0) {
+    return null;
+  }
+
+  const dayLabel = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(day);
+
+  return (
+    <CalendarModalFrame onClose={onClose} titleId={titleId} wide>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <header className="relative shrink-0 border-b border-[var(--card-border)] px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5 md:px-8 md:pb-5 md:pt-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-3 top-3 rounded-full p-2 text-[var(--text-body)] hover:bg-[var(--primary-light)] sm:right-4 sm:top-4"
+            aria-label="閉じる"
+          >
+            <span className="text-xl leading-none" aria-hidden>
+              ×
+            </span>
+          </button>
+          <h2 id={titleId} className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl">
+            {dayLabel} の終日予定
+          </h2>
+          <p className="mt-2 text-sm text-[var(--text-body)]">{events.length}件の予定をまとめて表示しています。</p>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+          <div className="space-y-4">
+            {events.map((event) => {
+              const calendarLabel = event.calendarId ? calendarDisplayNames[event.calendarId] || event.calendarId : null;
+              const hasDescription = Boolean(event.description?.trim());
+              const hasLocation = Boolean(event.location?.trim());
+              const hasStatus = Boolean(event.status?.trim());
+              return (
+                <article key={event.id} className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-white/92">
+                  <div className="border-b border-[var(--card-border)] px-4 py-3 sm:px-5 sm:py-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-[var(--text-heading)] sm:text-base">
+                          {event.summary || "（タイトルなし）"}
+                        </h3>
+                        <p className="mt-1 text-xs text-[var(--text-body)]">{formatEventScheduleText(event)}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => onEventClick(event)}
+                        className="rounded-full border border-[var(--card-border)] bg-white px-3 py-2 text-xs font-medium text-[var(--text-heading)] hover:bg-[var(--primary-light)]"
+                      >
+                        個別詳細
+                      </button>
+                    </div>
+                  </div>
+                  <div className="px-4 py-4 sm:px-5 sm:py-5">
+                    <dl className="space-y-4 text-sm">
+                      <div>
+                        <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">日時</dt>
+                        <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">
+                          {formatEventScheduleText(event)}
+                        </dd>
+                      </div>
+                      {calendarLabel ? (
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
+                          <dd className="mt-1.5 text-[var(--text-heading)]">{calendarLabel}</dd>
+                        </div>
+                      ) : null}
+                      {hasLocation ? (
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">場所</dt>
+                          <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.location}</dd>
+                        </div>
+                      ) : null}
+                      {hasDescription ? (
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
+                          <dd className="mt-1.5 whitespace-pre-wrap break-words text-[var(--text-heading)]">{event.description}</dd>
+                        </div>
+                      ) : null}
+                      {hasStatus ? (
+                        <div>
+                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">ステータス</dt>
+                          <dd className="mt-1.5 text-[var(--text-heading)]">{event.status}</dd>
+                        </div>
+                      ) : null}
+                    </dl>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+        <footer className="flex shrink-0 justify-end border-t border-[var(--card-border)] px-4 py-3 sm:px-6 sm:py-4 md:px-8 md:py-5">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-[var(--primary-color)] px-5 py-2.5 text-sm font-medium text-white hover:opacity-95 sm:min-h-0"
+          >
+            閉じる
+          </button>
+        </footer>
+      </div>
+    </CalendarModalFrame>
+  );
+}
+
 function WeekCalendarGrid({
   range,
   events,
   calendarColors,
   onEventClick,
+  onAllDayEventsClick,
 }: {
   range: { start: Date; end: Date };
   events: NormalizedEvent[];
   calendarColors: CalendarColorMap;
   onEventClick: (event: NormalizedEvent) => void;
+  onAllDayEventsClick: (day: Date, events: NormalizedEvent[]) => void;
 }) {
   const days = enumerateDays(range.start, range.end);
   const allDayEvents = events.filter((event) => event.isAllDay);
@@ -489,26 +614,54 @@ function WeekCalendarGrid({
             </span>
           </div>
           {days.map((day) => (
-            <div
-              key={day.toISOString()}
-              className="min-h-14 rounded-2xl border border-[var(--card-border)] bg-white/85 p-2 sm:min-h-14 sm:rounded-3xl"
-            >
-              <div className="space-y-1.5">
-                {allDayEvents
-                  .filter((event) => intersectsDay(event, day))
-                  .map((event) => (
-                    <button
-                      key={event.id}
-                      type="button"
-                      onClick={() => onEventClick(event)}
-                      className="block w-full truncate rounded-lg border px-2 py-1.5 text-left text-[11px] font-semibold sm:text-xs"
-                      style={getCalendarColorStyle(calendarColors[event.calendarId || ""])}
-                    >
-                      {event.summary || "（タイトルなし）"}
-                    </button>
-                  ))}
-              </div>
-            </div>
+            (() => {
+              const dayEvents = allDayEvents.filter((event) => intersectsDay(event, day));
+              if (dayEvents.length === 0) {
+                return (
+                  <div
+                    key={day.toISOString()}
+                    className="min-h-14 rounded-2xl border border-[var(--card-border)] bg-white/85 p-2 sm:min-h-14 sm:rounded-3xl"
+                  />
+                );
+              }
+              const firstEvent = dayEvents[0];
+              const firstStyle = getCalendarColorStyle(calendarColors[firstEvent.calendarId || ""]);
+              return (
+                <button
+                  key={day.toISOString()}
+                  type="button"
+                  onClick={() => onAllDayEventsClick(day, dayEvents)}
+                  className="flex min-h-14 w-full flex-col items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center transition hover:bg-[var(--primary-light)]/35 sm:min-h-14 sm:rounded-3xl"
+                >
+                  {dayEvents.length === 1 ? (
+                    <>
+                      <span className="line-clamp-1 max-w-full text-xs font-semibold text-[var(--text-heading)] sm:text-sm">
+                        {firstEvent.summary || "（タイトルなし）"}
+                      </span>
+                      <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
+                        詳細を表示
+                      </span>
+                      <span className="mt-1 h-1.5 w-10 rounded-full" style={{ backgroundColor: firstStyle.borderColor as string }} />
+                    </>
+                  ) : (
+                    <>
+                      <span className="line-clamp-1 max-w-full text-xs font-semibold text-[var(--text-heading)] sm:text-sm">
+                        {firstEvent.summary || "（タイトルなし）"}
+                      </span>
+                      <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
+                        他 {dayEvents.length - 1} 件の終日予定
+                      </span>
+                      <span
+                        className="mt-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                        style={firstStyle}
+                      >
+                        終日予定
+                      </span>
+                    </>
+                  )}
+                </button>
+              );
+            })()
           ))}
         </div>
 
@@ -606,6 +759,7 @@ function CalendarAdminContent() {
   const [error, setError] = useState("");
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
+  const [allDayModal, setAllDayModal] = useState<{ day: Date; events: NormalizedEvent[] } | null>(null);
 
   useEffect(() => {
     const fetchPreferences = async () => {
@@ -735,6 +889,7 @@ function CalendarAdminContent() {
                 events={events}
                 calendarColors={calendarColors}
                 onEventClick={setDetailEvent}
+                onAllDayEventsClick={(day, dayEvents) => setAllDayModal({ day, events: dayEvents })}
               />
             )}
           </div>
@@ -750,6 +905,16 @@ function CalendarAdminContent() {
       <EventDetailModal
         event={detailEvent}
         onClose={() => setDetailEvent(null)}
+        calendarDisplayNames={calendarDisplayNames}
+      />
+      <AllDayEventsModal
+        day={allDayModal?.day || null}
+        events={allDayModal?.events || []}
+        onClose={() => setAllDayModal(null)}
+        onEventClick={(event) => {
+          setAllDayModal(null);
+          setDetailEvent(event);
+        }}
         calendarDisplayNames={calendarDisplayNames}
       />
     </div>
