@@ -35,7 +35,11 @@ function CalendarSettingsContent() {
           | CalendarPreferencesResponse
           | { error?: string };
         if (!res.ok) {
-          throw new Error(body && "error" in body ? body.error || "取得に失敗しました" : "取得に失敗しました");
+          throw new Error(
+            body && "error" in body
+              ? body.error || "取得に失敗しました"
+              : "取得に失敗しました",
+          );
         }
         const preferences = body as CalendarPreferencesResponse;
         setData(preferences);
@@ -57,7 +61,8 @@ function CalendarSettingsContent() {
     }
     return data.calendarIds.some(
       (calendarId) =>
-        (colors[calendarId] || "") !== (data.calendarColors[calendarId] || "") ||
+        (colors[calendarId] || "") !==
+          (data.calendarColors[calendarId] || "") ||
         (labels[calendarId] || "") !== (data.calendarLabels[calendarId] || ""),
     );
   }, [colors, data, labels]);
@@ -89,7 +94,11 @@ function CalendarSettingsContent() {
         | CalendarPreferencesResponse
         | { error?: string };
       if (!res.ok) {
-        throw new Error(body && "error" in body ? body.error || "保存に失敗しました" : "保存に失敗しました");
+        throw new Error(
+          body && "error" in body
+            ? body.error || "保存に失敗しました"
+            : "保存に失敗しました",
+        );
       }
       const preferences = body as CalendarPreferencesResponse;
       setData(preferences);
@@ -107,7 +116,10 @@ function CalendarSettingsContent() {
     <div className="min-h-screen bg-gray-100">
       <main className="mx-auto max-w-5xl px-2 py-4 sm:px-4 lg:px-8">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <Link href="/admin/calendar" className="inline-block text-sm text-blue-800 hover:text-gray-900">
+          <Link
+            href="/admin/calendar"
+            className="inline-block text-sm text-blue-800 hover:text-gray-900"
+          >
             ← 予定管理へ戻る
           </Link>
           <button
@@ -122,21 +134,32 @@ function CalendarSettingsContent() {
 
         <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
           <div className="border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
-            <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">Calendar Settings</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">
+              Calendar Settings
+            </p>
             <h1 className="mb-3 border-none pl-0">カレンダー設定</h1>
             <p className="max-w-3xl text-sm text-[var(--text-body)]">
-              `calendarId` ごとの色と表示ラベルを管理します。予定管理画面ではここで付けた表示名と色を使います。
+              `calendarId`
+              ごとの色と表示ラベルを管理します。予定管理画面ではここで付けた表示名と色を使います。
             </p>
           </div>
 
           <div className="px-4 py-5 sm:px-8">
             {loading ? (
-              <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">読み込み中...</div>
+              <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">
+                読み込み中...
+              </div>
             ) : error ? (
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+                {error}
+              </div>
             ) : (
               <div className="space-y-4">
-                {message ? <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-green-700">{message}</div> : null}
+                {message ? (
+                  <div className="rounded-2xl border border-green-200 bg-green-50 p-4 text-green-700">
+                    {message}
+                  </div>
+                ) : null}
                 {data?.calendarIds.map((calendarId) => (
                   <article
                     key={calendarId}
@@ -164,7 +187,9 @@ function CalendarSettingsContent() {
                       </div>
                       <div className="space-y-3">
                         <label className="block">
-                          <span className="mb-1 block text-sm font-medium text-[var(--text-heading)]">表示ラベル</span>
+                          <span className="mb-1 block text-sm font-medium text-[var(--text-heading)]">
+                            表示ラベル
+                          </span>
                           <input
                             type="text"
                             value={labels[calendarId] || ""}
@@ -179,7 +204,9 @@ function CalendarSettingsContent() {
                           />
                         </label>
                         <div className="rounded-2xl border border-[var(--card-border)] bg-[rgba(255,255,255,0.65)] px-4 py-3 text-xs text-[var(--text-body)]">
-                          <p className="font-semibold text-[var(--text-heading)]">calendarId</p>
+                          <p className="font-semibold text-[var(--text-heading)]">
+                            calendarId
+                          </p>
                           <p className="mt-1 break-all">{calendarId}</p>
                         </div>
                       </div>

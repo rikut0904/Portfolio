@@ -92,7 +92,11 @@ export function toApiDateTime(date: Date) {
   return date.toISOString();
 }
 
-export function formatHeaderRange(view: CalendarView, anchor: Date, locale = "ja-JP") {
+export function formatHeaderRange(
+  view: CalendarView,
+  anchor: Date,
+  locale = "ja-JP",
+) {
   const { start, end } = getViewRange(view, anchor);
   const dateFormatter = new Intl.DateTimeFormat(locale, {
     year: "numeric",
@@ -156,8 +160,13 @@ export function formatMonthDay(date: Date, locale = "ja-JP") {
   }).format(date);
 }
 
-export function getCalendarColor(color: string | undefined, fallback = "#6B46C1") {
-  return /^#[0-9A-Fa-f]{6}$/.test(color || "") ? (color as string).toUpperCase() : fallback;
+export function getCalendarColor(
+  color: string | undefined,
+  fallback = "#6B46C1",
+) {
+  return /^#[0-9A-Fa-f]{6}$/.test(color || "")
+    ? (color as string).toUpperCase()
+    : fallback;
 }
 
 export function getCalendarColorStyle(color: string | undefined) {

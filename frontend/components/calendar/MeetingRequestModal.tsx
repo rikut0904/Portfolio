@@ -20,7 +20,10 @@ function useModalBodyLock(active: boolean) {
   }, [active]);
 }
 
-const DURATION_LABEL: Record<(typeof MTG_DURATION_OPTIONS_MINUTES)[number], string> = {
+const DURATION_LABEL: Record<
+  (typeof MTG_DURATION_OPTIONS_MINUTES)[number],
+  string
+> = {
   30: "30分",
   60: "1時間",
   90: "1.5時間",
@@ -107,7 +110,14 @@ export default function MeetingRequestModal({
             displayEndHour,
           )
         : [],
-    [day, timedEvents, allDayEvents, durationMinutes, displayStartHour, displayEndHour],
+    [
+      day,
+      timedEvents,
+      allDayEvents,
+      durationMinutes,
+      displayStartHour,
+      displayEndHour,
+    ],
   );
 
   const slotsKey = useMemo(
@@ -148,7 +158,14 @@ export default function MeetingRequestModal({
     }
     const first = MTG_DURATION_OPTIONS_MINUTES.find(
       (d) =>
-        getFreeSlotsInDisplayRange(day, timedEvents, allDayEvents, d, displayStartHour, displayEndHour).length > 0,
+        getFreeSlotsInDisplayRange(
+          day,
+          timedEvents,
+          allDayEvents,
+          d,
+          displayStartHour,
+          displayEndHour,
+        ).length > 0,
     );
     if (first !== undefined) {
       setDurationMinutes(first);
@@ -180,7 +197,10 @@ export default function MeetingRequestModal({
     return null;
   }
 
-  const safeIndex = Math.min(selectedIndex, Math.max(0, availableSlots.length - 1));
+  const safeIndex = Math.min(
+    selectedIndex,
+    Math.max(0, availableSlots.length - 1),
+  );
   const slotStart = availableSlots[safeIndex]?.start;
   const slotEnd = availableSlots[safeIndex]?.end;
   const rangeLabel =
@@ -195,7 +215,9 @@ export default function MeetingRequestModal({
       return;
     }
     if (!slotStart || !slotEnd) {
-      setError("希望日時を選べません。この長さでは表示時間内に空きがありません。");
+      setError(
+        "希望日時を選べません。この長さでは表示時間内に空きがありません。",
+      );
       return;
     }
     const bodyText = [
@@ -241,7 +263,12 @@ export default function MeetingRequestModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-4">
-      <button type="button" className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+        aria-label="閉じる"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
@@ -260,7 +287,10 @@ export default function MeetingRequestModal({
                 ×
               </span>
             </button>
-            <h2 id={titleId} className="pr-10 text-base font-semibold text-[var(--text-heading)] sm:text-lg">
+            <h2
+              id={titleId}
+              className="pr-10 text-base font-semibold text-[var(--text-heading)] sm:text-lg"
+            >
               打ち合わせの依頼
             </h2>
             <p className="mt-2 text-sm text-[var(--text-body)]">
@@ -282,7 +312,10 @@ export default function MeetingRequestModal({
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+            <form
+              onSubmit={handleSubmit}
+              className="flex min-h-0 flex-1 flex-col"
+            >
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
                 <div className="flex flex-col gap-0 md:flex-row md:items-stretch md:gap-8">
                   <section
@@ -292,7 +325,10 @@ export default function MeetingRequestModal({
                     <h3 id="mtg-schedule-heading" className="sr-only">
                       日時の選択
                     </h3>
-                    <label className="block text-sm font-medium text-[var(--text-heading)]" htmlFor="mtg-duration">
+                    <label
+                      className="block text-sm font-medium text-[var(--text-heading)]"
+                      htmlFor="mtg-duration"
+                    >
                       打ち合わせの長さ
                     </label>
                     <div className="mt-2 max-h-[min(30vh,12rem)] overflow-y-auto overscroll-contain rounded-xl border border-[var(--card-border)] bg-white [-webkit-overflow-scrolling:touch] md:max-h-[min(40vh,14rem)]">
@@ -300,7 +336,9 @@ export default function MeetingRequestModal({
                         id="mtg-duration"
                         size={DURATION_SELECT_ROWS}
                         value={durationMinutes}
-                        onChange={(ev) => setDurationMinutes(Number(ev.target.value))}
+                        onChange={(ev) =>
+                          setDurationMinutes(Number(ev.target.value))
+                        }
                         className="w-full border-0 bg-transparent px-3 py-1.5 text-sm text-[var(--text-heading)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/35 focus:ring-inset"
                       >
                         {MTG_DURATION_OPTIONS_MINUTES.map((m) => (
@@ -311,7 +349,10 @@ export default function MeetingRequestModal({
                       </select>
                     </div>
 
-                    <label className="mt-4 block text-sm font-medium text-[var(--text-heading)]" htmlFor="mtg-slot">
+                    <label
+                      className="mt-4 block text-sm font-medium text-[var(--text-heading)]"
+                      htmlFor="mtg-slot"
+                    >
                       希望の開始〜終了
                     </label>
                     <p className="mt-1 text-xs text-[var(--text-body)]">
@@ -323,7 +364,9 @@ export default function MeetingRequestModal({
                           id="mtg-slot"
                           size={slotSelectSize}
                           value={safeIndex}
-                          onChange={(ev) => setSelectedIndex(Number(ev.target.value))}
+                          onChange={(ev) =>
+                            setSelectedIndex(Number(ev.target.value))
+                          }
                           className="w-full min-w-0 border-0 bg-transparent px-3 py-1.5 text-sm text-[var(--text-heading)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/35 focus:ring-inset"
                         >
                           {availableSlots.map((s, i) => (
@@ -347,7 +390,10 @@ export default function MeetingRequestModal({
                     <h3 id="mtg-contact-heading" className="sr-only">
                       お名前・連絡先・内容
                     </h3>
-                    <label className="block text-sm font-medium text-[var(--text-heading)]" htmlFor="mtg-name">
+                    <label
+                      className="block text-sm font-medium text-[var(--text-heading)]"
+                      htmlFor="mtg-name"
+                    >
                       お名前
                     </label>
                     <input
@@ -359,7 +405,10 @@ export default function MeetingRequestModal({
                       autoComplete="name"
                     />
 
-                    <label className="mt-4 block text-sm font-medium text-[var(--text-heading)]" htmlFor="mtg-email">
+                    <label
+                      className="mt-4 block text-sm font-medium text-[var(--text-heading)]"
+                      htmlFor="mtg-email"
+                    >
                       メールアドレス <span className="text-red-600">*</span>
                     </label>
                     <input
@@ -372,7 +421,10 @@ export default function MeetingRequestModal({
                       autoComplete="email"
                     />
 
-                    <label className="mt-4 block text-sm font-medium text-[var(--text-heading)]" htmlFor="mtg-msg">
+                    <label
+                      className="mt-4 block text-sm font-medium text-[var(--text-heading)]"
+                      htmlFor="mtg-msg"
+                    >
                       ご用件・メモ
                     </label>
                     <textarea
@@ -386,7 +438,9 @@ export default function MeetingRequestModal({
                   </section>
                 </div>
 
-                {error ? <p className="mt-4 text-sm text-red-600 md:mt-6">{error}</p> : null}
+                {error ? (
+                  <p className="mt-4 text-sm text-red-600 md:mt-6">{error}</p>
+                ) : null}
               </div>
               <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--card-border)] px-4 py-3 sm:px-6 sm:py-4">
                 <button

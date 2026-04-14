@@ -90,7 +90,12 @@ function InquiriesContent() {
       if (categoryFilter !== "all" && item.category !== categoryFilter)
         return false;
       if (!hasQuery) return true;
-      const target = [item.contactName, item.contactEmail, item.subject, item.threadId]
+      const target = [
+        item.contactName,
+        item.contactEmail,
+        item.subject,
+        item.threadId,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();

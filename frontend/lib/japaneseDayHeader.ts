@@ -31,7 +31,8 @@ export function weekDateHeaderContainerClass(v: WeekDateHeaderVariant): string {
 }
 
 export function weekDateHeaderWeekdayClass(v: WeekDateHeaderVariant): string {
-  const base = "text-[10px] uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]";
+  const base =
+    "text-[10px] uppercase tracking-[0.15em] sm:text-xs sm:tracking-[0.2em]";
   switch (v) {
     case "saturday":
       return `${base} text-blue-800/95`;

@@ -95,9 +95,9 @@ type calendarCacheEntry[T any] struct {
 }
 
 type calendarAPICache struct {
-	mu           sync.RWMutex
-	events       map[string]calendarCacheEntry[cachedCalendarEventsResponse]
-	preferences  map[string]calendarCacheEntry[cachedCalendarPreferences]
+	mu          sync.RWMutex
+	events      map[string]calendarCacheEntry[cachedCalendarEventsResponse]
+	preferences map[string]calendarCacheEntry[cachedCalendarPreferences]
 }
 
 func newCalendarAPICache() *calendarAPICache {

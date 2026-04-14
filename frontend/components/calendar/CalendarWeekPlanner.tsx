@@ -19,9 +19,7 @@ import {
   startOfDay,
   toApiDateTime,
 } from "../../lib/calendar";
-import {
-  hasAnyFreeSlotInDisplayRange,
-} from "../../lib/calendarAvailability";
+import { hasAnyFreeSlotInDisplayRange } from "../../lib/calendarAvailability";
 import {
   CALENDAR_GRID_DISPLAY_END_HOUR as GRID_DISPLAY_END_HOUR,
   CALENDAR_GRID_DISPLAY_START_HOUR as GRID_DISPLAY_START_HOUR,
@@ -39,7 +37,10 @@ export type CalendarWeekPlannerVariant = "admin" | "public";
 const WEEK_VIEW = "week" as const;
 
 const VISIBLE_HOURS = GRID_DISPLAY_END_HOUR - GRID_DISPLAY_START_HOUR;
-const HOUR_LABELS = Array.from({ length: VISIBLE_HOURS }, (_, i) => GRID_DISPLAY_START_HOUR + i);
+const HOUR_LABELS = Array.from(
+  { length: VISIBLE_HOURS },
+  (_, i) => GRID_DISPLAY_START_HOUR + i,
+);
 const HOUR_HEIGHT = 56;
 const DAY_GRID_HEIGHT = VISIBLE_HOURS * HOUR_HEIGHT;
 
@@ -68,14 +69,25 @@ type NormalizedEvent = CalendarEvent & {
 };
 
 function normalizeEvent(event: CalendarEvent): NormalizedEvent {
-  const startDate = event.isAllDay ? new Date(`${event.start}T00:00:00`) : new Date(event.start);
-  const endDate = event.isAllDay ? new Date(`${event.end}T00:00:00`) : new Date(event.end);
+  const startDate = event.isAllDay
+    ? new Date(`${event.start}T00:00:00`)
+    : new Date(event.start);
+  const endDate = event.isAllDay
+    ? new Date(`${event.end}T00:00:00`)
+    : new Date(event.end);
   return { ...event, startDate, endDate };
 }
 
 function formatEventScheduleText(event: NormalizedEvent): string {
-  const fmtD = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long", day: "numeric" });
-  const fmtT = new Intl.DateTimeFormat("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  const fmtD = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  const fmtT = new Intl.DateTimeFormat("ja-JP", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
   if (event.isAllDay) {
     const startStr = fmtD.format(event.startDate);
     const lastDay = new Date(event.endDate);
@@ -107,7 +119,11 @@ function formatEventDescriptionText(value: string): string {
     for (const node of Array.from(doc.querySelectorAll("br"))) {
       node.replaceWith("\n");
     }
-    for (const node of Array.from(doc.querySelectorAll("p, div, section, article, li, ul, ol, h1, h2, h3, h4, h5, h6"))) {
+    for (const node of Array.from(
+      doc.querySelectorAll(
+        "p, div, section, article, li, ul, ol, h1, h2, h3, h4, h5, h6",
+      ),
+    )) {
       node.insertAdjacentText("beforebegin", "\n");
       node.insertAdjacentText("afterend", "\n");
     }
@@ -126,7 +142,7 @@ function formatEventDescriptionText(value: string): string {
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">")
     .replace(/&#39;/gi, "'")
-    .replace(/&quot;/gi, "\"")
+    .replace(/&quot;/gi, '"')
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -240,7 +256,10 @@ type ClippedTimed = {
   clipped: { start: Date; end: Date };
 };
 
-function layoutTimedEventsForDay(day: Date, events: NormalizedEvent[]): Map<string, { column: number; columnCount: number }> {
+function layoutTimedEventsForDay(
+  day: Date,
+  events: NormalizedEvent[],
+): Map<string, { column: number; columnCount: number }> {
   const clippedList: ClippedTimed[] = events
     .filter((event) => intersectsDay(event, day))
     .map((event) => ({ event, clipped: clipEventToDay(event, day) }));
@@ -342,13 +361,9 @@ function WeekPickerModal({
   onClose: () => void;
   onPickDay: (day: Date) => void;
 }) {
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date(anchor.getFullYear(), anchor.getMonth(), 1));
-
-  useEffect(() => {
-    if (open) {
-      setVisibleMonth(new Date(anchor.getFullYear(), anchor.getMonth(), 1));
-    }
-  }, [open, anchor]);
+  const [visibleMonth, setVisibleMonth] = useState(
+    () => new Date(anchor.getFullYear(), anchor.getMonth(), 1),
+  );
 
   useModalBodyLock(open);
 
@@ -369,7 +384,11 @@ function WeekPickerModal({
   const todayStart = useMemo(() => startOfDay(new Date()), []);
 
   const gridDays = useMemo(() => {
-    const start = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+    const start = new Date(
+      visibleMonth.getFullYear(),
+      visibleMonth.getMonth(),
+      1,
+    );
     const startOffset = start.getDay() === 0 ? 6 : start.getDay() - 1;
     const gridStart = new Date(start);
     gridStart.setDate(gridStart.getDate() - startOffset);
@@ -384,11 +403,19 @@ function WeekPickerModal({
     return null;
   }
 
-  const monthLabel = new Intl.DateTimeFormat("ja-JP", { year: "numeric", month: "long" }).format(visibleMonth);
+  const monthLabel = new Intl.DateTimeFormat("ja-JP", {
+    year: "numeric",
+    month: "long",
+  }).format(visibleMonth);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-4">
-      <button type="button" className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+        aria-label="閉じる"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
@@ -398,23 +425,44 @@ function WeekPickerModal({
         <div className="mb-4 flex items-center justify-between gap-2">
           <button
             type="button"
-            onClick={() => setVisibleMonth(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1))}
+            onClick={() =>
+              setVisibleMonth(
+                new Date(
+                  visibleMonth.getFullYear(),
+                  visibleMonth.getMonth() - 1,
+                  1,
+                ),
+              )
+            }
             className="rounded-full border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--text-body)] hover:bg-[var(--primary-light)]"
           >
             ←
           </button>
-          <h2 id="week-picker-title" className="text-center text-base font-semibold text-[var(--text-heading)]">
+          <h2
+            id="week-picker-title"
+            className="text-center text-base font-semibold text-[var(--text-heading)]"
+          >
             {monthLabel}
           </h2>
           <button
             type="button"
-            onClick={() => setVisibleMonth(new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1))}
+            onClick={() =>
+              setVisibleMonth(
+                new Date(
+                  visibleMonth.getFullYear(),
+                  visibleMonth.getMonth() + 1,
+                  1,
+                ),
+              )
+            }
             className="rounded-full border border-[var(--card-border)] px-3 py-1.5 text-sm text-[var(--text-body)] hover:bg-[var(--primary-light)]"
           >
             →
           </button>
         </div>
-        <p className="mb-3 text-center text-xs text-[var(--text-body)]">日付をタップすると、その日を含む週が表示されます。</p>
+        <p className="mb-3 text-center text-xs text-[var(--text-body)]">
+          日付をタップすると、その日を含む週が表示されます。
+        </p>
         <div className="grid grid-cols-7 gap-1 text-center text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-body)]">
           {["月", "火", "水", "木", "金", "土", "日"].map((w) => (
             <div key={w} className="py-1">
@@ -425,7 +473,11 @@ function WeekPickerModal({
         <div className="mt-1 grid grid-cols-7 gap-1">
           {gridDays.map((day) => {
             const inMonth = day.getMonth() === visibleMonth.getMonth();
-            const inWeek = isInSelectedWeek(day, weekRange.start, weekRange.end);
+            const inWeek = isInSelectedWeek(
+              day,
+              weekRange.start,
+              weekRange.end,
+            );
             const isToday = dayTimestamp(day) === todayStart.getTime();
             return (
               <button
@@ -435,13 +487,17 @@ function WeekPickerModal({
                   onPickDay(day);
                   onClose();
                 }}
-                className={`flex aspect-square min-h-[2.5rem] items-center justify-center rounded-lg text-sm transition ${inWeek
-                  ? "bg-[var(--primary-color)] font-semibold text-white"
-                  : inMonth
-                    ? "border border-[var(--card-border)] bg-white/90 text-[var(--text-heading)] hover:bg-[var(--primary-light)]"
-                    : "border border-transparent text-gray-400 hover:bg-white/50"
-                  } ${isToday && !inWeek ? "ring-2 ring-[var(--primary-color)] ring-offset-1" : ""} ${isToday && inWeek ? "ring-2 ring-white/80 ring-offset-1 ring-offset-[var(--primary-color)]" : ""
-                  }`}
+                className={`flex aspect-square min-h-[2.5rem] items-center justify-center rounded-lg text-sm transition ${
+                  inWeek
+                    ? "bg-[var(--primary-color)] font-semibold text-white"
+                    : inMonth
+                      ? "border border-[var(--card-border)] bg-white/90 text-[var(--text-heading)] hover:bg-[var(--primary-light)]"
+                      : "border border-transparent text-gray-400 hover:bg-white/50"
+                } ${isToday && !inWeek ? "ring-2 ring-[var(--primary-color)] ring-offset-1" : ""} ${
+                  isToday && inWeek
+                    ? "ring-2 ring-white/80 ring-offset-1 ring-offset-[var(--primary-color)]"
+                    : ""
+                }`}
               >
                 {day.getDate()}
               </button>
@@ -484,13 +540,21 @@ function CalendarModalFrame({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-3 md:p-4">
-      <button type="button" className="absolute inset-0 bg-black/45 backdrop-blur-[1px]" aria-label="閉じる" onClick={onClose} />
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
+        aria-label="閉じる"
+        onClick={onClose}
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[100%] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] ${wide ? "max-w-[min(100%,48rem)] md:max-w-[min(100%,56rem)] lg:max-w-[min(100%,64rem)]" : "max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)] md:max-w-[min(100%,32rem)] lg:max-w-[min(100%,36rem)]"
-          }`}
+        className={`relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[100%] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] ${
+          wide
+            ? "max-w-[min(100%,48rem)] md:max-w-[min(100%,56rem)] lg:max-w-[min(100%,64rem)]"
+            : "max-w-[min(100%,26rem)] sm:max-w-[min(100%,28rem)] md:max-w-[min(100%,32rem)] lg:max-w-[min(100%,36rem)]"
+        }`}
       >
         {children}
       </div>
@@ -536,32 +600,49 @@ function EventDetailModal({
               ×
             </span>
           </button>
-          <h2 id={titleId} className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl">
+          <h2
+            id={titleId}
+            className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl"
+          >
             {event.summary || "（タイトルなし）"}
           </h2>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
           <dl className="space-y-4 text-sm sm:text-[15px]">
             <div>
-              <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">日時</dt>
-              <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">{formatEventScheduleText(event)}</dd>
+              <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                日時
+              </dt>
+              <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">
+                {formatEventScheduleText(event)}
+              </dd>
             </div>
             {calendarLabel ? (
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                  カレンダー
+                </dt>
                 <dd className="mt-1.5 break-all text-black">{calendarLabel}</dd>
               </div>
             ) : null}
             {hasLocation ? (
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">場所</dt>
-                <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">{event.location}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                  場所
+                </dt>
+                <dd className="mt-1.5 whitespace-pre-wrap break-words text-black">
+                  {event.location}
+                </dd>
               </div>
             ) : null}
             {hasDescription ? (
               <div>
-                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">説明</dt>
-                <dd className="mt-1.5 break-words text-black">{renderLinkedText(descriptionText)}</dd>
+                <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                  説明
+                </dt>
+                <dd className="mt-1.5 break-words text-black">
+                  {renderLinkedText(descriptionText)}
+                </dd>
               </div>
             ) : null}
           </dl>
@@ -631,10 +712,15 @@ function AllDayEventsModal({
               ×
             </span>
           </button>
-          <h2 id={titleId} className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl">
+          <h2
+            id={titleId}
+            className="pr-12 text-base font-semibold leading-snug text-[var(--text-heading)] sm:text-lg md:text-xl"
+          >
             {dayLabel} の終日予定
           </h2>
-          <p className="mt-2 text-sm text-black/80">{events.length}件の予定をまとめて表示しています。</p>
+          <p className="mt-2 text-sm text-black/80">
+            {events.length}件の予定をまとめて表示しています。
+          </p>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
           <div className="space-y-4">
@@ -644,7 +730,10 @@ function AllDayEventsModal({
                   ? calendarDisplayNames[event.calendarId] || event.calendarId
                   : null;
               return (
-                <article key={event.id} className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-white/92">
+                <article
+                  key={event.id}
+                  className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-white/92"
+                >
                   <div className="border-b border-[var(--card-border)] px-4 py-3 sm:px-5 sm:py-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -665,7 +754,9 @@ function AllDayEventsModal({
                     <div className="px-4 py-4 sm:px-5 sm:py-5">
                       <dl className="space-y-4 text-sm">
                         <div>
-                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">カレンダー</dt>
+                          <dt className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                            カレンダー
+                          </dt>
                           <dd className="mt-1.5 text-black">{calendarLabel}</dd>
                         </div>
                       </dl>
@@ -714,7 +805,9 @@ function WeekCalendarGrid({
     timedEvents: NormalizedEvent[];
     allDayEvents: NormalizedEvent[];
   }) => void;
-  onPublicSlotBlocked?: (reason: "overlap" | "allday" | "invalid" | "no_slots") => void;
+  onPublicSlotBlocked?: (
+    reason: "overlap" | "allday" | "invalid" | "no_slots",
+  ) => void;
 }) {
   const days = enumerateDays(range.start, range.end);
   const allDayEvents = events.filter((event) => event.isAllDay);
@@ -722,37 +815,54 @@ function WeekCalendarGrid({
   const gridCols = `72px repeat(${days.length}, minmax(0, 1fr))`;
 
   const eventBlockStyle = (calendarId: string | undefined) =>
-    variant === "public" ? PUBLIC_GRAY_EVENT_STYLE : getCalendarColorStyle(calendarColors[calendarId || ""]);
+    variant === "public"
+      ? PUBLIC_GRAY_EVENT_STYLE
+      : getCalendarColorStyle(calendarColors[calendarId || ""]);
 
   const interactionEnabled = variant === "admin";
 
   return (
     <div className="-mx-3 overflow-x-auto overflow-y-visible px-3 sm:-mx-5 sm:px-5">
       <div className="min-w-[900px] space-y-3 sm:space-y-4">
-        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+        <div
+          className="grid gap-2 sm:gap-3"
+          style={{ gridTemplateColumns: gridCols }}
+        >
           <div className="min-h-[3rem] rounded-2xl border border-[var(--card-border)] bg-white/85 sm:min-h-0 sm:border-0 sm:bg-transparent" />
           {days.map((day) => {
             const headerVar = getWeekDateHeaderVariant(day);
             return (
-              <div key={day.toISOString()} className={weekDateHeaderContainerClass(headerVar)}>
+              <div
+                key={day.toISOString()}
+                className={weekDateHeaderContainerClass(headerVar)}
+              >
                 <p className={weekDateHeaderWeekdayClass(headerVar)}>
-                  {new Intl.DateTimeFormat("ja-JP", { weekday: "short" }).format(day)}
+                  {new Intl.DateTimeFormat("ja-JP", {
+                    weekday: "short",
+                  }).format(day)}
                 </p>
-                <p className={weekDateHeaderDateClass(headerVar)}>{formatMonthDay(day)}</p>
+                <p className={weekDateHeaderDateClass(headerVar)}>
+                  {formatMonthDay(day)}
+                </p>
               </div>
             );
           })}
         </div>
 
-        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+        <div
+          className="grid gap-2 sm:gap-3"
+          style={{ gridTemplateColumns: gridCols }}
+        >
           <div className="flex min-h-14 items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center sm:min-h-0 sm:px-1">
             <span className="text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] text-[var(--text-body)] sm:text-xs">
               終日
             </span>
           </div>
-          {days.map((day) => (
+          {days.map((day) =>
             (() => {
-              const dayEvents = allDayEvents.filter((event) => intersectsDay(event, day));
+              const dayEvents = allDayEvents.filter((event) =>
+                intersectsDay(event, day),
+              );
               if (dayEvents.length === 0) {
                 return (
                   <div
@@ -775,7 +885,12 @@ function WeekCalendarGrid({
                           詳細を表示
                         </span>
                       ) : null}
-                      <span className="mt-1 h-1.5 w-10 rounded-full" style={{ backgroundColor: firstStyle.borderColor as string }} />
+                      <span
+                        className="mt-1 h-1.5 w-10 rounded-full"
+                        style={{
+                          backgroundColor: firstStyle.borderColor as string,
+                        }}
+                      />
                     </>
                   ) : (
                     <>
@@ -785,7 +900,12 @@ function WeekCalendarGrid({
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
                         他 {dayEvents.length - 1} 件の予定
                       </span>
-                      <span className="mt-1 h-1.5 w-10 rounded-full" style={{ backgroundColor: firstStyle.borderColor as string }} />
+                      <span
+                        className="mt-1 h-1.5 w-10 rounded-full"
+                        style={{
+                          backgroundColor: firstStyle.borderColor as string,
+                        }}
+                      />
                     </>
                   )}
                 </>
@@ -816,11 +936,14 @@ function WeekCalendarGrid({
                   {allDayBody}
                 </button>
               );
-            })()
-          ))}
+            })(),
+          )}
         </div>
 
-        <div className="grid gap-2 sm:gap-3" style={{ gridTemplateColumns: gridCols }}>
+        <div
+          className="grid gap-2 sm:gap-3"
+          style={{ gridTemplateColumns: gridCols }}
+        >
           <div
             className="relative rounded-2xl border border-[var(--card-border)] bg-white/85 sm:rounded-none sm:border-0 sm:bg-transparent"
             style={{ height: DAY_GRID_HEIGHT }}
@@ -862,7 +985,10 @@ function WeekCalendarGrid({
                         onPublicSlotBlocked?.("allday");
                         return;
                       }
-                      const preferredHint = computeApproximateTimeFromGridClick(day, y);
+                      const preferredHint = computeApproximateTimeFromGridClick(
+                        day,
+                        y,
+                      );
                       if (
                         !hasAnyFreeSlotInDisplayRange(
                           day,
@@ -875,7 +1001,12 @@ function WeekCalendarGrid({
                         onPublicSlotBlocked?.("no_slots");
                         return;
                       }
-                      onPublicSlotRequest({ day, preferredHint, timedEvents, allDayEvents });
+                      onPublicSlotRequest({
+                        day,
+                        preferredHint,
+                        timedEvents,
+                        allDayEvents,
+                      });
                     }}
                   />
                 ) : null}
@@ -883,7 +1014,9 @@ function WeekCalendarGrid({
                   <div
                     key={hour}
                     className="pointer-events-none absolute inset-x-0 border-t border-dashed border-[var(--card-border)]"
-                    style={{ top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT }}
+                    style={{
+                      top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT,
+                    }}
                   />
                 ))}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
@@ -896,7 +1029,10 @@ function WeekCalendarGrid({
                       return null;
                     }
                     const { top, height } = gridPos;
-                    const { column, columnCount } = dayLayout.get(event.id) ?? { column: 0, columnCount: 1 };
+                    const { column, columnCount } = dayLayout.get(event.id) ?? {
+                      column: 0,
+                      columnCount: 1,
+                    };
                     const gapPx = columnCount > 1 ? 2 : 0;
                     const leftStyle =
                       columnCount === 1
@@ -953,16 +1089,24 @@ function WeekCalendarGrid({
   );
 }
 
-function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerVariant }) {
+function CalendarWeekPlannerContent({
+  variant,
+}: {
+  variant: CalendarWeekPlannerVariant;
+}) {
   const { user } = useAuth();
   const [anchor, setAnchor] = useState(new Date());
   const [data, setData] = useState<CalendarEventsResponse | null>(null);
-  const [preferences, setPreferences] = useState<CalendarPreferencesResponse | null>(null);
+  const [preferences, setPreferences] =
+    useState<CalendarPreferencesResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [weekPickerOpen, setWeekPickerOpen] = useState(false);
   const [detailEvent, setDetailEvent] = useState<NormalizedEvent | null>(null);
-  const [allDayModal, setAllDayModal] = useState<{ day: Date; events: NormalizedEvent[] } | null>(null);
+  const [allDayModal, setAllDayModal] = useState<{
+    day: Date;
+    events: NormalizedEvent[];
+  } | null>(null);
   const [meetingRequest, setMeetingRequest] = useState<{
     day: Date;
     preferredHint: Date;
@@ -971,7 +1115,9 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
   } | null>(null);
   const [slotBusyHint, setSlotBusyHint] = useState<string | null>(null);
   const eventsCacheRef = useRef<Map<string, CalendarEventsResponse>>(new Map());
-  const eventsInFlightRef = useRef<Map<string, Promise<CalendarEventsResponse>>>(new Map());
+  const eventsInFlightRef = useRef<
+    Map<string, Promise<CalendarEventsResponse>>
+  >(new Map());
 
   useEffect(() => {
     if (!slotBusyHint) {
@@ -996,7 +1142,11 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
           | CalendarPreferencesResponse
           | { error?: string };
         if (!res.ok) {
-          throw new Error(body && "error" in body ? body.error || "取得に失敗しました" : "取得に失敗しました");
+          throw new Error(
+            body && "error" in body
+              ? body.error || "取得に失敗しました"
+              : "取得に失敗しました",
+          );
         }
         setPreferences(body as CalendarPreferencesResponse);
       } catch (err) {
@@ -1027,19 +1177,24 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
           to: toApiDateTime(range.end),
         });
         const eventsPath =
-          variant === "admin" ? "/api/admin/calendar/events" : "/api/calendar/events";
+          variant === "admin"
+            ? "/api/admin/calendar/events"
+            : "/api/calendar/events";
         const res = await fetch(`${eventsPath}?${query.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         const raw = await res.text();
         let body: CalendarEventsResponse | { error?: string } = {};
         try {
-          body = raw ? (JSON.parse(raw) as CalendarEventsResponse | { error?: string }) : {};
+          body = raw
+            ? (JSON.parse(raw) as CalendarEventsResponse | { error?: string })
+            : {};
         } catch {
           body = {};
         }
         if (!res.ok) {
-          const apiErr = "error" in body && typeof body.error === "string" ? body.error : "";
+          const apiErr =
+            "error" in body && typeof body.error === "string" ? body.error : "";
           if (apiErr) {
             throw new Error(apiErr);
           }
@@ -1080,15 +1235,20 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
         setError("");
       }
       try {
-        const token = variant === "admin" && user ? await user.getIdToken() : "";
+        const token =
+          variant === "admin" && user ? await user.getIdToken() : "";
         const currentWeek = await fetchWeekEvents(anchor, token);
         if (active) {
           setData(currentWeek);
           setError("");
         }
 
-        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, -1), token).catch(() => undefined);
-        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, 1), token).catch(() => undefined);
+        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, -1), token).catch(
+          () => undefined,
+        );
+        void fetchWeekEvents(shiftAnchor(WEEK_VIEW, anchor, 1), token).catch(
+          () => undefined,
+        );
       } catch (err) {
         if (active) {
           setError(err instanceof Error ? err.message : "取得に失敗しました");
@@ -1108,10 +1268,15 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
     };
   }, [anchor, user, variant]);
 
-  const events = useMemo(() => (data?.events || []).map(normalizeEvent), [data]);
+  const events = useMemo(
+    () => (data?.events || []).map(normalizeEvent),
+    [data],
+  );
   const range = useMemo(() => getViewRange(WEEK_VIEW, anchor), [anchor]);
-  const calendarColors = preferences?.calendarColors || data?.calendarColors || {};
-  const calendarDisplayNames = preferences?.calendarDisplayNames || data?.calendarDisplayNames || {};
+  const calendarColors =
+    preferences?.calendarColors || data?.calendarColors || {};
+  const calendarDisplayNames =
+    preferences?.calendarDisplayNames || data?.calendarDisplayNames || {};
 
   const calendarSection = (
     <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
@@ -1121,12 +1286,15 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
             <div>
               <h1 className="mb-0 border-none pl-0">スケジュール</h1>
               <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--text-body)]">
-                MTG や打ち合わせのご希望は、下の週表示で空いている時間帯をクリックしてお送りください。表示されている時間の範囲内から、長さと開始時刻を選べます。内容を確認のうえ、メールにてご連絡します。
+                MTG
+                や打ち合わせのご希望は、下の週表示で空いている時間帯をクリックしてお送りください。表示されている時間の範囲内から、長さと開始時刻を選べます。内容を確認のうえ、メールにてご連絡します。
               </p>
             </div>
           ) : (
             <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">Google Calendar</p>
+              <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">
+                Google Calendar
+              </p>
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h1 className="mb-0 border-none pl-0">予定管理</h1>
                 <Link
@@ -1135,7 +1303,11 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
                   aria-label="設定"
                   title="設定"
                 >
-                  <svg aria-hidden="true" viewBox="0 -960 960 960" className="h-5 w-5 fill-current">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 -960 960 960"
+                    className="h-5 w-5 fill-current"
+                  >
                     <path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 49-85-147 103-78q-2-14-2-29t2-29l-103-78 85-147 119 49q11-8 22.5-15t24.5-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-49 85 147-103 78q2 14 2 29t-2 29l103 78-85 147-119-49q-11 8-22.5 15T606-208L590-80H370Zm110-280q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Z" />
                   </svg>
                 </Link>
@@ -1177,15 +1349,21 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
           </button>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <p className="text-sm font-semibold text-[var(--text-heading)]">{formatHeaderRange(WEEK_VIEW, anchor)}</p>
+          <p className="text-sm font-semibold text-[var(--text-heading)]">
+            {formatHeaderRange(WEEK_VIEW, anchor)}
+          </p>
         </div>
       </div>
 
       <div className="px-3 py-4 sm:px-5 sm:py-6">
         {loading ? (
-          <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">読み込み中...</div>
+          <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">
+            読み込み中...
+          </div>
         ) : error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">{error}</div>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
+            {error}
+          </div>
         ) : (
           <WeekCalendarGrid
             range={range}
@@ -1193,8 +1371,14 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
             calendarColors={calendarColors}
             variant={variant}
             onEventClick={setDetailEvent}
-            onAllDayEventsClick={(day, dayEvents) => setAllDayModal({ day, events: dayEvents })}
-            onPublicSlotRequest={variant === "public" ? (payload) => setMeetingRequest(payload) : undefined}
+            onAllDayEventsClick={(day, dayEvents) =>
+              setAllDayModal({ day, events: dayEvents })
+            }
+            onPublicSlotRequest={
+              variant === "public"
+                ? (payload) => setMeetingRequest(payload)
+                : undefined
+            }
             onPublicSlotBlocked={
               variant === "public"
                 ? (reason) => {
@@ -1219,6 +1403,11 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
   const modals = (
     <>
       <WeekPickerModal
+        key={
+          weekPickerOpen
+            ? `week-picker-${anchor.getTime()}`
+            : "week-picker-idle"
+        }
         open={weekPickerOpen}
         anchor={anchor}
         onClose={() => setWeekPickerOpen(false)}
@@ -1264,7 +1453,10 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
       {variant === "admin" ? (
         <div className="min-h-screen bg-gray-100">
           <main className="mx-auto max-w-7xl px-2 py-4 sm:px-4 lg:px-8">
-            <Link href="/admin" className="mb-4 inline-block text-sm text-blue-800 hover:text-gray-900">
+            <Link
+              href="/admin"
+              className="mb-4 inline-block text-sm text-blue-800 hover:text-gray-900"
+            >
               ← ダッシュボード
             </Link>
             {calendarSection}
@@ -1289,6 +1481,10 @@ function CalendarWeekPlannerContent({ variant }: { variant: CalendarWeekPlannerV
   );
 }
 
-export function CalendarWeekPlanner({ variant }: { variant: CalendarWeekPlannerVariant }) {
+export function CalendarWeekPlanner({
+  variant,
+}: {
+  variant: CalendarWeekPlannerVariant;
+}) {
   return <CalendarWeekPlannerContent variant={variant} />;
 }

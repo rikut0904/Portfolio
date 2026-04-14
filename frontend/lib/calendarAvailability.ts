@@ -77,7 +77,9 @@ export function getFreeSlotsInDisplayRange(
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
 
-  const windowStart = new Date(dayStart.getTime() + displayMinStart * 60 * 1000);
+  const windowStart = new Date(
+    dayStart.getTime() + displayMinStart * 60 * 1000,
+  );
   const windowEnd = new Date(dayStart.getTime() + displayMinEnd * 60 * 1000);
   const maxStartMs = windowEnd.getTime() - durationMinutes * 60 * 1000;
   if (maxStartMs < windowStart.getTime()) {
@@ -107,6 +109,13 @@ export function hasAnyFreeSlotInDisplayRange(
 ): boolean {
   return MTG_DURATION_OPTIONS_MINUTES.some(
     (d) =>
-      getFreeSlotsInDisplayRange(day, timedEvents, allDayEvents, d, displayStartHour, displayEndHour).length > 0,
+      getFreeSlotsInDisplayRange(
+        day,
+        timedEvents,
+        allDayEvents,
+        d,
+        displayStartHour,
+        displayEndHour,
+      ).length > 0,
   );
 }

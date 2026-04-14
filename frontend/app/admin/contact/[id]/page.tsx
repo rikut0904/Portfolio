@@ -189,7 +189,9 @@ function InquiryDetailContent() {
                 <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
                   <span>状態: {statusLabel(detail.status)}</span>
                   <span>受付日時: {formatDateTime(detail.createdAt)}</span>
-                  {detail.threadId && <span>スレッドID: {detail.threadId}</span>}
+                  {detail.threadId && (
+                    <span>スレッドID: {detail.threadId}</span>
+                  )}
                 </div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   {detail.subject || "-"}

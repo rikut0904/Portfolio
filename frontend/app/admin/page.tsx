@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
 import { useAuth } from "../../lib/auth/AuthContext";
@@ -22,11 +22,7 @@ function DashboardContent() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       // 作品数を取得
       const productsRes = await fetch("/api/products");
@@ -44,15 +40,28 @@ function DashboardContent() {
       let calendarEventsCount = 0;
       try {
         const today = new Date();
-        const start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString();
-        const end = new Date(today.getFullYear(), today.getMonth() + 1, 1).toISOString();
+        const start = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          1,
+        ).toISOString();
+        const end = new Date(
+          today.getFullYear(),
+          today.getMonth() + 1,
+          1,
+        ).toISOString();
         const token = user ? await user.getIdToken() : "";
-        const calendarRes = await fetch(`/api/admin/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        const calendarRes = await fetch(
+          `/api/admin/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
+        );
         if (calendarRes.ok) {
           const calendarData = await calendarRes.json();
-          calendarEventsCount = Array.isArray(calendarData.events) ? calendarData.events.length : 0;
+          calendarEventsCount = Array.isArray(calendarData.events)
+            ? calendarData.events.length
+            : 0;
         }
       } catch (error) {
         console.error("Failed to fetch calendar stats:", error);
@@ -69,7 +78,11 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
 
   return (
     <div className="min-h-screen bg-gray-100">
