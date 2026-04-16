@@ -35,6 +35,13 @@ func (h *Handler) getCalendarPublicEvents(w http.ResponseWriter, r *http.Request
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
+	publications, err := h.resolveCalendarEventPublications(r.Context(), events)
+	if err != nil {
+		log.Printf("calendar public publications fetch error: %v", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar publications"})
+		return
+	}
+	events = applyCalendarEventPublications(events, publications)
 	events = filterEventsForPublicCalendar(events)
 	publicEvents := sanitizeEventsForPublicResponse(events)
 	filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
@@ -88,6 +95,12 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
+	publications, err := h.resolveCalendarEventPublications(r.Context(), events)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar publications"})
+		return
+	}
+	events = applyCalendarEventPublications(events, publications)
 	preferences, err := h.resolveCalendarPreferences(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
@@ -230,6 +243,22 @@ func filterEventsForPublicCalendar(events []gcalendar.Event) []gcalendar.Event {
 func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event {
 	out := make([]gcalendar.Event, 0, len(events))
 	for _, e := range events {
+		if e.IsPublished {
+			out = append(out, gcalendar.Event{
+				ID:          publicOpaqueEventID(e.CalendarID, e.ID),
+				CalendarID:  e.CalendarID,
+				Summary:     e.Summary,
+				Description: e.Description,
+				Location:    e.Location,
+				HTMLLink:    "",
+				Status:      "",
+				Start:       e.Start,
+				End:         e.End,
+				IsAllDay:    e.IsAllDay,
+				IsPublished: true,
+			})
+			continue
+		}
 		out = append(out, gcalendar.Event{
 			ID:          publicOpaqueEventID(e.CalendarID, e.ID),
 			CalendarID:  e.CalendarID,
@@ -241,6 +270,7 @@ func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event
 			Start:       e.Start,
 			End:         e.End,
 			IsAllDay:    e.IsAllDay,
+			IsPublished: false,
 		})
 	}
 	return out

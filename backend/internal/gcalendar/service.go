@@ -50,6 +50,7 @@ type Event struct {
 	Start       string `json:"start"`
 	End         string `json:"end"`
 	IsAllDay    bool   `json:"isAllDay"`
+	IsPublished bool   `json:"isPublished"`
 }
 
 func New(ctx context.Context, cfg Config) (*Service, error) {

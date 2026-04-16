@@ -16,6 +16,7 @@ export interface CalendarEvent {
   start: string;
   end: string;
   isAllDay: boolean;
+  isPublished: boolean;
 }
 
 export interface CalendarEventsResponse {

@@ -68,6 +68,16 @@ type NormalizedEvent = CalendarEvent & {
   endDate: Date;
 };
 
+function calendarEventKey(event: Pick<CalendarEvent, "id" | "calendarId">) {
+  return `${event.calendarId || ""}::${event.id}`;
+}
+
+function calendarEventInstanceKey(
+  event: Pick<CalendarEvent, "id" | "calendarId" | "start" | "end">,
+) {
+  return `${event.calendarId || ""}::${event.id}::${event.start}::${event.end}`;
+}
+
 function normalizeEvent(event: CalendarEvent): NormalizedEvent {
   const startDate = event.isAllDay
     ? new Date(`${event.start}T00:00:00`)
@@ -326,7 +336,7 @@ function layoutTimedEventsForDay(
         column = columnEnds.length;
         columnEnds.push(clipped.end.getTime());
       }
-      columnById.push({ id: event.id, column });
+      columnById.push({ id: calendarEventInstanceKey(event), column });
     }
     const columnCount = columnEnds.length;
     for (const { id, column } of columnById) {
@@ -567,11 +577,17 @@ function EventDetailModal({
   onClose,
   calendarDisplayNames,
   showCalendarMeta,
+  publicationControl,
 }: {
   event: NormalizedEvent | null;
   onClose: () => void;
   calendarDisplayNames: CalendarDisplayNameMap;
   showCalendarMeta: boolean;
+  publicationControl?: {
+    checked: boolean;
+    saving: boolean;
+    onChange: (next: boolean) => void;
+  };
 }) {
   const titleId = "calendar-event-detail-title";
   if (!event) {
@@ -606,6 +622,23 @@ function EventDetailModal({
           >
             {event.summary || "（タイトルなし）"}
           </h2>
+          {publicationControl ? (
+            <label className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-white/85 px-4 py-3 text-sm text-[var(--text-heading)]">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-[var(--card-border)]"
+                checked={publicationControl.checked}
+                disabled={publicationControl.saving}
+                onChange={(e) => publicationControl.onChange(e.target.checked)}
+              />
+              <span className="flex-1">
+                一般ページでタイトルと詳細を公開する
+              </span>
+              <span className="text-xs text-[var(--text-body)]">
+                {publicationControl.saving ? "保存中..." : ""}
+              </span>
+            </label>
+          ) : null}
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
           <dl className="space-y-4 text-sm sm:text-[15px]">
@@ -819,7 +852,8 @@ function WeekCalendarGrid({
       ? PUBLIC_GRAY_EVENT_STYLE
       : getCalendarColorStyle(calendarColors[calendarId || ""]);
 
-  const interactionEnabled = variant === "admin";
+  const canOpenEventDetail = (event: NormalizedEvent) =>
+    variant === "admin" || event.isPublished;
 
   return (
     <div className="-mx-3 overflow-x-auto overflow-y-visible px-3 sm:-mx-5 sm:px-5">
@@ -872,15 +906,23 @@ function WeekCalendarGrid({
                 );
               }
               const firstEvent = dayEvents[0];
+              const publishedDayEvents = dayEvents.filter(
+                (event) => event.isPublished,
+              );
+              const primaryPublicEvent = publishedDayEvents[0] || null;
               const firstStyle = eventBlockStyle(firstEvent.calendarId);
+              const firstTitle =
+                variant === "public"
+                  ? primaryPublicEvent?.summary || "予定あり"
+                  : firstEvent.summary || "（タイトルなし）";
               const allDayBody = (
                 <>
                   {dayEvents.length === 1 ? (
                     <>
                       <span className="line-clamp-1 max-w-full text-xs font-semibold text-[var(--text-heading)] sm:text-sm">
-                        {firstEvent.summary || "（タイトルなし）"}
+                        {firstTitle}
                       </span>
-                      {interactionEnabled ? (
+                      {variant === "admin" || primaryPublicEvent ? (
                         <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
                           詳細を表示
                         </span>
@@ -895,10 +937,14 @@ function WeekCalendarGrid({
                   ) : (
                     <>
                       <span className="line-clamp-1 max-w-full text-xs font-semibold text-[var(--text-heading)] sm:text-sm">
-                        {firstEvent.summary || "（タイトルなし）"}
+                        {firstTitle}
                       </span>
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
-                        他 {dayEvents.length - 1} 件の予定
+                        {variant === "public"
+                          ? publishedDayEvents.length > 0
+                            ? `他 ${Math.max(publishedDayEvents.length - 1, 0)} 件の公開予定`
+                            : "公開予定なし"
+                          : `他 ${dayEvents.length - 1} 件の予定`}
                       </span>
                       <span
                         className="mt-1 h-1.5 w-10 rounded-full"
@@ -910,7 +956,10 @@ function WeekCalendarGrid({
                   )}
                 </>
               );
-              if (!interactionEnabled) {
+              if (
+                variant === "public" &&
+                (!primaryPublicEvent || publishedDayEvents.length === 0)
+              ) {
                 return (
                   <div
                     key={day.toISOString()}
@@ -925,6 +974,16 @@ function WeekCalendarGrid({
                   key={day.toISOString()}
                   type="button"
                   onClick={() => {
+                    if (variant === "public") {
+                      if (publishedDayEvents.length === 1 && primaryPublicEvent) {
+                        onEventClick(primaryPublicEvent);
+                        return;
+                      }
+                      if (publishedDayEvents.length > 1) {
+                        onAllDayEventsClick(day, publishedDayEvents);
+                      }
+                      return;
+                    }
                     if (dayEvents.length === 1) {
                       onEventClick(firstEvent);
                       return;
@@ -1029,10 +1088,10 @@ function WeekCalendarGrid({
                       return null;
                     }
                     const { top, height } = gridPos;
-                    const { column, columnCount } = dayLayout.get(event.id) ?? {
-                      column: 0,
-                      columnCount: 1,
-                    };
+                    const eventInstanceKey = calendarEventInstanceKey(event);
+                    const { column, columnCount } = dayLayout.get(
+                      eventInstanceKey,
+                    ) ?? { column: 0, columnCount: 1 };
                     const gapPx = columnCount > 1 ? 2 : 0;
                     const leftStyle =
                       columnCount === 1
@@ -1050,11 +1109,16 @@ function WeekCalendarGrid({
                       right: "auto" as const,
                       ...eventBlockStyle(event.calendarId),
                     };
-                    const label = event.summary || "（タイトルなし）";
-                    if (!interactionEnabled) {
+                    const label =
+                      variant === "public"
+                        ? event.isPublished
+                          ? event.summary || "（タイトルなし）"
+                          : "予定あり"
+                        : event.summary || "（タイトルなし）";
+                    if (!canOpenEventDetail(event)) {
                       return (
                         <div
-                          key={`${event.id}-${day.toISOString()}`}
+                          key={`${eventInstanceKey}-${day.toISOString()}`}
                           className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
                           style={blockStyle}
                           aria-label="予定あり"
@@ -1067,7 +1131,7 @@ function WeekCalendarGrid({
                     }
                     return (
                       <button
-                        key={`${event.id}-${day.toISOString()}`}
+                        key={`${eventInstanceKey}-${day.toISOString()}`}
                         type="button"
                         onClick={() => onEventClick(event)}
                         className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
@@ -1114,6 +1178,9 @@ function CalendarWeekPlannerContent({
     allDayEvents: NormalizedEvent[];
   } | null>(null);
   const [slotBusyHint, setSlotBusyHint] = useState<string | null>(null);
+  const [publicationSavingKey, setPublicationSavingKey] = useState<
+    string | null
+  >(null);
   const eventsCacheRef = useRef<Map<string, CalendarEventsResponse>>(new Map());
   const eventsInFlightRef = useRef<
     Map<string, Promise<CalendarEventsResponse>>
@@ -1131,7 +1198,36 @@ function CalendarWeekPlannerContent({
       timezone: typeof o.timezone === "string" ? o.timezone : "Asia/Tokyo",
       from: typeof o.from === "string" ? o.from : "",
       to: typeof o.to === "string" ? o.to : "",
-      events: Array.isArray(o.events) ? o.events : [],
+      events: Array.isArray(o.events)
+        ? o.events.map((event) => {
+            const record =
+              event && typeof event === "object"
+                ? (event as unknown as Record<string, unknown>)
+                : {};
+            return {
+              id: typeof record.id === "string" ? record.id : "",
+              calendarId:
+                typeof record.calendarId === "string"
+                  ? record.calendarId
+                  : undefined,
+              summary:
+                typeof record.summary === "string" ? record.summary : "",
+              description:
+                typeof record.description === "string"
+                  ? record.description
+                  : "",
+              location:
+                typeof record.location === "string" ? record.location : "",
+              htmlLink:
+                typeof record.htmlLink === "string" ? record.htmlLink : "",
+              status: typeof record.status === "string" ? record.status : "",
+              start: typeof record.start === "string" ? record.start : "",
+              end: typeof record.end === "string" ? record.end : "",
+              isAllDay: Boolean(record.isAllDay),
+              isPublished: Boolean(record.isPublished),
+            };
+          })
+        : [],
       calendarIds: Array.isArray(o.calendarIds) ? o.calendarIds : undefined,
       calendarColors: o.calendarColors,
       calendarLabels: o.calendarLabels,
@@ -1298,6 +1394,55 @@ function CalendarWeekPlannerContent({
     };
   }, [anchor, user, variant]);
 
+  const applyPublicationToResponse = (
+    response: CalendarEventsResponse,
+    calendarId: string,
+    eventId: string,
+    isPublished: boolean,
+  ): CalendarEventsResponse => ({
+    ...response,
+    events: response.events.map((event) =>
+      event.id === eventId && event.calendarId === calendarId
+        ? { ...event, isPublished }
+        : event,
+    ),
+  });
+
+  const syncEventPublication = (
+    calendarId: string,
+    eventId: string,
+    isPublished: boolean,
+  ) => {
+    eventsCacheRef.current = new Map(
+      Array.from(eventsCacheRef.current.entries()).map(([key, value]) => [
+        key,
+        applyPublicationToResponse(value, calendarId, eventId, isPublished),
+      ]),
+    );
+    setData((current) =>
+      current
+        ? applyPublicationToResponse(current, calendarId, eventId, isPublished)
+        : current,
+    );
+    setDetailEvent((current) =>
+      current && current.id === eventId && current.calendarId === calendarId
+        ? { ...current, isPublished }
+        : current,
+    );
+    setAllDayModal((current) =>
+      current
+        ? {
+            ...current,
+            events: current.events.map((event) =>
+              event.id === eventId && event.calendarId === calendarId
+                ? { ...event, isPublished }
+                : event,
+            ),
+          }
+        : current,
+    );
+  };
+
   const events = useMemo(() => {
     const list = data?.events;
     if (!Array.isArray(list)) {
@@ -1310,6 +1455,48 @@ function CalendarWeekPlannerContent({
     preferences?.calendarColors || data?.calendarColors || {};
   const calendarDisplayNames =
     preferences?.calendarDisplayNames || data?.calendarDisplayNames || {};
+  const detailEventPublicationKey = detailEvent
+    ? calendarEventKey(detailEvent)
+    : null;
+
+  const handleAdminPublicationChange = async (next: boolean) => {
+    if (variant !== "admin" || !detailEvent || !detailEvent.calendarId) {
+      return;
+    }
+    const eventKey = calendarEventKey(detailEvent);
+    setPublicationSavingKey(eventKey);
+    try {
+      const token = user ? await user.getIdToken() : "";
+      const res = await fetch("/api/admin/calendar/events/publication", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          calendarId: detailEvent.calendarId,
+          eventId: detailEvent.id,
+          isPublished: next,
+        }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        throw new Error(body.error || "公開設定の保存に失敗しました");
+      }
+      syncEventPublication(detailEvent.calendarId, detailEvent.id, next);
+      setSlotBusyHint(
+        next
+          ? "この予定を一般ページで公開しました。"
+          : "この予定を一般ページで非公開にしました。",
+      );
+    } catch (err) {
+      setSlotBusyHint(
+        err instanceof Error ? err.message : "公開設定の保存に失敗しました",
+      );
+    } finally {
+      setPublicationSavingKey(null);
+    }
+  };
 
   const calendarSection = (
     <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
@@ -1452,6 +1639,15 @@ function CalendarWeekPlannerContent({
             onClose={() => setDetailEvent(null)}
             calendarDisplayNames={calendarDisplayNames}
             showCalendarMeta
+            publicationControl={
+              detailEvent
+                ? {
+                    checked: detailEvent.isPublished,
+                    saving: publicationSavingKey === detailEventPublicationKey,
+                    onChange: handleAdminPublicationChange,
+                  }
+                : undefined
+            }
           />
           <AllDayEventsModal
             day={allDayModal?.day || null}
@@ -1466,16 +1662,35 @@ function CalendarWeekPlannerContent({
           />
         </>
       ) : (
-        <MeetingRequestModal
-          open={meetingRequest !== null}
-          onClose={() => setMeetingRequest(null)}
-          day={meetingRequest?.day ?? null}
-          preferredHint={meetingRequest?.preferredHint ?? null}
-          timedEvents={meetingRequest?.timedEvents ?? []}
-          allDayEvents={meetingRequest?.allDayEvents ?? []}
-          displayStartHour={GRID_DISPLAY_START_HOUR}
-          displayEndHour={GRID_DISPLAY_END_HOUR}
-        />
+        <>
+          <EventDetailModal
+            event={detailEvent?.isPublished ? detailEvent : null}
+            onClose={() => setDetailEvent(null)}
+            calendarDisplayNames={calendarDisplayNames}
+            showCalendarMeta={false}
+          />
+          <AllDayEventsModal
+            day={allDayModal?.day || null}
+            events={(allDayModal?.events || []).filter((event) => event.isPublished)}
+            onClose={() => setAllDayModal(null)}
+            onEventClick={(event) => {
+              setAllDayModal(null);
+              setDetailEvent(event);
+            }}
+            calendarDisplayNames={calendarDisplayNames}
+            showCalendarMeta={false}
+          />
+          <MeetingRequestModal
+            open={meetingRequest !== null}
+            onClose={() => setMeetingRequest(null)}
+            day={meetingRequest?.day ?? null}
+            preferredHint={meetingRequest?.preferredHint ?? null}
+            timedEvents={meetingRequest?.timedEvents ?? []}
+            allDayEvents={meetingRequest?.allDayEvents ?? []}
+            displayStartHour={GRID_DISPLAY_START_HOUR}
+            displayEndHour={GRID_DISPLAY_END_HOUR}
+          />
+        </>
       )}
     </>
   );

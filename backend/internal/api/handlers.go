@@ -161,6 +161,12 @@ func (c *calendarAPICache) clearPreferences() {
 	c.mu.Unlock()
 }
 
+func (c *calendarAPICache) clearEvents() {
+	c.mu.Lock()
+	clear(c.events)
+	c.mu.Unlock()
+}
+
 func (h *Handler) Register(r chi.Router) {
 	r.Get("/health", h.handleHealth)
 
@@ -169,6 +175,7 @@ func (h *Handler) Register(r chi.Router) {
 		r.Get("/calendar/events", h.getCalendarPublicEvents)
 
 		r.Get("/admin/calendar/events", h.withAdmin(h.getCalendarEvents))
+		r.Patch("/admin/calendar/events/publication", h.withAdmin(h.patchCalendarEventPublication))
 		r.Get("/admin/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
 		r.Patch("/admin/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
 		r.Post("/auth/login", h.login)
