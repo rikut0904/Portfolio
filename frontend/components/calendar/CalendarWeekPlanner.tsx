@@ -815,6 +815,7 @@ function AllDayEventsModal({
 }
 
 const PUBLIC_GRAY_EVENT_STYLE = getCalendarColorStyle("#9CA3AF");
+const PUBLIC_PUBLISHED_EVENT_STYLE = getCalendarColorStyle("#E7A55A");
 
 function WeekCalendarGrid({
   range,
@@ -847,10 +848,14 @@ function WeekCalendarGrid({
   const timedEvents = events.filter((event) => !event.isAllDay);
   const gridCols = `72px repeat(${days.length}, minmax(0, 1fr))`;
 
-  const eventBlockStyle = (calendarId: string | undefined) =>
-    variant === "public"
-      ? PUBLIC_GRAY_EVENT_STYLE
-      : getCalendarColorStyle(calendarColors[calendarId || ""]);
+  const eventBlockStyle = (event: NormalizedEvent) => {
+    if (variant === "public") {
+      return event.isPublished
+        ? PUBLIC_PUBLISHED_EVENT_STYLE
+        : PUBLIC_GRAY_EVENT_STYLE;
+    }
+    return getCalendarColorStyle(calendarColors[event.calendarId || ""]);
+  };
 
   const canOpenEventDetail = (event: NormalizedEvent) =>
     variant === "admin" || event.isPublished;
@@ -910,7 +915,11 @@ function WeekCalendarGrid({
                 (event) => event.isPublished,
               );
               const primaryPublicEvent = publishedDayEvents[0] || null;
-              const firstStyle = eventBlockStyle(firstEvent.calendarId);
+              const firstStyle = eventBlockStyle(
+                variant === "public" && primaryPublicEvent
+                  ? primaryPublicEvent
+                  : firstEvent,
+              );
               const firstTitle =
                 variant === "public"
                   ? primaryPublicEvent?.summary || "予定あり"
@@ -956,6 +965,15 @@ function WeekCalendarGrid({
                   )}
                 </>
               );
+              const publicAllDayCardStyle =
+                variant === "public" && primaryPublicEvent
+                  ? {
+                      backgroundColor:
+                        PUBLIC_PUBLISHED_EVENT_STYLE.backgroundColor as string,
+                      borderColor:
+                        PUBLIC_PUBLISHED_EVENT_STYLE.borderColor as string,
+                    }
+                  : undefined;
               if (
                 variant === "public" &&
                 (!primaryPublicEvent || publishedDayEvents.length === 0)
@@ -964,6 +982,7 @@ function WeekCalendarGrid({
                   <div
                     key={day.toISOString()}
                     className="flex min-h-14 w-full flex-col items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center sm:min-h-14 sm:rounded-3xl"
+                    style={publicAllDayCardStyle}
                   >
                     {allDayBody}
                   </div>
@@ -991,6 +1010,7 @@ function WeekCalendarGrid({
                     onAllDayEventsClick(day, dayEvents);
                   }}
                   className="flex min-h-14 w-full flex-col items-center justify-center rounded-2xl border border-[var(--card-border)] bg-white/85 px-2 py-2 text-center transition hover:bg-[var(--primary-light)]/35 sm:min-h-14 sm:rounded-3xl"
+                  style={publicAllDayCardStyle}
                 >
                   {allDayBody}
                 </button>
@@ -1107,7 +1127,7 @@ function WeekCalendarGrid({
                       left: leftStyle,
                       width: widthStyle,
                       right: "auto" as const,
-                      ...eventBlockStyle(event.calendarId),
+                      ...eventBlockStyle(event),
                     };
                     const label =
                       variant === "public"
