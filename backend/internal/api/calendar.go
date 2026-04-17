@@ -29,12 +29,13 @@ func (h *Handler) getCalendarPublicEvents(w http.ResponseWriter, r *http.Request
 	}
 	selectedCalendarIDs := parseCalendarIDFilter(r)
 
-	events, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
+	cachedEvents, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
 		log.Printf("calendar public events fetch error: %v", err)
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
+	events := cachedEvents.events
 	publications, err := h.resolveCalendarEventPublications(r.Context(), events)
 	if err != nil {
 		log.Printf("calendar public publications fetch error: %v", err)
@@ -72,58 +73,29 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 	}
 	selectedCalendarIDs := parseCalendarIDFilter(r)
 
-	cacheKey := buildCalendarEventsCacheKey(start, end, selectedCalendarIDs)
-	if cached, ok := h.calendarCache.getEvents(cacheKey); ok {
-		filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
-		writeCacheHeader(w)
-		writeJSON(w, http.StatusOK, map[string]any{
-			"timezone":             h.calendar.Timezone(),
-			"calendarIds":          filteredIDs,
-			"calendarColors":       filterCalendarMap(cached.response.CalendarColors, filteredIDs),
-			"calendarLabels":       filterCalendarMap(cached.response.CalendarLabels, filteredIDs),
-			"calendarDisplayNames": filterCalendarMap(cached.response.CalendarDisplayName, filteredIDs),
-			"from":                 cached.from,
-			"to":                   cached.to,
-			"events":               cached.events,
-		})
-		return
-	}
-
-	events, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
+	cachedEvents, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
 		log.Printf("calendar events fetch error: %v", err)
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
+	events := cachedEvents.events
 	publications, err := h.resolveCalendarEventPublications(r.Context(), events)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar publications"})
 		return
 	}
 	events = applyCalendarEventPublications(events, publications)
-	preferences, err := h.resolveCalendarPreferences(r.Context())
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
-		return
-	}
 	filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
-	fromText := start.Format(time.RFC3339)
-	toText := end.Format(time.RFC3339)
-	h.calendarCache.setEvents(cacheKey, cachedCalendarEventsResponse{
-		response: preferences,
-		events:   events,
-		from:     fromText,
-		to:       toText,
-	}, calendarEventsCacheTTL)
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"timezone":             h.calendar.Timezone(),
 		"calendarIds":          filteredIDs,
-		"calendarColors":       filterCalendarMap(preferences.CalendarColors, filteredIDs),
-		"calendarLabels":       filterCalendarMap(preferences.CalendarLabels, filteredIDs),
-		"calendarDisplayNames": filterCalendarMap(preferences.CalendarDisplayName, filteredIDs),
-		"from":                 fromText,
-		"to":                   toText,
+		"calendarColors":       filterCalendarMap(cachedEvents.response.CalendarColors, filteredIDs),
+		"calendarLabels":       filterCalendarMap(cachedEvents.response.CalendarLabels, filteredIDs),
+		"calendarDisplayNames": filterCalendarMap(cachedEvents.response.CalendarDisplayName, filteredIDs),
+		"from":                 cachedEvents.from,
+		"to":                   cachedEvents.to,
 		"events":               events,
 	})
 }
@@ -132,27 +104,28 @@ func buildCalendarEventsCacheKey(start, end time.Time, selected []string) string
 	return start.Format(time.RFC3339) + "|" + end.Format(time.RFC3339) + "|" + strings.Join(selected, ",")
 }
 
-func (h *Handler) listCalendarEventsWithCache(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) ([]gcalendar.Event, error) {
+func (h *Handler) listCalendarEventsWithCache(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) (cachedCalendarEventsResponse, error) {
 	cacheKey := buildCalendarEventsCacheKey(start, end, selectedCalendarIDs)
 	if cached, ok := h.calendarCache.getEvents(cacheKey); ok {
-		return cached.events, nil
+		return cached, nil
 	}
 
 	events, err := h.calendar.ListEvents(ctx, start, end, selectedCalendarIDs)
 	if err != nil {
-		return nil, err
+		return cachedCalendarEventsResponse{}, err
 	}
 	preferences, err := h.resolveCalendarPreferences(ctx)
 	if err != nil {
-		return nil, err
+		return cachedCalendarEventsResponse{}, err
 	}
-	h.calendarCache.setEvents(cacheKey, cachedCalendarEventsResponse{
+	cached := cachedCalendarEventsResponse{
 		response: preferences,
 		events:   events,
 		from:     start.Format(time.RFC3339),
 		to:       end.Format(time.RFC3339),
-	}, calendarEventsCacheTTL)
-	return events, nil
+	}
+	h.calendarCache.setEvents(cacheKey, cached, calendarEventsCacheTTL)
+	return cached, nil
 }
 
 func parseCalendarRange(r *http.Request, timezone string) (time.Time, time.Time, error) {
