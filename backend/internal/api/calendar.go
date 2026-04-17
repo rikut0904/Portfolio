@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"log"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -101,7 +102,9 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 }
 
 func buildCalendarEventsCacheKey(start, end time.Time, selected []string) string {
-	return start.Format(time.RFC3339) + "|" + end.Format(time.RFC3339) + "|" + strings.Join(selected, ",")
+	normalizedSelected := append([]string(nil), selected...)
+	slices.Sort(normalizedSelected)
+	return start.Format(time.RFC3339) + "|" + end.Format(time.RFC3339) + "|" + strings.Join(normalizedSelected, ",")
 }
 
 func (h *Handler) listCalendarEventsWithCache(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) (cachedCalendarEventsResponse, error) {
