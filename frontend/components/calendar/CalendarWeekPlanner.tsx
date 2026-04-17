@@ -586,10 +586,29 @@ function EventDetailModal({
   publicationControl?: {
     checked: boolean;
     saving: boolean;
-    onChange: (next: boolean) => void;
+    publicDescription: string;
+    onSave: (payload: {
+      isPublished: boolean;
+      publicDescription: string;
+    }) => void;
   };
 }) {
   const titleId = "calendar-event-detail-title";
+  const [draftPublished, setDraftPublished] = useState(false);
+  const [draftPublicDescription, setDraftPublicDescription] = useState("");
+
+  useEffect(() => {
+    if (!event) {
+      return;
+    }
+    setDraftPublished(Boolean(publicationControl?.checked));
+    setDraftPublicDescription(publicationControl?.publicDescription || "");
+  }, [
+    event,
+    publicationControl?.checked,
+    publicationControl?.publicDescription,
+  ]);
+
   if (!event) {
     return null;
   }
@@ -623,21 +642,53 @@ function EventDetailModal({
             {event.summary || "（タイトルなし）"}
           </h2>
           {publicationControl ? (
-            <label className="mt-4 flex items-center gap-3 rounded-2xl border border-[var(--card-border)] bg-white/85 px-4 py-3 text-sm text-[var(--text-heading)]">
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-[var(--card-border)]"
-                checked={publicationControl.checked}
-                disabled={publicationControl.saving}
-                onChange={(e) => publicationControl.onChange(e.target.checked)}
-              />
-              <span className="flex-1">
-                一般ページでタイトルと詳細を公開する
-              </span>
-              <span className="text-xs text-[var(--text-body)]">
-                {publicationControl.saving ? "保存中..." : ""}
-              </span>
-            </label>
+            <div className="mt-4 rounded-2xl border border-[var(--card-border)] bg-white/85 px-4 py-4">
+              <label className="flex items-center gap-3 text-sm text-[var(--text-heading)]">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-[var(--card-border)]"
+                  checked={draftPublished}
+                  disabled={publicationControl.saving}
+                  onChange={(e) => setDraftPublished(e.target.checked)}
+                />
+                <span className="flex-1">
+                  一般ページで詳細を公開する
+                </span>
+                <span className="text-xs text-[var(--text-body)]">
+                  {publicationControl.saving ? "保存中..." : ""}
+                </span>
+              </label>
+              <div className="mt-4 space-y-3">
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-body)]">
+                    公開詳細
+                  </p>
+                  <textarea
+                    value={draftPublicDescription}
+                    onChange={(e) => setDraftPublicDescription(e.target.value)}
+                    disabled={publicationControl.saving}
+                    placeholder="一般ページで見せたい説明や https://... のURLを記載できます"
+                    rows={5}
+                    className="w-full rounded-xl border border-[var(--card-border)] bg-white px-3 py-2 text-sm text-black outline-none focus:border-[var(--primary-color)]"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={publicationControl.saving}
+                    onClick={() =>
+                      publicationControl.onSave({
+                        isPublished: draftPublished,
+                        publicDescription: draftPublicDescription,
+                      })
+                    }
+                    className="inline-flex min-h-[40px] items-center justify-center rounded-full bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white hover:opacity-95 disabled:opacity-60"
+                  >
+                    公開詳細を保存
+                  </button>
+                </div>
+              </div>
+            </div>
           ) : null}
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 text-black sm:px-6 sm:py-5 md:px-8 md:py-6">
@@ -1236,6 +1287,10 @@ function CalendarWeekPlannerContent({
                 typeof record.description === "string"
                   ? record.description
                   : "",
+              publicDescription:
+                typeof record.publicDescription === "string"
+                  ? record.publicDescription
+                  : "",
               location:
                 typeof record.location === "string" ? record.location : "",
               htmlLink:
@@ -1419,11 +1474,12 @@ function CalendarWeekPlannerContent({
     calendarId: string,
     eventId: string,
     isPublished: boolean,
+    publicDescription: string,
   ): CalendarEventsResponse => ({
     ...response,
     events: response.events.map((event) =>
       event.id === eventId && event.calendarId === calendarId
-        ? { ...event, isPublished }
+        ? { ...event, isPublished, publicDescription }
         : event,
     ),
   });
@@ -1432,21 +1488,34 @@ function CalendarWeekPlannerContent({
     calendarId: string,
     eventId: string,
     isPublished: boolean,
+    publicDescription: string,
   ) => {
     eventsCacheRef.current = new Map(
       Array.from(eventsCacheRef.current.entries()).map(([key, value]) => [
         key,
-        applyPublicationToResponse(value, calendarId, eventId, isPublished),
+        applyPublicationToResponse(
+          value,
+          calendarId,
+          eventId,
+          isPublished,
+          publicDescription,
+        ),
       ]),
     );
     setData((current) =>
       current
-        ? applyPublicationToResponse(current, calendarId, eventId, isPublished)
+        ? applyPublicationToResponse(
+            current,
+            calendarId,
+            eventId,
+            isPublished,
+            publicDescription,
+          )
         : current,
     );
     setDetailEvent((current) =>
       current && current.id === eventId && current.calendarId === calendarId
-        ? { ...current, isPublished }
+        ? { ...current, isPublished, publicDescription }
         : current,
     );
     setAllDayModal((current) =>
@@ -1455,7 +1524,7 @@ function CalendarWeekPlannerContent({
             ...current,
             events: current.events.map((event) =>
               event.id === eventId && event.calendarId === calendarId
-                ? { ...event, isPublished }
+                ? { ...event, isPublished, publicDescription }
                 : event,
             ),
           }
@@ -1479,7 +1548,13 @@ function CalendarWeekPlannerContent({
     ? calendarEventKey(detailEvent)
     : null;
 
-  const handleAdminPublicationChange = async (next: boolean) => {
+  const handleAdminPublicationSave = async ({
+    isPublished,
+    publicDescription,
+  }: {
+    isPublished: boolean;
+    publicDescription: string;
+  }) => {
     if (variant !== "admin" || !detailEvent || !detailEvent.calendarId) {
       return;
     }
@@ -1496,16 +1571,25 @@ function CalendarWeekPlannerContent({
         body: JSON.stringify({
           calendarId: detailEvent.calendarId,
           eventId: detailEvent.id,
-          isPublished: next,
+          isPublished,
+          publicDescription,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        publicDescription?: string;
+      };
       if (!res.ok) {
         throw new Error(body.error || "公開設定の保存に失敗しました");
       }
-      syncEventPublication(detailEvent.calendarId, detailEvent.id, next);
+      syncEventPublication(
+        detailEvent.calendarId,
+        detailEvent.id,
+        isPublished,
+        body.publicDescription || "",
+      );
       setSlotBusyHint(
-        next
+        isPublished
           ? "この予定を一般ページで公開しました。"
           : "この予定を一般ページで非公開にしました。",
       );
@@ -1664,7 +1748,8 @@ function CalendarWeekPlannerContent({
                 ? {
                     checked: detailEvent.isPublished,
                     saving: publicationSavingKey === detailEventPublicationKey,
-                    onChange: handleAdminPublicationChange,
+                    publicDescription: detailEvent.publicDescription || "",
+                    onSave: handleAdminPublicationSave,
                   }
                 : undefined
             }

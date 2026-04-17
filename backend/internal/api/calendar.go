@@ -244,33 +244,36 @@ func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event
 	out := make([]gcalendar.Event, 0, len(events))
 	for _, e := range events {
 		if e.IsPublished {
+			description := strings.TrimSpace(e.PublicDescription)
 			out = append(out, gcalendar.Event{
-				ID:          publicOpaqueEventID(e.CalendarID, e.ID),
-				CalendarID:  e.CalendarID,
-				Summary:     e.Summary,
-				Description: e.Description,
-				Location:    e.Location,
-				HTMLLink:    "",
-				Status:      "",
-				Start:       e.Start,
-				End:         e.End,
-				IsAllDay:    e.IsAllDay,
-				IsPublished: true,
+				ID:                publicOpaqueEventID(e.CalendarID, e.ID),
+				CalendarID:        e.CalendarID,
+				Summary:           e.Summary,
+				Description:       description,
+				PublicDescription: e.PublicDescription,
+				Location:          e.Location,
+				HTMLLink:          "",
+				Status:            "",
+				Start:             e.Start,
+				End:               e.End,
+				IsAllDay:          e.IsAllDay,
+				IsPublished:       true,
 			})
 			continue
 		}
 		out = append(out, gcalendar.Event{
-			ID:          publicOpaqueEventID(e.CalendarID, e.ID),
-			CalendarID:  e.CalendarID,
-			Summary:     publicCalendarEventLabel,
-			Description: "",
-			Location:    "",
-			HTMLLink:    "",
-			Status:      "",
-			Start:       e.Start,
-			End:         e.End,
-			IsAllDay:    e.IsAllDay,
-			IsPublished: false,
+			ID:                publicOpaqueEventID(e.CalendarID, e.ID),
+			CalendarID:        e.CalendarID,
+			Summary:           publicCalendarEventLabel,
+			Description:       "",
+			PublicDescription: "",
+			Location:          "",
+			HTMLLink:          "",
+			Status:            "",
+			Start:             e.Start,
+			End:               e.End,
+			IsAllDay:          e.IsAllDay,
+			IsPublished:       false,
 		})
 	}
 	return out

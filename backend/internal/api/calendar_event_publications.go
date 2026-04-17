@@ -9,12 +9,17 @@ import (
 	"portfolio-backend/internal/gcalendar"
 )
 
+type calendarEventPublication struct {
+	IsPublic          bool
+	PublicDescription string
+}
+
 func calendarEventPublicationKey(calendarID, eventID string) string {
 	return calendarID + "\x00" + eventID
 }
 
-func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events []gcalendar.Event) (map[string]bool, error) {
-	publications := make(map[string]bool, len(events))
+func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events []gcalendar.Event) (map[string]calendarEventPublication, error) {
+	publications := make(map[string]calendarEventPublication, len(events))
 	if len(events) == 0 {
 		return publications, nil
 	}
@@ -42,7 +47,7 @@ func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events [
 	}
 
 	rows, err := h.store.Pool.Query(ctx, `
-		SELECT calendar_id, event_id, is_public
+		SELECT calendar_id, event_id, is_public, public_description
 		FROM calendar_event_publications
 		WHERE calendar_id = ANY($1) AND event_id = ANY($2)
 	`, calendarIDs, eventIDs)
@@ -54,11 +59,12 @@ func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events [
 	for rows.Next() {
 		var calendarID string
 		var eventID string
-		var isPublic bool
-		if err := rows.Scan(&calendarID, &eventID, &isPublic); err != nil {
+		var row calendarEventPublication
+		if err := rows.Scan(&calendarID, &eventID, &row.IsPublic, &row.PublicDescription); err != nil {
 			return nil, err
 		}
-		publications[calendarEventPublicationKey(calendarID, eventID)] = isPublic
+		row.PublicDescription = strings.TrimSpace(row.PublicDescription)
+		publications[calendarEventPublicationKey(calendarID, eventID)] = row
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -66,13 +72,15 @@ func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events [
 	return publications, nil
 }
 
-func applyCalendarEventPublications(events []gcalendar.Event, publications map[string]bool) []gcalendar.Event {
+func applyCalendarEventPublications(events []gcalendar.Event, publications map[string]calendarEventPublication) []gcalendar.Event {
 	if len(events) == 0 {
 		return []gcalendar.Event{}
 	}
 	applied := make([]gcalendar.Event, 0, len(events))
 	for _, event := range events {
-		event.IsPublished = publications[calendarEventPublicationKey(event.CalendarID, event.ID)]
+		publication := publications[calendarEventPublicationKey(event.CalendarID, event.ID)]
+		event.IsPublished = publication.IsPublic
+		event.PublicDescription = publication.PublicDescription
 		applied = append(applied, event)
 	}
 	return applied
@@ -85,9 +93,10 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 	}
 
 	var body struct {
-		CalendarID  string `json:"calendarId"`
-		EventID     string `json:"eventId"`
-		IsPublished bool   `json:"isPublished"`
+		CalendarID        string `json:"calendarId"`
+		EventID           string `json:"eventId"`
+		IsPublished       bool   `json:"isPublished"`
+		PublicDescription string `json:"publicDescription"`
 	}
 	if err := decodeBody(r, &body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -113,26 +122,33 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	publicDescription := strings.TrimSpace(body.PublicDescription)
+
 	if _, err := h.store.Pool.Exec(r.Context(), `
-		INSERT INTO calendar_event_publications (calendar_id, event_id, is_public, updated_at)
-		VALUES ($1, $2, $3, NOW())
+		INSERT INTO calendar_event_publications (
+			calendar_id, event_id, is_public, public_description, updated_at
+		)
+		VALUES ($1, $2, $3, $4, NOW())
 		ON CONFLICT (calendar_id, event_id)
 		DO UPDATE SET
 			is_public = EXCLUDED.is_public,
+			public_description = EXCLUDED.public_description,
 			updated_at = NOW()
-	`, calendarID, eventID, body.IsPublished); err != nil {
+	`, calendarID, eventID, body.IsPublished, publicDescription); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar event publication"})
 		return
 	}
 
 	h.calendarCache.clearEvents()
 	h.logAdmin(r.Context(), "update", "calendar_event_publications", eventID, "info", user, map[string]any{
-		"calendarId":  calendarID,
-		"isPublished": body.IsPublished,
+		"calendarId":        calendarID,
+		"isPublished":       body.IsPublished,
+		"publicDescription": publicDescription,
 	})
 	writeJSON(w, http.StatusOK, map[string]any{
-		"calendarId":  calendarID,
-		"eventId":     eventID,
-		"isPublished": body.IsPublished,
+		"calendarId":        calendarID,
+		"eventId":           eventID,
+		"isPublished":       body.IsPublished,
+		"publicDescription": publicDescription,
 	})
 }

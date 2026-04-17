@@ -40,17 +40,18 @@ type Service struct {
 }
 
 type Event struct {
-	ID          string `json:"id"`
-	CalendarID  string `json:"calendarId"`
-	Summary     string `json:"summary"`
-	Description string `json:"description"`
-	Location    string `json:"location"`
-	HTMLLink    string `json:"htmlLink"`
-	Status      string `json:"status"`
-	Start       string `json:"start"`
-	End         string `json:"end"`
-	IsAllDay    bool   `json:"isAllDay"`
-	IsPublished bool   `json:"isPublished"`
+	ID                string `json:"id"`
+	CalendarID        string `json:"calendarId"`
+	Summary           string `json:"summary"`
+	Description       string `json:"description"`
+	PublicDescription string `json:"publicDescription"`
+	Location          string `json:"location"`
+	HTMLLink          string `json:"htmlLink"`
+	Status            string `json:"status"`
+	Start             string `json:"start"`
+	End               string `json:"end"`
+	IsAllDay          bool   `json:"isAllDay"`
+	IsPublished       bool   `json:"isPublished"`
 }
 
 func New(ctx context.Context, cfg Config) (*Service, error) {

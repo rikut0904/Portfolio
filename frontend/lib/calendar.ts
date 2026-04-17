@@ -10,6 +10,7 @@ export interface CalendarEvent {
   calendarId?: string;
   summary: string;
   description: string;
+  publicDescription: string;
   location: string;
   htmlLink: string;
   status: string;
