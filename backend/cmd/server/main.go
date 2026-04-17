@@ -44,9 +44,6 @@ func main() {
 	if err := migrations.RunCalendarEventPublicationContent(ctx, st.Pool); err != nil {
 		log.Fatalf("migration error: %v", err)
 	}
-	if err := migrations.RunCalendarEventPublicationRemoveSummary(ctx, st.Pool); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
 	if cfg.RunInquiryThreadMigration {
 		if err := migrations.RunInquiryThreads(ctx, st.Pool); err != nil {
 			log.Fatalf("migration error: %v", err)

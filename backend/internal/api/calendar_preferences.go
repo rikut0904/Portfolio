@@ -107,19 +107,31 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		}
 
 		if _, err := tx.Exec(r.Context(), `
-			INSERT INTO calendar_preferences (calendar_id, color, label, updated_at)
-			VALUES (
-				$1,
-				COALESCE(NULLIF($2, ''), $3),
-				$4,
-				NOW()
-			)
-			ON CONFLICT (calendar_id)
-			DO UPDATE SET
-				color = COALESCE(NULLIF(EXCLUDED.color, ''), calendar_preferences.color),
-				label = EXCLUDED.label,
-				updated_at = NOW()
-		`, id, normalizedColor, h.calendar.DefaultCalendarColors()[id], normalizedLabel); err != nil {
+				INSERT INTO calendar_preferences (calendar_id, color, label, updated_at)
+				VALUES (
+					$1,
+					CASE
+						WHEN $4 THEN $2
+						ELSE $3
+					END,
+					CASE
+						WHEN $5 THEN $6
+						ELSE ''
+					END,
+					NOW()
+				)
+				ON CONFLICT (calendar_id)
+				DO UPDATE SET
+					color = CASE
+						WHEN $4 THEN EXCLUDED.color
+						ELSE calendar_preferences.color
+					END,
+					label = CASE
+						WHEN $5 THEN EXCLUDED.label
+						ELSE calendar_preferences.label
+					END,
+					updated_at = NOW()
+			`, id, normalizedColor, h.calendar.DefaultCalendarColors()[id], hasColor, hasLabel, normalizedLabel); err != nil {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
 			return
 		}
