@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"log"
 	"net/http"
 	"slices"
@@ -32,7 +33,12 @@ func (h *Handler) getCalendarPublicEvents(w http.ResponseWriter, r *http.Request
 
 	cachedEvents, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
-		log.Printf("calendar public events fetch error: %v", err)
+		var partialErr *gcalendar.PartialFetchError
+		if errors.As(err, &partialErr) {
+			log.Printf("calendar public events partial fetch error: %v", err)
+		} else {
+			log.Printf("calendar public events fetch error: %v", err)
+		}
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return
 	}
@@ -76,6 +82,12 @@ func (h *Handler) getCalendarEvents(w http.ResponseWriter, r *http.Request, _ *a
 
 	cachedEvents, err := h.listCalendarEventsWithCache(r.Context(), start, end, selectedCalendarIDs)
 	if err != nil {
+		var partialErr *gcalendar.PartialFetchError
+		if errors.As(err, &partialErr) {
+			log.Printf("calendar events partial fetch error: %v", err)
+			writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch some Google Calendar events"})
+			return
+		}
 		log.Printf("calendar events fetch error: %v", err)
 		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to fetch Google Calendar events"})
 		return

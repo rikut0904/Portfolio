@@ -39,6 +39,17 @@ type Service struct {
 	api         *calendar.Service
 }
 
+type PartialFetchError struct {
+	Failures []string
+}
+
+func (e *PartialFetchError) Error() string {
+	if e == nil || len(e.Failures) == 0 {
+		return "google calendar event fetch partially failed"
+	}
+	return "google calendar event fetch partially failed: " + strings.Join(e.Failures, "; ")
+}
+
 type Event struct {
 	ID                string `json:"id"`
 	CalendarID        string `json:"calendarId"`
@@ -150,6 +161,9 @@ func (s *Service) ListEvents(ctx context.Context, start, end time.Time, selected
 	})
 	if len(events) == 0 && len(failures) > 0 {
 		return nil, fmt.Errorf("all calendar event fetches failed: %s", strings.Join(failures, "; "))
+	}
+	if len(failures) > 0 {
+		return nil, &PartialFetchError{Failures: failures}
 	}
 	return events, nil
 }
