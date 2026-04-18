@@ -52,16 +52,14 @@ func (h *Handler) getCalendarPublicEvents(w http.ResponseWriter, r *http.Request
 	events = applyCalendarEventPublications(events, publications)
 	events = filterEventsForPublicCalendar(events)
 	publicEvents := sanitizeEventsForPublicResponse(events)
-	filteredIDs := selectedCalendarIDsOrAll(h.calendar.CalendarIDs(), selectedCalendarIDs)
 	fromText := start.Format(time.RFC3339)
 	toText := end.Format(time.RFC3339)
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{
 		"timezone":             h.calendar.Timezone(),
-		"calendarIds":          filteredIDs,
-		"calendarColors":       publicGrayCalendarColors(filteredIDs),
-		"calendarLabels":       emptyCalendarStringMap(filteredIDs),
-		"calendarDisplayNames": emptyCalendarStringMap(filteredIDs),
+		"calendarColors":       map[string]string{},
+		"calendarLabels":       map[string]string{},
+		"calendarDisplayNames": map[string]string{},
 		"from":                 fromText,
 		"to":                   toText,
 		"events":               publicEvents,
@@ -251,7 +249,7 @@ func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event
 			description := strings.TrimSpace(e.PublicDescription)
 			out = append(out, gcalendar.Event{
 				ID:                publicOpaqueEventID(e.CalendarID, e.ID),
-				CalendarID:        e.CalendarID,
+				CalendarID:        "",
 				Summary:           e.Summary,
 				Description:       description,
 				PublicDescription: e.PublicDescription,
@@ -267,7 +265,7 @@ func sanitizeEventsForPublicResponse(events []gcalendar.Event) []gcalendar.Event
 		}
 		out = append(out, gcalendar.Event{
 			ID:                publicOpaqueEventID(e.CalendarID, e.ID),
-			CalendarID:        e.CalendarID,
+			CalendarID:        "",
 			Summary:           publicCalendarEventLabel,
 			Description:       "",
 			PublicDescription: "",
