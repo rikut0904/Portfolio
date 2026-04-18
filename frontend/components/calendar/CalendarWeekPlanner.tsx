@@ -112,7 +112,10 @@ function calendarEventInstanceKey(
   return `${event.calendarId || ""}::${event.id}::${event.start}::${event.end}`;
 }
 
-function normalizeEvent(event: CalendarEvent, timezone: string): NormalizedEvent {
+function normalizeEvent(
+  event: CalendarEvent,
+  timezone: string,
+): NormalizedEvent {
   const startDate = event.isAllDay
     ? parseAllDayDate(event.start)
     : new Date(event.start);
@@ -630,21 +633,12 @@ function EventDetailModal({
   };
 }) {
   const titleId = "calendar-event-detail-title";
-  const [draftPublished, setDraftPublished] = useState(false);
-  const [draftPublicDescription, setDraftPublicDescription] = useState("");
-
-  useEffect(() => {
-    if (!event) {
-      return;
-    }
-    setDraftPublished(Boolean(publicationControl?.checked));
-    setDraftPublicDescription(publicationControl?.publicDescription || "");
-  }, [
-    event,
-    publicationControl?.checked,
-    publicationControl?.publicDescription,
-  ]);
-
+  const [draftPublished, setDraftPublished] = useState(
+    Boolean(publicationControl?.checked),
+  );
+  const [draftPublicDescription, setDraftPublicDescription] = useState(
+    publicationControl?.publicDescription || "",
+  );
   if (!event) {
     return null;
   }
@@ -687,9 +681,7 @@ function EventDetailModal({
                   disabled={publicationControl.saving}
                   onChange={(e) => setDraftPublished(e.target.checked)}
                 />
-                <span className="flex-1">
-                  一般ページで詳細を公開する
-                </span>
+                <span className="flex-1">一般ページで詳細を公開する</span>
                 <span className="text-xs text-[var(--text-body)]">
                   {publicationControl.saving ? "保存中..." : ""}
                 </span>
@@ -1081,7 +1073,10 @@ function WeekCalendarGrid({
                   type="button"
                   onClick={() => {
                     if (variant === "public") {
-                      if (publishedDayEvents.length === 1 && primaryPublicEvent) {
+                      if (
+                        publishedDayEvents.length === 1 &&
+                        primaryPublicEvent
+                      ) {
                         onEventClick(primaryPublicEvent);
                         return;
                       }
@@ -1317,8 +1312,7 @@ function CalendarWeekPlannerContent({
                 typeof record.calendarId === "string"
                   ? record.calendarId
                   : undefined,
-              summary:
-                typeof record.summary === "string" ? record.summary : "",
+              summary: typeof record.summary === "string" ? record.summary : "",
               description:
                 typeof record.description === "string"
                   ? record.description
@@ -1573,7 +1567,9 @@ function CalendarWeekPlannerContent({
     if (!Array.isArray(list)) {
       return [];
     }
-    return list.map((event) => normalizeEvent(event, data?.timezone || "Asia/Tokyo"));
+    return list.map((event) =>
+      normalizeEvent(event, data?.timezone || "Asia/Tokyo"),
+    );
   }, [data]);
   const range = useMemo(() => getViewRange(WEEK_VIEW, anchor), [anchor]);
   const calendarColors =
@@ -1775,6 +1771,9 @@ function CalendarWeekPlannerContent({
       {variant === "admin" ? (
         <>
           <EventDetailModal
+            key={`${detailEventPublicationKey || "detail"}::${
+              detailEvent?.isPublished ? "1" : "0"
+            }::${detailEvent?.publicDescription || ""}`}
             event={detailEvent}
             onClose={() => setDetailEvent(null)}
             calendarDisplayNames={calendarDisplayNames}
@@ -1805,6 +1804,7 @@ function CalendarWeekPlannerContent({
       ) : (
         <>
           <EventDetailModal
+            key={detailEventPublicationKey || "public-detail"}
             event={detailEvent?.isPublished ? detailEvent : null}
             onClose={() => setDetailEvent(null)}
             calendarDisplayNames={calendarDisplayNames}
@@ -1812,7 +1812,9 @@ function CalendarWeekPlannerContent({
           />
           <AllDayEventsModal
             day={allDayModal?.day || null}
-            events={(allDayModal?.events || []).filter((event) => event.isPublished)}
+            events={(allDayModal?.events || []).filter(
+              (event) => event.isPublished,
+            )}
             onClose={() => setAllDayModal(null)}
             onEventClick={(event) => {
               setAllDayModal(null);
