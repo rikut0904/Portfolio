@@ -44,7 +44,9 @@ export default function HistorySectionForm({
 }: HistorySectionFormProps) {
   const histories = Array.isArray(formData.histories) ? formData.histories : [];
 
-  const commitHistories = (nextHistories: ReturnType<typeof normalizeHistory>[]) => {
+  const commitHistories = (
+    nextHistories: ReturnType<typeof normalizeHistory>[],
+  ) => {
     setFormData({
       ...formData,
       histories: nextHistories.map((history) => ({
@@ -76,7 +78,9 @@ export default function HistorySectionForm({
     commitHistories(
       histories
         .map(normalizeHistory)
-        .filter((_: ReturnType<typeof normalizeHistory>, i: number) => i !== index),
+        .filter(
+          (_: ReturnType<typeof normalizeHistory>, i: number) => i !== index,
+        ),
     );
   };
 
@@ -192,7 +196,9 @@ export default function HistorySectionForm({
             <input
               type="url"
               value={history.url}
-              onChange={(e) => updateHistory(historyIndex, "url", e.target.value)}
+              onChange={(e) =>
+                updateHistory(historyIndex, "url", e.target.value)
+              }
               placeholder="カードURL（任意）"
               className="mb-3 w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
             />
@@ -207,7 +213,12 @@ export default function HistorySectionForm({
                       type="text"
                       value={detail.text || ""}
                       onChange={(e) =>
-                        updateDetail(historyIndex, detailIndex, "text", e.target.value)
+                        updateDetail(
+                          historyIndex,
+                          detailIndex,
+                          "text",
+                          e.target.value,
+                        )
                       }
                       placeholder="詳細を入力"
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
@@ -224,7 +235,12 @@ export default function HistorySectionForm({
                     type="url"
                     value={detail.url || ""}
                     onChange={(e) =>
-                      updateDetail(historyIndex, detailIndex, "url", e.target.value)
+                      updateDetail(
+                        historyIndex,
+                        detailIndex,
+                        "url",
+                        e.target.value,
+                      )
                     }
                     placeholder="詳細URL（任意）"
                     className="mt-2 w-full px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"

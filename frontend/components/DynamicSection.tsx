@@ -96,7 +96,8 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     const nested =
       data?.data && typeof data.data === "object" ? data.data : null;
     const singleData: ProfileData = nested || data || {};
-    const profileImageSrc = singleData.profileImage || singleData.imageUrl || "";
+    const profileImageSrc =
+      singleData.profileImage || singleData.imageUrl || "";
     return (
       <FadeInSection>
         <section id={section.id}>
@@ -141,18 +142,22 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
           <section id={section.id}>
             <h2>{meta.displayName}</h2>
             <div className="grid-card">
-              {data.items.filter(isGroupedCategorizedItem).map((item, index: number) => (
-                <div key={index} className="card">
-                  <h3>{item.title}</h3>
-                  <ol>
-                    {item.items?.map((subItem, subIndex: number) => (
-                      <li key={subIndex}>
-                        {typeof subItem === "string" ? subItem : subItem?.text || ""}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
+              {data.items
+                .filter(isGroupedCategorizedItem)
+                .map((item, index: number) => (
+                  <div key={index} className="card">
+                    <h3>{item.title}</h3>
+                    <ol>
+                      {item.items?.map((subItem, subIndex: number) => (
+                        <li key={subIndex}>
+                          {typeof subItem === "string"
+                            ? subItem
+                            : subItem?.text || ""}
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ))}
             </div>
           </section>
         </FadeInSection>
@@ -234,16 +239,16 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
                 <div key={index} className="card">
                   <h3>{renderLinkedText(history.date || "", history.url)}</h3>
                   <ul className="list-disc ml-5">
-                    {history.details?.map(
-                      (detail, detailIndex: number) => (
-                        <li key={detailIndex}>
-                          {renderLinkedText(
-                            typeof detail === "string" ? detail : detail?.text || "",
-                            typeof detail === "string" ? "" : detail?.url || "",
-                          )}
-                        </li>
-                      ),
-                    )}
+                    {history.details?.map((detail, detailIndex: number) => (
+                      <li key={detailIndex}>
+                        {renderLinkedText(
+                          typeof detail === "string"
+                            ? detail
+                            : detail?.text || "",
+                          typeof detail === "string" ? "" : detail?.url || "",
+                        )}
+                      </li>
+                    ))}
                   </ul>
                 </div>
               ))}

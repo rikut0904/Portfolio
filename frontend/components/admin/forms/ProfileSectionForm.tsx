@@ -5,12 +5,10 @@ interface ProfileSectionFormProps {
     data?: Record<string, string | undefined>;
     [key: string]: unknown;
   };
-  setFormData: (
-    data: {
-      data?: Record<string, string | undefined>;
-      [key: string]: unknown;
-    },
-  ) => void;
+  setFormData: (data: {
+    data?: Record<string, string | undefined>;
+    [key: string]: unknown;
+  }) => void;
 }
 
 export default function ProfileSectionForm({
@@ -22,7 +20,10 @@ export default function ProfileSectionForm({
     typeof value === "string" ? value : undefined;
   const profileData: Record<string, string | undefined> = {
     name: getString(rawProfileData?.name) || "",
-    hometown: getString(rawProfileData?.hometown) || getString(rawProfileData?.from) || "",
+    hometown:
+      getString(rawProfileData?.hometown) ||
+      getString(rawProfileData?.from) ||
+      "",
     hobbies: getString(rawProfileData?.hobbies) || "",
     university:
       getString(rawProfileData?.university) ||

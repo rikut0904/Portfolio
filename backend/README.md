@@ -56,6 +56,12 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
   - `GITHUB_OWNER`
   - `GITHUB_REPO`
   - `GITHUB_BRANCH` (default: `main`)
+- Set Google Calendar env vars (public week view + admin calendar)
+  - `GOOGLE_CALENDAR_IDS` (comma-separated)
+    - single-calendar fallback: `GOOGLE_CALENDAR_ID`
+  - `GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON`
+    - raw JSON or base64-encoded JSON
+  - `GOOGLE_CALENDAR_TIMEZONE` (default: `Asia/Tokyo`)
 - Set CORS env vars:
   - `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com`
   - `CORS_ALLOW_CREDENTIALS=false` (recommended for bearer-token auth)
@@ -99,3 +105,13 @@ or start the server once with `RUN_INQUIRY_THREAD_MIGRATION=true`.
   - Adds a follow-up message to the same inquiry thread
 - `POST /api/inquiries/{id}/reply`
   - Sends reply mail to inquiry sender (`contact_email`) if mail sending is configured
+- `GET /api/calendar/events` — public: week grid (titles etc. sanitized on the server; empty slots imply free time)
+- `GET /api/admin/calendar/events`
+  - Admin only
+  - Full Google Calendar events for the admin UI
+- `GET /api/admin/calendar/preferences`
+  - Admin only
+  - Returns per-`calendarId` color and label settings
+- `PATCH /api/admin/calendar/preferences`
+  - Admin only
+  - Saves per-`calendarId` color and label settings for the Google Calendar admin UI

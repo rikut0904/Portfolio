@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -34,6 +35,9 @@ type Config struct {
 	GitHubOwner               string
 	GitHubRepo                string
 	GitHubBranch              string
+	GoogleCalendarIDs         []string
+	GoogleCalendarTimezone    string
+	GoogleCalendarCredentials string
 	AdminEmails               map[string]struct{}
 	AdminUIDs                 map[string]struct{}
 }
@@ -65,6 +69,9 @@ func Load() (Config, error) {
 		GitHubOwner:               strings.TrimSpace(os.Getenv("GITHUB_OWNER")),
 		GitHubRepo:                strings.TrimSpace(os.Getenv("GITHUB_REPO")),
 		GitHubBranch:              getEnv("GITHUB_BRANCH", "main"),
+		GoogleCalendarIDs:         loadGoogleCalendarIDs(),
+		GoogleCalendarTimezone:    getEnv("GOOGLE_CALENDAR_TIMEZONE", "Asia/Tokyo"),
+		GoogleCalendarCredentials: loadGoogleCalendarCredentials(),
 		AdminEmails:               toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_EMAILS")))),
 		AdminUIDs:                 toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_UIDS")))),
 	}
@@ -139,6 +146,31 @@ func loadDiscordWebhookURLs() []string {
 		return values
 	}
 	if value := strings.TrimSpace(os.Getenv("DISCORD_WEBHOOK_URL")); value != "" {
+		return []string{value}
+	}
+	return nil
+}
+
+func loadGoogleCalendarCredentials() string {
+	raw := strings.TrimSpace(os.Getenv("GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON"))
+	if raw == "" {
+		return ""
+	}
+	if strings.HasPrefix(raw, "{") {
+		return raw
+	}
+	decoded, err := base64.StdEncoding.DecodeString(raw)
+	if err != nil {
+		return raw
+	}
+	return strings.TrimSpace(string(decoded))
+}
+
+func loadGoogleCalendarIDs() []string {
+	if values := splitCSV(strings.TrimSpace(os.Getenv("GOOGLE_CALENDAR_IDS"))); len(values) > 0 {
+		return values
+	}
+	if value := strings.TrimSpace(os.Getenv("GOOGLE_CALENDAR_ID")); value != "" {
 		return []string{value}
 	}
 	return nil

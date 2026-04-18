@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
 
@@ -18,11 +18,7 @@ function DashboardContent() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       // 作品数を取得
       const productsRes = await fetch("/api/products");
@@ -47,7 +43,11 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchStats();
+  }, [fetchStats]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -139,6 +139,35 @@ function DashboardContent() {
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M8 10h8m-8 4h6m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h8l6 6v8a2 2 0 01-2 2z"
+                />
+              </svg>
+            </div>
+          </Link>
+
+          <Link
+            href="/admin/calendar"
+            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
+                  予定管理
+                </h2>
+                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                  Googleカレンダーの予定を日・週・月・年で確認
+                </p>
+              </div>
+              <svg
+                className="w-6 h-6 sm:w-8 sm:h-8 text-violet-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
             </div>

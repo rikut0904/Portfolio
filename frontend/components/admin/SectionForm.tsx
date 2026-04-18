@@ -20,7 +20,9 @@ interface SectionFormProps {
   };
   onSave: (data: Record<string, unknown>) => Promise<void>;
   onCancel: () => void;
-  onMetaUpdate?: (meta: Record<string, string | number | boolean>) => Promise<void>;
+  onMetaUpdate?: (
+    meta: Record<string, string | number | boolean>,
+  ) => Promise<void>;
 }
 
 interface HistoryItem {
@@ -46,7 +48,8 @@ export default function SectionForm({
     return data;
   };
 
-  const [formData, setFormData] = useState<Record<string, unknown>>(initializeFormData());
+  const [formData, setFormData] =
+    useState<Record<string, unknown>>(initializeFormData());
   const [displayName, setDisplayName] = useState(section.meta.displayName);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">(
     section.meta.sortOrder || "asc",

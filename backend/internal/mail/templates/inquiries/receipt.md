@@ -8,6 +8,7 @@
 件名: {{SUBJECT}}
 返信先: {{CONTACT_EMAIL}}
 確認URL: {{THREAD_URL}}
+{{CALENDAR_URL_LINE}}
 
 お問い合わせ内容:
 {{MESSAGE}}

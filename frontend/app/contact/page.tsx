@@ -234,8 +234,12 @@ export default function ContactPage() {
               <div className="card">
                 <h3 className="mb-3">送信時のお願い</h3>
                 <ul className="mb-0 list-disc space-y-2 pl-5 text-sm text-[var(--text-body)]">
-                  <li>制作のご相談は、用途や希望時期があると回答しやすくなります。</li>
-                  <li>不具合報告は、発生手順や表示メッセージを添えてください。</li>
+                  <li>
+                    制作のご相談は、用途や希望時期があると回答しやすくなります。
+                  </li>
+                  <li>
+                    不具合報告は、発生手順や表示メッセージを添えてください。
+                  </li>
                   <li>返信先メールアドレスに誤りがあると返答できません。</li>
                 </ul>
               </div>

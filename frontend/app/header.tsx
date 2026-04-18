@@ -19,6 +19,7 @@ export default function Header() {
         </button>
         <nav className="hidden md:flex space-x-6">
           <Link href="/">Home</Link>
+          <Link href="/calendar">カレンダー</Link>
           <Link href="/activities">課外活動</Link>
           <Link href="/product">作品紹介</Link>
           <Link href="/contact">お問い合わせ</Link>
@@ -32,6 +33,9 @@ export default function Header() {
       >
         <Link href="/" onClick={closeMenu}>
           Home
+        </Link>
+        <Link href="/calendar" onClick={closeMenu}>
+          カレンダー
         </Link>
         <Link href="/activities" onClick={closeMenu}>
           課外活動

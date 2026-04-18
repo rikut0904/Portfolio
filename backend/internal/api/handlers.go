@@ -14,10 +14,12 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"portfolio-backend/internal/auth"
 	"portfolio-backend/internal/discord"
+	"portfolio-backend/internal/gcalendar"
 	"portfolio-backend/internal/mail"
 	"portfolio-backend/internal/store"
 
@@ -39,6 +41,8 @@ type Handler struct {
 	githubOwner       string
 	githubRepo        string
 	githubBranch      string
+	calendar          *gcalendar.Service
+	calendarCache     *calendarAPICache
 }
 
 func NewHandler(
@@ -54,6 +58,7 @@ func NewHandler(
 	githubOwner string,
 	githubRepo string,
 	githubBranch string,
+	calendarClient *gcalendar.Service,
 ) *Handler {
 	return &Handler{
 		store:             store,
@@ -68,7 +73,116 @@ func NewHandler(
 		githubOwner:       strings.TrimSpace(githubOwner),
 		githubRepo:        strings.TrimSpace(githubRepo),
 		githubBranch:      strings.TrimSpace(githubBranch),
+		calendar:          calendarClient,
+		calendarCache:     newCalendarAPICache(),
 	}
+}
+
+type cachedCalendarEventsResponse struct {
+	response calendarPreferencesResponse
+	events   []gcalendar.Event
+	from     string
+	to       string
+}
+
+type cachedCalendarPreferences struct {
+	response calendarPreferencesResponse
+}
+
+type calendarCacheEntry[T any] struct {
+	value     T
+	expiresAt time.Time
+}
+
+type calendarAPICache struct {
+	mu          sync.RWMutex
+	events      map[string]calendarCacheEntry[cachedCalendarEventsResponse]
+	preferences map[string]calendarCacheEntry[cachedCalendarPreferences]
+}
+
+func newCalendarAPICache() *calendarAPICache {
+	return &calendarAPICache{
+		events:      make(map[string]calendarCacheEntry[cachedCalendarEventsResponse]),
+		preferences: make(map[string]calendarCacheEntry[cachedCalendarPreferences]),
+	}
+}
+
+func (c *calendarAPICache) getEvents(key string) (cachedCalendarEventsResponse, bool) {
+	c.mu.RLock()
+	entry, ok := c.events[key]
+	c.mu.RUnlock()
+	if !ok || time.Now().After(entry.expiresAt) {
+		if ok {
+			c.mu.Lock()
+			delete(c.events, key)
+			c.mu.Unlock()
+		}
+		return cachedCalendarEventsResponse{}, false
+	}
+	return entry.value, true
+}
+
+func (c *calendarAPICache) setEvents(key string, value cachedCalendarEventsResponse, ttl time.Duration) {
+	c.mu.Lock()
+	c.pruneExpiredEventsLocked(time.Now())
+	c.events[key] = calendarCacheEntry[cachedCalendarEventsResponse]{
+		value:     value,
+		expiresAt: time.Now().Add(ttl),
+	}
+	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) getPreferences(key string) (cachedCalendarPreferences, bool) {
+	c.mu.RLock()
+	entry, ok := c.preferences[key]
+	c.mu.RUnlock()
+	if !ok || time.Now().After(entry.expiresAt) {
+		if ok {
+			c.mu.Lock()
+			delete(c.preferences, key)
+			c.mu.Unlock()
+		}
+		return cachedCalendarPreferences{}, false
+	}
+	return entry.value, true
+}
+
+func (c *calendarAPICache) setPreferences(key string, value cachedCalendarPreferences, ttl time.Duration) {
+	c.mu.Lock()
+	c.pruneExpiredPreferencesLocked(time.Now())
+	c.preferences[key] = calendarCacheEntry[cachedCalendarPreferences]{
+		value:     value,
+		expiresAt: time.Now().Add(ttl),
+	}
+	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) pruneExpiredEventsLocked(now time.Time) {
+	for key, entry := range c.events {
+		if now.After(entry.expiresAt) {
+			delete(c.events, key)
+		}
+	}
+}
+
+func (c *calendarAPICache) pruneExpiredPreferencesLocked(now time.Time) {
+	for key, entry := range c.preferences {
+		if now.After(entry.expiresAt) {
+			delete(c.preferences, key)
+		}
+	}
+}
+
+func (c *calendarAPICache) clearPreferences() {
+	c.mu.Lock()
+	clear(c.preferences)
+	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) clearEvents() {
+	c.mu.Lock()
+	clear(c.events)
+	c.mu.Unlock()
 }
 
 func (h *Handler) Register(r chi.Router) {
@@ -76,6 +190,12 @@ func (h *Handler) Register(r chi.Router) {
 
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/app-mode", h.getAppMode)
+		r.Get("/calendar/events", h.getCalendarPublicEvents)
+
+		r.Get("/admin/calendar/events", h.withAdmin(h.getCalendarEvents))
+		r.Patch("/admin/calendar/events/publication", h.withAdmin(h.patchCalendarEventPublication))
+		r.Get("/admin/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
+		r.Patch("/admin/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
 		r.Post("/auth/login", h.login)
 		r.Post("/auth/refresh", h.refreshToken)
 		r.Get("/auth/me", h.withAdmin(h.me))
@@ -1695,6 +1815,21 @@ func (h *Handler) buildContactLink(threadID string) string {
 	return h.appBaseURL + "/contact/" + threadID
 }
 
+func buildGoogleCalendarTemplateURL(summary, description string, start, end time.Time) string {
+	if start.IsZero() || end.IsZero() || !end.After(start) {
+		return ""
+	}
+	values := url.Values{}
+	values.Set("action", "TEMPLATE")
+	values.Set("text", strings.TrimSpace(summary))
+	values.Set("details", strings.TrimSpace(description))
+	values.Set(
+		"dates",
+		start.UTC().Format("20060102T150405Z")+"/"+end.UTC().Format("20060102T150405Z"),
+	)
+	return "https://calendar.google.com/calendar/render?" + values.Encode()
+}
+
 func (h *Handler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
 	rows, err := h.store.Pool.Query(ctx, `
 		SELECT id, inquiry_id, thread_id, sender_type, sender_name, sender_email, message, created_at
@@ -1734,19 +1869,51 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	var body map[string]any
+	var body struct {
+		Category       string `json:"category"`
+		Subject        string `json:"subject"`
+		Message        string `json:"message"`
+		ContactName    string `json:"contactName"`
+		ContactEmail   string `json:"contactEmail"`
+		RequestedStart string `json:"requestedStart"`
+		RequestedEnd   string `json:"requestedEnd"`
+	}
 	if err := decodeBody(r, &body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
 		return
 	}
-	category := normalize(body["category"])
-	subject := normalize(body["subject"])
-	message := normalize(body["message"])
-	contactName := normalize(body["contactName"])
-	contactEmail := normalize(body["contactEmail"])
+	category := strings.TrimSpace(body.Category)
+	subject := strings.TrimSpace(body.Subject)
+	message := strings.TrimSpace(body.Message)
+	contactName := strings.TrimSpace(body.ContactName)
+	contactEmail := strings.TrimSpace(body.ContactEmail)
 	if subject == "" || message == "" || contactEmail == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "subject, message, contactEmail are required"})
 		return
+	}
+	var requestedStart time.Time
+	var requestedEnd time.Time
+	calendarEventURL := ""
+	if category == "mtg" {
+		if h.calendar == nil || !h.calendar.Enabled() {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
+			return
+		}
+		var err error
+		requestedStart, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedStart))
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedStart must be RFC3339"})
+			return
+		}
+		requestedEnd, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedEnd))
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedEnd must be RFC3339"})
+			return
+		}
+		if !requestedEnd.After(requestedStart) {
+			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedEnd must be after requestedStart"})
+			return
+		}
 	}
 	var id string
 	var threadID string
@@ -1758,6 +1925,40 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create inquiry"})
 		return
+	}
+	if category == "mtg" {
+		calendarSummary := "MTG"
+		if strings.TrimSpace(contactName) != "" {
+			calendarSummary = strings.TrimSpace(contactName) + "-MTG"
+		}
+		calendarDescription := strings.TrimSpace(strings.Join([]string{
+			"MTG詳細",
+			message,
+		}, "\n"))
+		calendarEvent, err := h.calendar.CreateEvent(r.Context(), gcalendar.CreateEventInput{
+			Summary:     calendarSummary,
+			Description: calendarDescription,
+			Start:       requestedStart,
+			End:         requestedEnd,
+		})
+		if err != nil {
+			log.Printf("failed to create mtg calendar event: inquiry=%s err=%v", id, err)
+			if _, deleteErr := h.store.Pool.Exec(r.Context(), `DELETE FROM inquiries WHERE id=$1`, id); deleteErr != nil {
+				log.Printf("failed to rollback inquiry after calendar creation error: inquiry=%s err=%v", id, deleteErr)
+			}
+			writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to reserve the requested time on Google Calendar"})
+			return
+		}
+		h.calendarCache.clearEvents()
+		calendarEventURL = buildGoogleCalendarTemplateURL(
+			calendarSummary,
+			calendarDescription,
+			requestedStart,
+			requestedEnd,
+		)
+		if calendarEventURL == "" {
+			calendarEventURL = calendarEvent.HTMLLink
+		}
 	}
 	threadURL := h.buildContactLink(threadID)
 	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
@@ -1777,6 +1978,7 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 		Subject:      subject,
 		Message:      message,
 		ThreadURL:    threadURL,
+		CalendarURL:  calendarEventURL,
 		ContactEmail: contactEmail,
 	})
 

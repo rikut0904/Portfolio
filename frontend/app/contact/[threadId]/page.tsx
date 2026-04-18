@@ -136,7 +136,9 @@ export default function ContactThreadPage() {
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="card space-y-6">
-              {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
+              {loading && (
+                <p className="text-sm text-gray-500">読み込み中...</p>
+              )}
               {error && <p className="text-sm text-red-600">{error}</p>}
 
               {!loading && detail && (
@@ -155,7 +157,9 @@ export default function ContactThreadPage() {
                   </div>
 
                   <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card-background)] p-4">
-                    <p className="mb-2 text-xs text-gray-500">お問い合わせ内容</p>
+                    <p className="mb-2 text-xs text-gray-500">
+                      お問い合わせ内容
+                    </p>
                     <p className="whitespace-pre-wrap text-sm text-[var(--foreground)]">
                       {detail.message || "-"}
                     </p>

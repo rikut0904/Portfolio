@@ -10,7 +10,9 @@ interface ListSectionFormProps {
   setFormData: (data: { lists?: ListItem[] }) => void;
 }
 
-const normalizeItems = (items: Array<string | { text?: string }> = []): string[] =>
+const normalizeItems = (
+  items: Array<string | { text?: string }> = [],
+): string[] =>
   items.map((item) => (typeof item === "string" ? item : item?.text || ""));
 
 const normalizeList = (list: ListItem) => ({
@@ -26,7 +28,9 @@ export default function ListSectionForm({
 }: ListSectionFormProps) {
   const lists = Array.isArray(formData.lists) ? formData.lists : [];
 
-  const commitLists = (nextLists: Array<{ title: string; items: string[] }>) => {
+  const commitLists = (
+    nextLists: Array<{ title: string; items: string[] }>,
+  ) => {
     setFormData({
       ...formData,
       lists: nextLists.map((list) => ({
@@ -37,10 +41,7 @@ export default function ListSectionForm({
   };
 
   const addList = () => {
-    commitLists([
-      ...lists.map(normalizeList),
-      { title: "", items: [""] },
-    ]);
+    commitLists([...lists.map(normalizeList), { title: "", items: [""] }]);
   };
 
   const updateList = (
@@ -70,11 +71,7 @@ export default function ListSectionForm({
     commitLists(nextLists);
   };
 
-  const updateItem = (
-    listIndex: number,
-    itemIndex: number,
-    value: string,
-  ) => {
+  const updateItem = (listIndex: number, itemIndex: number, value: string) => {
     const nextLists = lists.map(normalizeList);
     const nextItems = [...nextLists[listIndex].items];
     nextItems[itemIndex] = value;
@@ -85,7 +82,9 @@ export default function ListSectionForm({
     const nextLists = lists.map(normalizeList);
     nextLists[listIndex] = {
       ...nextLists[listIndex],
-      items: nextLists[listIndex].items.filter((_: string, i: number) => i !== itemIndex),
+      items: nextLists[listIndex].items.filter(
+        (_: string, i: number) => i !== itemIndex,
+      ),
     };
     commitLists(nextLists);
   };
@@ -104,7 +103,9 @@ export default function ListSectionForm({
                 <input
                   type="text"
                   value={list.title}
-                  onChange={(e) => updateList(listIndex, "title", e.target.value)}
+                  onChange={(e) =>
+                    updateList(listIndex, "title", e.target.value)
+                  }
                   placeholder="カテゴリ名（例：情報、電気）"
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
                 />
@@ -123,7 +124,9 @@ export default function ListSectionForm({
                   <input
                     type="text"
                     value={item}
-                    onChange={(e) => updateItem(listIndex, itemIndex, e.target.value)}
+                    onChange={(e) =>
+                      updateItem(listIndex, itemIndex, e.target.value)
+                    }
                     placeholder="項目を入力"
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm sm:text-base"
                   />

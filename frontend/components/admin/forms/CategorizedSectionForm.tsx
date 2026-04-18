@@ -25,9 +25,7 @@ interface CategorizedSectionFormProps {
 }
 
 const normalizeEntry = (entry: string | LinkableText) =>
-  typeof entry === "string"
-    ? { text: entry }
-    : { text: entry?.text || "" };
+  typeof entry === "string" ? { text: entry } : { text: entry?.text || "" };
 
 const normalizeGroupedLists = (lists: LinkableCategory[]): LinkableCategory[] =>
   lists.map((list) => ({
@@ -35,7 +33,9 @@ const normalizeGroupedLists = (lists: LinkableCategory[]): LinkableCategory[] =>
     items: Array.isArray(list?.items) ? list.items.map(normalizeEntry) : [],
   }));
 
-const normalizeFlatLists = (formData: CategorizedFormData): LinkableCategory[] => {
+const normalizeFlatLists = (
+  formData: CategorizedFormData,
+): LinkableCategory[] => {
   if (!Array.isArray(formData.categories)) {
     return [];
   }
@@ -68,7 +68,9 @@ export default function CategorizedSectionForm({
 
   const lists = usesGroupedItems
     ? normalizeGroupedLists(
-        Array.isArray(formData.items) ? (formData.items as LinkableCategory[]) : [],
+        Array.isArray(formData.items)
+          ? (formData.items as LinkableCategory[])
+          : [],
       )
     : normalizeFlatLists(formData);
 
@@ -100,10 +102,7 @@ export default function CategorizedSectionForm({
   };
 
   const addList = () => {
-    commitLists([
-      ...lists,
-      { title: "", items: [{ text: "" }] },
-    ]);
+    commitLists([...lists, { title: "", items: [{ text: "" }] }]);
   };
 
   const updateList = (
@@ -129,13 +128,11 @@ export default function CategorizedSectionForm({
     commitLists(nextLists);
   };
 
-  const updateItem = (
-    listIndex: number,
-    itemIndex: number,
-    value: string,
-  ) => {
+  const updateItem = (listIndex: number, itemIndex: number, value: string) => {
     const nextLists = [...lists];
-    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    const nextItems = [...(nextLists[listIndex].items || [])].map(
+      normalizeEntry,
+    );
     nextItems[itemIndex] = { ...nextItems[itemIndex], text: value };
     updateList(listIndex, "items", nextItems);
   };
@@ -174,7 +171,9 @@ export default function CategorizedSectionForm({
   const moveItemUp = (listIndex: number, itemIndex: number) => {
     if (itemIndex === 0) return;
     const nextLists = [...lists];
-    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    const nextItems = [...(nextLists[listIndex].items || [])].map(
+      normalizeEntry,
+    );
     [nextItems[itemIndex - 1], nextItems[itemIndex]] = [
       nextItems[itemIndex],
       nextItems[itemIndex - 1],
@@ -185,7 +184,9 @@ export default function CategorizedSectionForm({
 
   const moveItemDown = (listIndex: number, itemIndex: number) => {
     const nextLists = [...lists];
-    const nextItems = [...(nextLists[listIndex].items || [])].map(normalizeEntry);
+    const nextItems = [...(nextLists[listIndex].items || [])].map(
+      normalizeEntry,
+    );
     if (itemIndex === nextItems.length - 1) return;
     [nextItems[itemIndex], nextItems[itemIndex + 1]] = [
       nextItems[itemIndex + 1],
@@ -271,7 +272,9 @@ export default function CategorizedSectionForm({
                 <input
                   type="text"
                   value={list.title || ""}
-                  onChange={(e) => updateList(listIndex, "title", e.target.value)}
+                  onChange={(e) =>
+                    updateList(listIndex, "title", e.target.value)
+                  }
                   placeholder="カテゴリ名"
                   className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
                 />
@@ -312,7 +315,9 @@ export default function CategorizedSectionForm({
                           <button
                             type="button"
                             onClick={() => moveItemDown(listIndex, itemIndex)}
-                            disabled={itemIndex === (list.items || []).length - 1}
+                            disabled={
+                              itemIndex === (list.items || []).length - 1
+                            }
                             className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
                             title="下に移動"
                           >
@@ -334,7 +339,9 @@ export default function CategorizedSectionForm({
                         <input
                           type="text"
                           value={item.text || ""}
-                          onChange={(e) => updateItem(listIndex, itemIndex, e.target.value)}
+                          onChange={(e) =>
+                            updateItem(listIndex, itemIndex, e.target.value)
+                          }
                           placeholder="項目"
                           className="flex-1 min-w-0 px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md text-xs sm:text-base"
                         />
@@ -346,7 +353,7 @@ export default function CategorizedSectionForm({
                           ×
                         </button>
                       </div>
-                      </div>
+                    </div>
                   );
                 })}
                 <button
