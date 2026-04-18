@@ -60,16 +60,20 @@ func BuildInquiryNotification(data InquiryNotificationData) (subject, body strin
 }
 
 func BuildInquiryReceipt(data InquiryReceiptData) (subject, body string, err error) {
+	calendarURLLine := ""
+	if strings.TrimSpace(data.CalendarURL) != "" {
+		calendarURLLine = "予定URL: " + strings.TrimSpace(data.CalendarURL)
+	}
 	return renderEmailTemplate(
 		"templates/inquiries/receipt.md",
 		map[string]string{
-			"GREETING":      greeting(data.Name),
-			"CATEGORY":      fallbackText(data.Category),
-			"SUBJECT":       fallbackText(data.Subject),
-			"MESSAGE":       fallbackText(data.Message),
-			"THREAD_URL":    fallbackText(data.ThreadURL),
-			"CALENDAR_URL":  fallbackText(data.CalendarURL),
-			"CONTACT_EMAIL": fallbackText(data.ContactEmail),
+			"GREETING":          greeting(data.Name),
+			"CATEGORY":          fallbackText(data.Category),
+			"SUBJECT":           fallbackText(data.Subject),
+			"MESSAGE":           fallbackText(data.Message),
+			"THREAD_URL":        fallbackText(data.ThreadURL),
+			"CALENDAR_URL_LINE": calendarURLLine,
+			"CONTACT_EMAIL":     fallbackText(data.ContactEmail),
 		},
 		"【Portfolio】お問い合わせを受け付けました",
 		"お問い合わせを受け付けました。",
