@@ -24,6 +24,7 @@ type InquiryReceiptData struct {
 	Subject      string
 	Message      string
 	ThreadURL    string
+	CalendarURL  string
 	ContactEmail string
 }
 
@@ -67,6 +68,7 @@ func BuildInquiryReceipt(data InquiryReceiptData) (subject, body string, err err
 			"SUBJECT":       fallbackText(data.Subject),
 			"MESSAGE":       fallbackText(data.Message),
 			"THREAD_URL":    fallbackText(data.ThreadURL),
+			"CALENDAR_URL":  fallbackText(data.CalendarURL),
 			"CONTACT_EMAIL": fallbackText(data.ContactEmail),
 		},
 		"【Portfolio】お問い合わせを受け付けました",

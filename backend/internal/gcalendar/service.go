@@ -39,6 +39,17 @@ type Service struct {
 	api         *calendar.Service
 }
 
+type CreateEventInput struct {
+	Summary     string
+	Description string
+	Start       time.Time
+	End         time.Time
+}
+
+type CreatedEvent struct {
+	HTMLLink string
+}
+
 type PartialFetchError struct {
 	Failures []string
 }
@@ -73,7 +84,7 @@ func New(ctx context.Context, cfg Config) (*Service, error) {
 	api, err := calendar.NewService(
 		ctx,
 		option.WithCredentialsJSON([]byte(cfg.CredentialsJSON)),
-		option.WithScopes(calendar.CalendarReadonlyScope),
+		option.WithScopes(calendar.CalendarScope),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("google calendar init failed: %w", err)
@@ -115,6 +126,38 @@ func (s *Service) Timezone() string {
 		return "Asia/Tokyo"
 	}
 	return s.timezone
+}
+
+func (s *Service) CreateEvent(ctx context.Context, input CreateEventInput) (CreatedEvent, error) {
+	if !s.Enabled() {
+		return CreatedEvent{}, errors.New("google calendar is not configured")
+	}
+	if len(s.calendarIDs) == 0 {
+		return CreatedEvent{}, errors.New("google calendar target is not configured")
+	}
+	if input.Start.IsZero() || input.End.IsZero() || !input.End.After(input.Start) {
+		return CreatedEvent{}, errors.New("invalid event time range")
+	}
+	event := &calendar.Event{
+		Summary:     strings.TrimSpace(input.Summary),
+		Description: strings.TrimSpace(input.Description),
+		Start: &calendar.EventDateTime{
+			DateTime: input.Start.Format(time.RFC3339),
+			TimeZone: s.Timezone(),
+		},
+		End: &calendar.EventDateTime{
+			DateTime: input.End.Format(time.RFC3339),
+			TimeZone: s.Timezone(),
+		},
+	}
+	if event.Summary == "" {
+		event.Summary = "MTG依頼"
+	}
+	created, err := s.api.Events.Insert(s.calendarIDs[0], event).Context(ctx).Do()
+	if err != nil {
+		return CreatedEvent{}, fmt.Errorf("create google calendar event: %w", err)
+	}
+	return CreatedEvent{HTMLLink: strings.TrimSpace(created.HtmlLink)}, nil
 }
 
 func (s *Service) ListEvents(ctx context.Context, start, end time.Time, selectedCalendarIDs []string) ([]Event, error) {

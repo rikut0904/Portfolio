@@ -239,6 +239,8 @@ export default function MeetingRequestModal({
           message: bodyText,
           contactName: contactName.trim(),
           contactEmail: contactEmail.trim(),
+          requestedStart: slotStart.toISOString(),
+          requestedEnd: slotEnd.toISOString(),
         }),
       });
       const data = (await res.json().catch(() => ({}))) as { error?: string };
