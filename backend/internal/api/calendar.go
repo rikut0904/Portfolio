@@ -211,7 +211,23 @@ func selectedCalendarIDsOrAll(all, selected []string) []string {
 	if len(selected) == 0 {
 		return all
 	}
-	return selected
+	allowed := make(map[string]struct{}, len(all))
+	for _, id := range all {
+		allowed[id] = struct{}{}
+	}
+	filtered := make([]string, 0, len(selected))
+	seen := make(map[string]struct{}, len(selected))
+	for _, id := range selected {
+		if _, ok := allowed[id]; !ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		filtered = append(filtered, id)
+	}
+	return filtered
 }
 
 func filterCalendarMap(values map[string]string, calendarIDs []string) map[string]string {
