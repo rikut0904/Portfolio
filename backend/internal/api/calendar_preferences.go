@@ -158,6 +158,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		"labels": updatedLabels,
 	})
 	h.calendarCache.clearPreferences()
+	h.calendarCache.clearEvents()
 	writeJSON(w, http.StatusOK, preferences)
 }
 
