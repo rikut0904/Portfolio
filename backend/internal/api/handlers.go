@@ -124,6 +124,7 @@ func (c *calendarAPICache) getEvents(key string) (cachedCalendarEventsResponse, 
 
 func (c *calendarAPICache) setEvents(key string, value cachedCalendarEventsResponse, ttl time.Duration) {
 	c.mu.Lock()
+	c.pruneExpiredEventsLocked(time.Now())
 	c.events[key] = calendarCacheEntry[cachedCalendarEventsResponse]{
 		value:     value,
 		expiresAt: time.Now().Add(ttl),
@@ -148,11 +149,28 @@ func (c *calendarAPICache) getPreferences(key string) (cachedCalendarPreferences
 
 func (c *calendarAPICache) setPreferences(key string, value cachedCalendarPreferences, ttl time.Duration) {
 	c.mu.Lock()
+	c.pruneExpiredPreferencesLocked(time.Now())
 	c.preferences[key] = calendarCacheEntry[cachedCalendarPreferences]{
 		value:     value,
 		expiresAt: time.Now().Add(ttl),
 	}
 	c.mu.Unlock()
+}
+
+func (c *calendarAPICache) pruneExpiredEventsLocked(now time.Time) {
+	for key, entry := range c.events {
+		if now.After(entry.expiresAt) {
+			delete(c.events, key)
+		}
+	}
+}
+
+func (c *calendarAPICache) pruneExpiredPreferencesLocked(now time.Time) {
+	for key, entry := range c.preferences {
+		if now.After(entry.expiresAt) {
+			delete(c.preferences, key)
+		}
+	}
 }
 
 func (c *calendarAPICache) clearPreferences() {
