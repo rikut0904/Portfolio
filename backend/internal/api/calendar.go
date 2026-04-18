@@ -193,14 +193,15 @@ func parseCalendarIDFilter(r *http.Request) []string {
 	out := make([]string, 0, len(values))
 	seen := map[string]struct{}{}
 	for _, value := range values {
-		if value == "" {
+		id := strings.TrimSpace(value)
+		if id == "" {
 			continue
 		}
-		if _, ok := seen[value]; ok {
+		if _, ok := seen[id]; ok {
 			continue
 		}
-		seen[value] = struct{}{}
-		out = append(out, value)
+		seen[id] = struct{}{}
+		out = append(out, id)
 	}
 	return out
 }
