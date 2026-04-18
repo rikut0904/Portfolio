@@ -3,22 +3,18 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
-import { useAuth } from "../../lib/auth/AuthContext";
 
 interface Stats {
   productsCount: number;
   sectionsCount: number;
   publicProductsCount: number;
-  calendarEventsCount: number;
 }
 
 function DashboardContent() {
-  const { user } = useAuth();
   const [stats, setStats] = useState<Stats>({
     productsCount: 0,
     sectionsCount: 0,
     publicProductsCount: 0,
-    calendarEventsCount: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -37,48 +33,17 @@ function DashboardContent() {
       // 公開中の作品数
       const publicProducts = products.filter((p: any) => p.status === "公開");
 
-      let calendarEventsCount = 0;
-      try {
-        const today = new Date();
-        const start = new Date(
-          today.getFullYear(),
-          today.getMonth(),
-          1,
-        ).toISOString();
-        const end = new Date(
-          today.getFullYear(),
-          today.getMonth() + 1,
-          1,
-        ).toISOString();
-        const token = user ? await user.getIdToken() : "";
-        const calendarRes = await fetch(
-          `/api/admin/calendar/events?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          },
-        );
-        if (calendarRes.ok) {
-          const calendarData = await calendarRes.json();
-          calendarEventsCount = Array.isArray(calendarData.events)
-            ? calendarData.events.length
-            : 0;
-        }
-      } catch (error) {
-        console.error("Failed to fetch calendar stats:", error);
-      }
-
       setStats({
         productsCount: products.length,
         sectionsCount: sections.length,
         publicProductsCount: publicProducts.length,
-        calendarEventsCount,
       });
     } catch (error) {
       console.error("Failed to fetch stats:", error);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     void fetchStats();
@@ -190,9 +155,6 @@ function DashboardContent() {
                 </h2>
                 <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
                   Googleカレンダーの予定を日・週・月・年で確認
-                </p>
-                <p className="mt-3 text-xs font-semibold text-[var(--text-heading)]">
-                  今月 {stats.calendarEventsCount} 件
                 </p>
               </div>
               <svg
