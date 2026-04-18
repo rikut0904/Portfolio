@@ -843,7 +843,7 @@ function AllDayEventsModal({
                   : null;
               return (
                 <article
-                  key={event.id}
+                  key={calendarEventInstanceKey(event)}
                   className="overflow-hidden rounded-2xl border border-[var(--card-border)] bg-white/92"
                 >
                   <div className="border-b border-[var(--card-border)] px-4 py-3 sm:px-5 sm:py-4">
