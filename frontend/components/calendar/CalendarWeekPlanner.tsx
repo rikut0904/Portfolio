@@ -66,7 +66,41 @@ function timedBlockPositionInGrid(clipped: { start: Date; end: Date }) {
 type NormalizedEvent = CalendarEvent & {
   startDate: Date;
   endDate: Date;
+  timezone: string;
 };
+
+function formatDateKeyInTimeZone(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const parts = formatter.formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? "0000";
+  const month = parts.find((part) => part.type === "month")?.value ?? "01";
+  const day = parts.find((part) => part.type === "day")?.value ?? "01";
+  return `${year}-${month}-${day}`;
+}
+
+function parseAllDayDate(value: string) {
+  return new Date(`${value}T00:00:00Z`);
+}
+
+function shiftDateKeyByDays(value: string, days: number) {
+  const date = parseAllDayDate(value);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function formatAllDayDateLabel(value: string) {
+  return new Intl.DateTimeFormat("ja-JP", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  }).format(parseAllDayDate(value));
+}
 
 function calendarEventKey(event: Pick<CalendarEvent, "id" | "calendarId">) {
   return `${event.calendarId || ""}::${event.id}`;
@@ -78,14 +112,14 @@ function calendarEventInstanceKey(
   return `${event.calendarId || ""}::${event.id}::${event.start}::${event.end}`;
 }
 
-function normalizeEvent(event: CalendarEvent): NormalizedEvent {
+function normalizeEvent(event: CalendarEvent, timezone: string): NormalizedEvent {
   const startDate = event.isAllDay
-    ? new Date(`${event.start}T00:00:00`)
+    ? parseAllDayDate(event.start)
     : new Date(event.start);
   const endDate = event.isAllDay
-    ? new Date(`${event.end}T00:00:00`)
+    ? parseAllDayDate(event.end)
     : new Date(event.end);
-  return { ...event, startDate, endDate };
+  return { ...event, startDate, endDate, timezone };
 }
 
 function formatEventScheduleText(event: NormalizedEvent): string {
@@ -99,10 +133,8 @@ function formatEventScheduleText(event: NormalizedEvent): string {
     minute: "2-digit",
   });
   if (event.isAllDay) {
-    const startStr = fmtD.format(event.startDate);
-    const lastDay = new Date(event.endDate);
-    lastDay.setDate(lastDay.getDate() - 1);
-    const endStr = fmtD.format(lastDay);
+    const startStr = formatAllDayDateLabel(event.start);
+    const endStr = formatAllDayDateLabel(shiftDateKeyByDays(event.end, -1));
     if (startStr === endStr) {
       return `${startStr}（終日）`;
     }
@@ -191,6 +223,10 @@ function getWeekCacheKey(anchor: Date) {
 }
 
 function intersectsDay(event: NormalizedEvent, day: Date) {
+  if (event.isAllDay) {
+    const dayKey = formatDateKeyInTimeZone(day, event.timezone);
+    return event.end > dayKey && event.start <= dayKey;
+  }
   const dayStart = startOfDay(day);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
@@ -1537,7 +1573,7 @@ function CalendarWeekPlannerContent({
     if (!Array.isArray(list)) {
       return [];
     }
-    return list.map(normalizeEvent);
+    return list.map((event) => normalizeEvent(event, data?.timezone || "Asia/Tokyo"));
   }, [data]);
   const range = useMemo(() => getViewRange(WEEK_VIEW, anchor), [anchor]);
   const calendarColors =
