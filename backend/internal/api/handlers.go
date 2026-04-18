@@ -1877,6 +1877,10 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 	var requestedEnd time.Time
 	calendarEventURL := ""
 	if category == "mtg" {
+		if h.calendar == nil || !h.calendar.Enabled() {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
+			return
+		}
 		var err error
 		requestedStart, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedStart))
 		if err != nil {
