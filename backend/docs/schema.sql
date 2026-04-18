@@ -107,6 +107,16 @@ CREATE TABLE IF NOT EXISTS calendar_preferences (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS calendar_event_publications (
+  calendar_id TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  is_public BOOLEAN NOT NULL DEFAULT false,
+  public_description TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (calendar_id, event_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_admin_logs_created_at_id ON admin_logs (created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries (created_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inquiries_thread_id ON inquiries (thread_id);
