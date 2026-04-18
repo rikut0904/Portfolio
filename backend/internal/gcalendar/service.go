@@ -212,37 +212,47 @@ func (s *Service) ListEvents(ctx context.Context, start, end time.Time, selected
 }
 
 func (s *Service) fetchCalendarEvents(ctx context.Context, calendarID string, start, end time.Time) ([]Event, error) {
-	call := s.api.Events.List(calendarID).
-		Context(ctx).
-		ShowDeleted(false).
-		SingleEvents(true).
-		OrderBy("startTime").
-		TimeMin(start.Format(time.RFC3339)).
-		TimeMax(end.Format(time.RFC3339)).
-		MaxResults(2500)
-
-	resp, err := call.Do()
-	if err != nil {
-		return nil, err
-	}
-	events := make([]Event, 0, len(resp.Items))
-	for _, item := range resp.Items {
-		if eventDeclinedBySelf(item) {
-			continue
+	events := make([]Event, 0)
+	pageToken := ""
+	for {
+		call := s.api.Events.List(calendarID).
+			Context(ctx).
+			ShowDeleted(false).
+			SingleEvents(true).
+			OrderBy("startTime").
+			TimeMin(start.Format(time.RFC3339)).
+			TimeMax(end.Format(time.RFC3339)).
+			MaxResults(2500)
+		if pageToken != "" {
+			call = call.PageToken(pageToken)
 		}
-		startText, endText, isAllDay := parseEventRange(item)
-		events = append(events, Event{
-			ID:          item.Id,
-			CalendarID:  calendarID,
-			Summary:     item.Summary,
-			Description: item.Description,
-			Location:    item.Location,
-			HTMLLink:    item.HtmlLink,
-			Status:      item.Status,
-			Start:       startText,
-			End:         endText,
-			IsAllDay:    isAllDay,
-		})
+
+		resp, err := call.Do()
+		if err != nil {
+			return nil, err
+		}
+		for _, item := range resp.Items {
+			if eventDeclinedBySelf(item) {
+				continue
+			}
+			startText, endText, isAllDay := parseEventRange(item)
+			events = append(events, Event{
+				ID:          item.Id,
+				CalendarID:  calendarID,
+				Summary:     item.Summary,
+				Description: item.Description,
+				Location:    item.Location,
+				HTMLLink:    item.HtmlLink,
+				Status:      item.Status,
+				Start:       startText,
+				End:         endText,
+				IsAllDay:    isAllDay,
+			})
+		}
+		if strings.TrimSpace(resp.NextPageToken) == "" {
+			break
+		}
+		pageToken = resp.NextPageToken
 	}
 	return events, nil
 }
