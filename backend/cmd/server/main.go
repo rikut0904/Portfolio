@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"portfolio-backend/internal/api"
+	httpapi "portfolio-backend/internal/adapter/http"
 	"portfolio-backend/internal/auth"
 	"portfolio-backend/internal/config"
 	"portfolio-backend/internal/discord"
@@ -90,7 +90,7 @@ func main() {
 		cfg.GoogleCalendarTimezone,
 	)
 
-	handler := api.NewHandler(
+	handler := httpapi.NewHandler(
 		st,
 		verifier,
 		mailer,
@@ -105,7 +105,7 @@ func main() {
 		cfg.GitHubBranch,
 		calendarClient,
 	)
-	router := api.NewRouter(cfg, handler)
+	router := httpapi.NewRouter(cfg, handler)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

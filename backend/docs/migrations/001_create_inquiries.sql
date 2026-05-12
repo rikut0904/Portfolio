@@ -1,5 +1,5 @@
 -- Create inquiries table for Go backend inquiry APIs.
--- Compatible with current code in internal/api/handlers.go
+-- Compatible with current code in internal/adapter/http/inquiries_handlers.go
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
