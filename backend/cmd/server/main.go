@@ -97,23 +97,23 @@ func main() {
 	technologyRepository := postgres.NewTechnologyRepository(st)
 	technologyUsecase := technologyusecase.New(technologyRepository)
 
-	handler := httpapi.NewHandler(
-		st,
-		productUsecase,
-		technologyUsecase,
-		verifier,
-		mailer,
-		discordClient,
-		cfg.FirebaseWebAPIKey,
-		cfg.AppBaseURL,
-		cfg.MailTo,
-		cfg.AppMode,
-		cfg.GitHubToken,
-		cfg.GitHubOwner,
-		cfg.GitHubRepo,
-		cfg.GitHubBranch,
-		calendarClient,
-	)
+	handler := httpapi.NewHandler(httpapi.HandlerConfig{
+		Store:             st,
+		Products:          productUsecase,
+		Technologies:      technologyUsecase,
+		Verifier:          verifier,
+		Mailer:            mailer,
+		Discord:           discordClient,
+		FirebaseWebAPIKey: cfg.FirebaseWebAPIKey,
+		AppBaseURL:        cfg.AppBaseURL,
+		MailTo:            cfg.MailTo,
+		AppMode:           cfg.AppMode,
+		GitHubToken:       cfg.GitHubToken,
+		GitHubOwner:       cfg.GitHubOwner,
+		GitHubRepo:        cfg.GitHubRepo,
+		GitHubBranch:      cfg.GitHubBranch,
+		Calendar:          calendarClient,
+	})
 	router := httpapi.NewRouter(cfg, handler)
 
 	srv := &http.Server{

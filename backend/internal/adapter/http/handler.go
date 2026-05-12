@@ -33,39 +33,41 @@ type Handler struct {
 	calendarCache     *calendarAPICache
 }
 
-func NewHandler(
-	store *postgres.Store,
-	products *productusecase.Usecase,
-	technologies *technologyusecase.Usecase,
-	verifier *auth.Verifier,
-	mailer *mail.Client,
-	discord *discord.Client,
-	firebaseWebAPIKey string,
-	appBaseURL string,
-	mailTo []string,
-	appMode bool,
-	githubToken string,
-	githubOwner string,
-	githubRepo string,
-	githubBranch string,
-	calendarClient *gcalendar.Service,
-) *Handler {
+type HandlerConfig struct {
+	Store             *postgres.Store
+	Products          *productusecase.Usecase
+	Technologies      *technologyusecase.Usecase
+	Verifier          *auth.Verifier
+	Mailer            *mail.Client
+	Discord           *discord.Client
+	FirebaseWebAPIKey string
+	AppBaseURL        string
+	MailTo            []string
+	AppMode           bool
+	GitHubToken       string
+	GitHubOwner       string
+	GitHubRepo        string
+	GitHubBranch      string
+	Calendar          *gcalendar.Service
+}
+
+func NewHandler(cfg HandlerConfig) *Handler {
 	return &Handler{
-		store:             store,
-		products:          products,
-		technologies:      technologies,
-		verifier:          verifier,
-		mailer:            mailer,
-		discord:           discord,
-		firebaseWebAPIKey: strings.TrimSpace(firebaseWebAPIKey),
-		appBaseURL:        strings.TrimRight(strings.TrimSpace(appBaseURL), "/"),
-		mailTo:            mailTo,
-		appMode:           appMode,
-		githubToken:       strings.TrimSpace(githubToken),
-		githubOwner:       strings.TrimSpace(githubOwner),
-		githubRepo:        strings.TrimSpace(githubRepo),
-		githubBranch:      strings.TrimSpace(githubBranch),
-		calendar:          calendarClient,
+		store:             cfg.Store,
+		products:          cfg.Products,
+		technologies:      cfg.Technologies,
+		verifier:          cfg.Verifier,
+		mailer:            cfg.Mailer,
+		discord:           cfg.Discord,
+		firebaseWebAPIKey: strings.TrimSpace(cfg.FirebaseWebAPIKey),
+		appBaseURL:        strings.TrimRight(strings.TrimSpace(cfg.AppBaseURL), "/"),
+		mailTo:            cfg.MailTo,
+		appMode:           cfg.AppMode,
+		githubToken:       strings.TrimSpace(cfg.GitHubToken),
+		githubOwner:       strings.TrimSpace(cfg.GitHubOwner),
+		githubRepo:        strings.TrimSpace(cfg.GitHubRepo),
+		githubBranch:      strings.TrimSpace(cfg.GitHubBranch),
+		calendar:          cfg.Calendar,
 		calendarCache:     newCalendarAPICache(),
 	}
 }
