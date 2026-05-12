@@ -6,17 +6,17 @@ import (
 
 	"portfolio-backend/internal/config"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func NewRouter(cfg config.Config, h *Handler) http.Handler {
-	r := chi.NewRouter()
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(20 * time.Second))
+	e := echo.New()
+	e.HideBanner = true
+	e.HidePort = true
+	e.Use(middleware.RequestID())
+	e.Use(middleware.Recover())
+	e.Use(middleware.ContextTimeout(20 * time.Second))
 
 	origins := cfg.AllowedOrigins
 	if len(origins) == 0 {
@@ -30,15 +30,15 @@ func NewRouter(cfg config.Config, h *Handler) http.Handler {
 			break
 		}
 	}
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   origins,
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     origins,
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodPatch, http.MethodDelete, http.MethodOptions},
+		AllowHeaders:     []string{echo.HeaderAccept, echo.HeaderAuthorization, echo.HeaderContentType, "X-CSRF-Token"},
+		ExposeHeaders:    []string{"Link"},
 		AllowCredentials: allowCredentials,
 		MaxAge:           300,
 	}))
 
-	h.Register(r)
-	return r
+	h.Register(e)
+	return e
 }

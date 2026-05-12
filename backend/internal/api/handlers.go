@@ -23,9 +23,9 @@ import (
 	"portfolio-backend/internal/mail"
 	"portfolio-backend/internal/store"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/echo/v4"
 )
 
 type Handler struct {
@@ -185,69 +185,95 @@ func (c *calendarAPICache) clearEvents() {
 	c.mu.Unlock()
 }
 
-func (h *Handler) Register(r chi.Router) {
-	r.Get("/health", h.handleHealth)
+type routeParamsContextKey struct{}
 
-	r.Route("/api", func(r chi.Router) {
-		r.Get("/app-mode", h.getAppMode)
-		r.Get("/calendar/events", h.getCalendarPublicEvents)
+func (h *Handler) Register(e *echo.Echo) {
+	e.GET("/health", wrapHTTP(h.handleHealth))
 
-		r.Get("/admin/calendar/events", h.withAdmin(h.getCalendarEvents))
-		r.Patch("/admin/calendar/events/publication", h.withAdmin(h.patchCalendarEventPublication))
-		r.Get("/admin/calendar/preferences", h.withAdmin(h.getCalendarPreferences))
-		r.Patch("/admin/calendar/preferences", h.withAdmin(h.patchCalendarPreferences))
-		r.Post("/auth/login", h.login)
-		r.Post("/auth/refresh", h.refreshToken)
-		r.Get("/auth/me", h.withAdmin(h.me))
+	api := e.Group("/api")
+	api.GET("/app-mode", wrapHTTP(h.getAppMode))
+	api.GET("/calendar/events", wrapHTTP(h.getCalendarPublicEvents))
 
-		r.Get("/products", h.getProducts)
-		r.Post("/products", h.withAdmin(h.createProduct))
-		r.Put("/products/{id}", h.withAdmin(h.updateProduct))
-		r.Delete("/products/{id}", h.withAdmin(h.deleteProduct))
+	api.GET("/admin/calendar/events", wrapHTTP(h.withAdmin(h.getCalendarEvents)))
+	api.PATCH("/admin/calendar/events/publication", wrapHTTP(h.withAdmin(h.patchCalendarEventPublication)))
+	api.GET("/admin/calendar/preferences", wrapHTTP(h.withAdmin(h.getCalendarPreferences)))
+	api.PATCH("/admin/calendar/preferences", wrapHTTP(h.withAdmin(h.patchCalendarPreferences)))
+	api.POST("/auth/login", wrapHTTP(h.login))
+	api.POST("/auth/refresh", wrapHTTP(h.refreshToken))
+	api.GET("/auth/me", wrapHTTP(h.withAdmin(h.me)))
 
-		r.Get("/sections", h.getSections)
-		r.Post("/sections", h.withAdmin(h.createSection))
-		r.Put("/sections/{id}", h.withAdmin(h.updateSection))
-		r.Patch("/sections/{id}/meta", h.withAdmin(h.patchSectionMeta))
-		r.Delete("/sections/{id}/delete", h.withAdmin(h.deleteSection))
+	api.GET("/products", wrapHTTP(h.getProducts))
+	api.POST("/products", wrapHTTP(h.withAdmin(h.createProduct)))
+	api.PUT("/products/:id", wrapHTTP(h.withAdmin(h.updateProduct)))
+	api.DELETE("/products/:id", wrapHTTP(h.withAdmin(h.deleteProduct)))
 
-		r.Get("/activities", h.getActivities)
-		r.Post("/activities", h.withAdmin(h.createActivity))
-		r.Get("/activities/{id}", h.getActivity)
-		r.Put("/activities/{id}", h.withAdmin(h.updateActivity))
-		r.Patch("/activities/{id}", h.withAdmin(h.patchActivity))
-		r.Delete("/activities/{id}", h.withAdmin(h.deleteActivity))
+	api.GET("/sections", wrapHTTP(h.getSections))
+	api.POST("/sections", wrapHTTP(h.withAdmin(h.createSection)))
+	api.PUT("/sections/:id", wrapHTTP(h.withAdmin(h.updateSection)))
+	api.PATCH("/sections/:id/meta", wrapHTTP(h.withAdmin(h.patchSectionMeta)))
+	api.DELETE("/sections/:id/delete", wrapHTTP(h.withAdmin(h.deleteSection)))
 
-		r.Get("/activity-categories", h.getActivityCategories)
-		r.Post("/activity-categories", h.withAdmin(h.createActivityCategory))
-		r.Patch("/activity-categories/{id}", h.withAdmin(h.patchActivityCategory))
-		r.Delete("/activity-categories/{id}", h.withAdmin(h.deleteActivityCategory))
+	api.GET("/activities", wrapHTTP(h.getActivities))
+	api.POST("/activities", wrapHTTP(h.withAdmin(h.createActivity)))
+	api.GET("/activities/:id", wrapHTTP(h.getActivity))
+	api.PUT("/activities/:id", wrapHTTP(h.withAdmin(h.updateActivity)))
+	api.PATCH("/activities/:id", wrapHTTP(h.withAdmin(h.patchActivity)))
+	api.DELETE("/activities/:id", wrapHTTP(h.withAdmin(h.deleteActivity)))
 
-		r.Get("/technologies", h.getTechnologies)
-		r.Post("/technologies", h.withAdmin(h.createTechnology))
-		r.Put("/technologies/{id}", h.withAdmin(h.updateTechnology))
-		r.Delete("/technologies/{id}", h.withAdmin(h.deleteTechnology))
-		r.Post("/images/upload", h.withAdmin(h.uploadImage))
+	api.GET("/activity-categories", wrapHTTP(h.getActivityCategories))
+	api.POST("/activity-categories", wrapHTTP(h.withAdmin(h.createActivityCategory)))
+	api.PATCH("/activity-categories/:id", wrapHTTP(h.withAdmin(h.patchActivityCategory)))
+	api.DELETE("/activity-categories/:id", wrapHTTP(h.withAdmin(h.deleteActivityCategory)))
 
-		r.Post("/contact", h.createInquiry)
-		r.Get("/contact/thread/{threadId}", h.getInquiryThread)
-		r.Post("/contact/thread/{threadId}/reply", h.replyInquiryThread)
-		r.Get("/contact", h.withAdmin(h.getInquiries))
-		r.Get("/contact/{id}", h.withAdmin(h.getInquiry))
-		r.Patch("/contact/{id}", h.withAdmin(h.patchInquiryStatus))
-		r.Post("/contact/{id}/reply", h.withAdmin(h.replyInquiry))
+	api.GET("/technologies", wrapHTTP(h.getTechnologies))
+	api.POST("/technologies", wrapHTTP(h.withAdmin(h.createTechnology)))
+	api.PUT("/technologies/:id", wrapHTTP(h.withAdmin(h.updateTechnology)))
+	api.DELETE("/technologies/:id", wrapHTTP(h.withAdmin(h.deleteTechnology)))
+	api.POST("/images/upload", wrapHTTP(h.withAdmin(h.uploadImage)))
 
-		r.Post("/inquiries", h.createInquiry)
-		r.Get("/inquiries/thread/{threadId}", h.getInquiryThread)
-		r.Post("/inquiries/thread/{threadId}/reply", h.replyInquiryThread)
-		r.Get("/inquiries", h.withAdmin(h.getInquiries))
-		r.Get("/inquiries/{id}", h.withAdmin(h.getInquiry))
-		r.Patch("/inquiries/{id}", h.withAdmin(h.patchInquiryStatus))
-		r.Post("/inquiries/{id}/reply", h.withAdmin(h.replyInquiry))
+	api.POST("/contact", wrapHTTP(h.createInquiry))
+	api.GET("/contact/thread/:threadId", wrapHTTP(h.getInquiryThread))
+	api.POST("/contact/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
+	api.GET("/contact", wrapHTTP(h.withAdmin(h.getInquiries)))
+	api.GET("/contact/:id", wrapHTTP(h.withAdmin(h.getInquiry)))
+	api.PATCH("/contact/:id", wrapHTTP(h.withAdmin(h.patchInquiryStatus)))
+	api.POST("/contact/:id/reply", wrapHTTP(h.withAdmin(h.replyInquiry)))
 
-		r.Post("/admin-logs", h.withAdmin(h.createAuthLog))
-		r.Get("/admin-logs", h.withAdmin(h.getAdminLogs))
-	})
+	api.POST("/inquiries", wrapHTTP(h.createInquiry))
+	api.GET("/inquiries/thread/:threadId", wrapHTTP(h.getInquiryThread))
+	api.POST("/inquiries/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
+	api.GET("/inquiries", wrapHTTP(h.withAdmin(h.getInquiries)))
+	api.GET("/inquiries/:id", wrapHTTP(h.withAdmin(h.getInquiry)))
+	api.PATCH("/inquiries/:id", wrapHTTP(h.withAdmin(h.patchInquiryStatus)))
+	api.POST("/inquiries/:id/reply", wrapHTTP(h.withAdmin(h.replyInquiry)))
+
+	api.POST("/admin-logs", wrapHTTP(h.withAdmin(h.createAuthLog)))
+	api.GET("/admin-logs", wrapHTTP(h.withAdmin(h.getAdminLogs)))
+}
+
+func wrapHTTP(next http.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := c.Request().WithContext(context.WithValue(c.Request().Context(), routeParamsContextKey{}, routeParams(c)))
+		next(c.Response(), req)
+		return nil
+	}
+}
+
+func routeParams(c echo.Context) map[string]string {
+	names := c.ParamNames()
+	values := c.ParamValues()
+	params := make(map[string]string, len(names))
+	for i, name := range names {
+		if i < len(values) {
+			params[name] = values[i]
+		}
+	}
+	return params
+}
+
+func routeParam(r *http.Request, name string) string {
+	params, _ := r.Context().Value(routeParamsContextKey{}).(map[string]string)
+	return params[name]
 }
 
 func (h *Handler) getAppMode(w http.ResponseWriter, _ *http.Request) {
@@ -760,7 +786,7 @@ func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request, user *au
 }
 
 func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var body productPayload
 	if err := decodeBody(r, &body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -801,7 +827,7 @@ func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request, user *au
 }
 
 func (h *Handler) deleteProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	cmd, err := h.store.Pool.Exec(r.Context(), `DELETE FROM "products" WHERE id=$1`, id)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete product"})
@@ -1097,7 +1123,7 @@ func (h *Handler) createSection(w http.ResponseWriter, r *http.Request, user *au
 }
 
 func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -1120,7 +1146,7 @@ func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *au
 }
 
 func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -1170,7 +1196,7 @@ func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (h *Handler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	tx, err := h.store.Pool.Begin(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete section"})
@@ -1267,7 +1293,7 @@ func (h *Handler) getActivities(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) getActivity(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var a activity
 	var description, category, link, image, status sql.NullString
 	var ct, ut sql.NullString
@@ -1359,7 +1385,7 @@ func (h *Handler) patchActivity(w http.ResponseWriter, r *http.Request, user *au
 }
 
 func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, user *auth.Claims, partial bool) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -1423,7 +1449,7 @@ func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, use
 }
 
 func (h *Handler) deleteActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	cmd, err := h.store.Pool.Exec(r.Context(), `DELETE FROM "activities" WHERE id=$1`, id)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete activity"})
@@ -1532,7 +1558,7 @@ func (h *Handler) createActivityCategory(w http.ResponseWriter, r *http.Request,
 }
 
 func (h *Handler) deleteActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	tx, err := h.store.Pool.Begin(r.Context())
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
@@ -1567,7 +1593,7 @@ func (h *Handler) deleteActivityCategory(w http.ResponseWriter, r *http.Request,
 }
 
 func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -1713,7 +1739,7 @@ func (h *Handler) createTechnology(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (h *Handler) updateTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var body struct {
 		Name     string `json:"name"`
 		Category string `json:"category"`
@@ -1750,7 +1776,7 @@ func (h *Handler) updateTechnology(w http.ResponseWriter, r *http.Request, user 
 }
 
 func (h *Handler) deleteTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	cmd, err := h.store.Pool.Exec(r.Context(), `DELETE FROM "technologies" WHERE id=$1`, id)
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete technology"})
@@ -2016,7 +2042,7 @@ func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var threadID, category, subject, message, contactName, contactEmail, status string
 	var ct, ut time.Time
 	err := h.store.Pool.QueryRow(r.Context(), `
@@ -2045,7 +2071,7 @@ func (h *Handler) getInquiryThread(w http.ResponseWriter, r *http.Request) {
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	threadID := strings.TrimSpace(chi.URLParam(r, "threadId"))
+	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
 		return
@@ -2092,7 +2118,7 @@ func (h *Handler) replyInquiryThread(w http.ResponseWriter, r *http.Request) {
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	threadID := strings.TrimSpace(chi.URLParam(r, "threadId"))
+	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
 		return
@@ -2186,7 +2212,7 @@ func (h *Handler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, use
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
@@ -2214,7 +2240,7 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 	if !h.ensureInquiriesTable(w, r) {
 		return
 	}
-	id := chi.URLParam(r, "id")
+	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
