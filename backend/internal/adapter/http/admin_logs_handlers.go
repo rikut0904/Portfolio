@@ -27,19 +27,18 @@ func (adminLogModel) TableName() string {
 	return "adminLogs"
 }
 
-func (h *Handler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *AdminLogHandler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	action := normalize(body["action"])
 	if action != "login" && action != "logout" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid action"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid action", nil)
 	}
 	h.logAdmin(r.Context(), action, "auth", "", "info", user, map[string]any{"userAgent": r.Header.Get("User-Agent")})
 	writeJSON(w, http.StatusCreated, map[string]any{"success": true})
+	return nil
 }
 
 type cursor struct {
@@ -67,7 +66,7 @@ func decodeCursor(v string) (cursor, bool) {
 	return c, true
 }
 
-func (h *Handler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.Claims) {
+func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.Claims) error {
 	limit := parseIntDefault(r.URL.Query().Get("limit"), 10)
 	if limit < 1 {
 		limit = 10
@@ -86,8 +85,7 @@ func (h *Handler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.C
 
 	var models []adminLogModel
 	if err := query.Order(`"createdAt" DESC, id DESC`).Limit(limit).Find(&models).Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin logs"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch admin logs", err)
 	}
 
 	logs := make([]map[string]any, 0, len(models))
@@ -124,6 +122,7 @@ func (h *Handler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.C
 		nextCursor = encodeCursor(cursor{CreatedAt: toISO(lastCreatedAt), ID: lastID})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"logs": logs, "nextCursor": nextCursor})
+	return nil
 }
 
 func parseIntDefault(v string, fallback int) int {

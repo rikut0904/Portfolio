@@ -33,18 +33,15 @@ type inquiryReplyItem struct {
 	CreatedAt   string `json:"createdAt"`
 }
 
-func (h *Handler) ensureInquiriesTable(w http.ResponseWriter, r *http.Request) bool {
-	m := h.store.DB.WithContext(r.Context()).Migrator()
+func (h *InquiryHandler) ensureInquiriesTable(ctx context.Context) error {
+	m := h.store.DB.WithContext(ctx).Migrator()
 	if !m.HasTable("inquiries") || !m.HasTable("inquiry_replies") || !m.HasColumn("inquiries", "thread_id") {
-		writeJSON(w, http.StatusNotImplemented, map[string]any{
-			"error": "inquiry thread schema is not found. Please apply the latest inquiry migration first",
-		})
-		return false
+		return NewAppError(http.StatusNotImplemented, "inquiry thread schema is not found. Please apply the latest inquiry migration first", nil)
 	}
-	return true
+	return nil
 }
 
-func (h *Handler) buildContactLink(threadID string) string {
+func (h *InquiryHandler) buildContactLink(threadID string) string {
 	threadID = strings.TrimSpace(threadID)
 	if threadID == "" || h.appBaseURL == "" {
 		return ""
@@ -99,7 +96,7 @@ func (inquiryReplyModel) TableName() string {
 	return "inquiry_replies"
 }
 
-func (h *Handler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
+func (h *InquiryHandler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
 	var models []inquiryReplyModel
 	err := h.store.DB.WithContext(ctx).
 		Where("inquiry_id = ?", inquiryID).
@@ -126,9 +123,9 @@ func (h *Handler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]
 	return replies, nil
 }
 
-func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	var body struct {
 		Category       string `json:"category"`
@@ -140,8 +137,7 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 		RequestedEnd   string `json:"requestedEnd"`
 	}
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	category := strings.TrimSpace(body.Category)
 	subject := strings.TrimSpace(body.Subject)
@@ -149,31 +145,26 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 	contactName := strings.TrimSpace(body.ContactName)
 	contactEmail := strings.TrimSpace(body.ContactEmail)
 	if subject == "" || message == "" || contactEmail == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "subject, message, contactEmail are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "subject, message, contactEmail are required", nil)
 	}
 	var requestedStart time.Time
 	var requestedEnd time.Time
 	calendarEventURL := ""
 	if category == "mtg" {
 		if h.calendar == nil || !h.calendar.Enabled() {
-			writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
-			return
+			return NewAppError(http.StatusServiceUnavailable, "Google Calendar is not configured", nil)
 		}
 		var err error
 		requestedStart, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedStart))
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedStart must be RFC3339"})
-			return
+			return NewAppError(http.StatusBadRequest, "requestedStart must be RFC3339", err)
 		}
 		requestedEnd, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedEnd))
 		if err != nil {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedEnd must be RFC3339"})
-			return
+			return NewAppError(http.StatusBadRequest, "requestedEnd must be RFC3339", err)
 		}
 		if !requestedEnd.After(requestedStart) {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "requestedEnd must be after requestedStart"})
-			return
+			return NewAppError(http.StatusBadRequest, "requestedEnd must be after requestedStart", nil)
 		}
 	}
 
@@ -225,8 +216,7 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Printf("failed to create inquiry: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create inquiry", err)
 	}
 
 	threadURL := h.buildContactLink(inquiry.ThreadID)
@@ -252,17 +242,17 @@ func (h *Handler) createInquiry(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusCreated, map[string]any{"id": inquiry.ID, "threadId": inquiry.ThreadID, "threadUrl": threadURL})
+	return nil
 }
 
-func (h *Handler) getInquiries(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) getInquiries(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	var models []inquiryModel
 	err := h.store.DB.WithContext(r.Context()).Order("created_at DESC").Find(&models).Error
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiries"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiries", err)
 	}
 
 	inquiries := make([]map[string]any, 0, len(models))
@@ -282,28 +272,26 @@ func (h *Handler) getInquiries(w http.ResponseWriter, r *http.Request, user *aut
 	}
 	h.logAdmin(r.Context(), "read", "inquiries", "", "info", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"contacts": inquiries, "inquiries": inquiries})
+	return nil
 }
 
-func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	id := routeParam(r, "id")
 	var m inquiryModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
 
 	replies, err := h.fetchInquiryReplies(r.Context(), id)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
 	h.logAdmin(r.Context(), "read", "inquiry", id, "info", user, nil)
 	detail := map[string]any{
@@ -321,33 +309,30 @@ func (h *Handler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.
 		"updatedAt":    toISO(m.UpdatedAt),
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
+	return nil
 }
 
-func (h *Handler) getInquiryThread(w http.ResponseWriter, r *http.Request) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) getInquiryThread(w http.ResponseWriter, r *http.Request) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
 	}
 
 	var m inquiryModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "thread_id = ?", threadID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
 
 	replies, err := h.fetchInquiryReplies(r.Context(), m.ID)
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
 
 	detail := map[string]any{
@@ -365,27 +350,25 @@ func (h *Handler) getInquiryThread(w http.ResponseWriter, r *http.Request) {
 		"updatedAt":    toISO(m.UpdatedAt),
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
+	return nil
 }
 
-func (h *Handler) replyInquiryThread(w http.ResponseWriter, r *http.Request) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Request) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "threadId is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
 	}
 
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	message := normalize(body["message"])
 	if message == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "message is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "message is required", nil)
 	}
 
 	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
@@ -421,11 +404,9 @@ func (h *Handler) replyInquiryThread(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create reply", err)
 	}
 
 	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
@@ -441,51 +422,47 @@ func (h *Handler) replyInquiryThread(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusOK, map[string]any{"id": replyID})
+	return nil
 }
 
-func (h *Handler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	status := normalize(body["status"])
 	if status != "pending" && status != "in_progress" && status != "resolved" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid status"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid status", nil)
 	}
 
 	result := h.store.DB.WithContext(r.Context()).Model(&inquiryModel{}).Where("id = ?", id).Updates(map[string]any{"status": status, "updated_at": time.Now()})
 	if result.Error != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update inquiry"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update inquiry", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", nil)
 	}
 	h.logAdmin(r.Context(), "update", "inquiry", id, "info", user, map[string]any{"status": status})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	return nil
 }
 
-func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if !h.ensureInquiriesTable(w, r) {
-		return
+func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if err := h.ensureInquiriesTable(r.Context()); err != nil {
+		return err
 	}
 	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	message := normalize(body["message"])
 	if message == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "message is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "message is required", nil)
 	}
 
 	senderName := "admin"
@@ -526,11 +503,9 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create reply"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create reply", err)
 	}
 
 	h.sendInquiryReply(r.Context(), mail.InquiryReplyData{
@@ -543,9 +518,10 @@ func (h *Handler) replyInquiry(w http.ResponseWriter, r *http.Request, user *aut
 
 	h.logAdmin(r.Context(), "reply", "inquiry", id, "info", user, map[string]any{"messageLength": len(message)})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	return nil
 }
 
-func (h *Handler) notifyInquiryCreated(ctx context.Context, data mail.InquiryNotificationData) {
+func (h *InquiryHandler) notifyInquiryCreated(ctx context.Context, data mail.InquiryNotificationData) {
 	if strings.TrimSpace(data.NotificationLabel) == "" {
 		data.NotificationLabel = "新しいお問い合わせ"
 	}
@@ -573,7 +549,7 @@ func (h *Handler) notifyInquiryCreated(ctx context.Context, data mail.InquiryNot
 	}
 }
 
-func (h *Handler) sendInquiryReceipt(ctx context.Context, data mail.InquiryReceiptData) {
+func (h *InquiryHandler) sendInquiryReceipt(ctx context.Context, data mail.InquiryReceiptData) {
 	if h.mailer == nil {
 		return
 	}
@@ -587,7 +563,7 @@ func (h *Handler) sendInquiryReceipt(ctx context.Context, data mail.InquiryRecei
 	}
 }
 
-func (h *Handler) sendInquiryReply(ctx context.Context, data mail.InquiryReplyData) {
+func (h *InquiryHandler) sendInquiryReply(ctx context.Context, data mail.InquiryReplyData) {
 	if h.mailer == nil {
 		return
 	}
@@ -600,5 +576,3 @@ func (h *Handler) sendInquiryReply(ctx context.Context, data mail.InquiryReplyDa
 		log.Printf("SES notify error (reply): %v", err)
 	}
 }
-
-// admin logs

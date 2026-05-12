@@ -10,80 +10,70 @@ import (
 	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
-func (h *Handler) getTechnologies(w http.ResponseWriter, r *http.Request) {
-	list, err := h.technologies.List(r.Context())
+func (h *TechnologyHandler) getTechnologies(w http.ResponseWriter, r *http.Request) error {
+	list, err := h.usecase.List(r.Context())
 	if err != nil {
 		log.Printf("getTechnologies usecase error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch technologies"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch technologies", err)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"technologies": list})
+	return nil
 }
 
-func (h *Handler) createTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *TechnologyHandler) createTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body domain.Payload
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	technology, err := h.technologies.Create(r.Context(), body)
+	technology, err := h.usecase.Create(r.Context(), body)
 	if errors.Is(err, technologyusecase.ErrInvalidTechnology) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Technology name is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Technology name is required", err)
 	}
 	if errors.Is(err, technologyusecase.ErrDuplicateTechnology) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Technology already exists"})
-		return
+		return NewAppError(http.StatusBadRequest, "Technology already exists", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create technology"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create technology", err)
 	}
 	h.logAdmin(r.Context(), "create", "technology", technology.ID, "info", user, map[string]any{"name": technology.Name, "category": technology.Category})
 	writeJSON(w, http.StatusCreated, map[string]any{"technology": technology})
+	return nil
 }
 
-func (h *Handler) updateTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *TechnologyHandler) updateTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var body domain.Payload
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	err := h.technologies.Update(r.Context(), id, body)
+	err := h.usecase.Update(r.Context(), id, body)
 	if errors.Is(err, technologyusecase.ErrInvalidTechnology) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Technology name is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Technology name is required", err)
 	}
 	if errors.Is(err, technologyusecase.ErrDuplicateTechnology) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Technology with this name already exists"})
-		return
+		return NewAppError(http.StatusBadRequest, "Technology with this name already exists", err)
 	}
 	if errors.Is(err, technologyusecase.ErrNotFound) {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update technology"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update technology", err)
 	}
 	h.logAdmin(r.Context(), "update", "technology", id, "info", user, map[string]any{"name": body.Name, "category": body.Category})
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+	return nil
 }
 
-func (h *Handler) deleteTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *TechnologyHandler) deleteTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
-	err := h.technologies.Delete(r.Context(), id)
+	err := h.usecase.Delete(r.Context(), id)
 	if errors.Is(err, technologyusecase.ErrNotFound) {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete technology"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to delete technology", err)
 	}
 	h.logAdmin(r.Context(), "delete", "technology", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+	return nil
 }
-
-// inquiries

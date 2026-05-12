@@ -14,10 +14,9 @@ import (
 	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
-type Handler struct {
+// BaseHandler contains common dependencies for all domain handlers.
+type BaseHandler struct {
 	store             *postgres.Store
-	products          *productusecase.Usecase
-	technologies      *technologyusecase.Usecase
 	verifier          *auth.Verifier
 	mailer            *mail.Client
 	discord           *discord.Client
@@ -29,8 +28,18 @@ type Handler struct {
 	githubOwner       string
 	githubRepo        string
 	githubBranch      string
-	calendar          *gcalendar.Service
-	calendarCache     *calendarAPICache
+}
+
+// Handler is the root container for all domain-specific handlers.
+type Handler struct {
+	*BaseHandler
+	Activities   *ActivityHandler
+	Products     *ProductHandler
+	Technologies *TechnologyHandler
+	Inquiries    *InquiryHandler
+	Sections     *SectionHandler
+	Calendar     *CalendarHandler
+	AdminLogs    *AdminLogHandler
 }
 
 type HandlerConfig struct {
@@ -52,10 +61,8 @@ type HandlerConfig struct {
 }
 
 func NewHandler(cfg HandlerConfig) *Handler {
-	return &Handler{
+	base := &BaseHandler{
 		store:             cfg.Store,
-		products:          cfg.Products,
-		technologies:      cfg.Technologies,
 		verifier:          cfg.Verifier,
 		mailer:            cfg.Mailer,
 		discord:           cfg.Discord,
@@ -67,9 +74,62 @@ func NewHandler(cfg HandlerConfig) *Handler {
 		githubOwner:       strings.TrimSpace(cfg.GitHubOwner),
 		githubRepo:        strings.TrimSpace(cfg.GitHubRepo),
 		githubBranch:      strings.TrimSpace(cfg.GitHubBranch),
-		calendar:          cfg.Calendar,
-		calendarCache:     newCalendarAPICache(),
 	}
+
+	h := &Handler{
+		BaseHandler: base,
+	}
+
+	h.Activities = &ActivityHandler{BaseHandler: base}
+	h.Products = &ProductHandler{BaseHandler: base, usecase: cfg.Products}
+	h.Technologies = &TechnologyHandler{BaseHandler: base, usecase: cfg.Technologies}
+	h.Inquiries = &InquiryHandler{BaseHandler: base, calendar: cfg.Calendar, calendarCache: newCalendarAPICache()}
+	h.Sections = &SectionHandler{BaseHandler: base}
+	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: newCalendarAPICache()}
+	h.AdminLogs = &AdminLogHandler{BaseHandler: base}
+
+	return h
+}
+
+// ActivityHandler handles activity-related requests.
+type ActivityHandler struct {
+	*BaseHandler
+}
+
+// ProductHandler handles product-related requests.
+type ProductHandler struct {
+	*BaseHandler
+	usecase *productusecase.Usecase
+}
+
+// TechnologyHandler handles technology-related requests.
+type TechnologyHandler struct {
+	*BaseHandler
+	usecase *technologyusecase.Usecase
+}
+
+// InquiryHandler handles inquiry and contact requests.
+type InquiryHandler struct {
+	*BaseHandler
+	calendar      *gcalendar.Service
+	calendarCache *calendarAPICache
+}
+
+// SectionHandler handles dynamic section requests.
+type SectionHandler struct {
+	*BaseHandler
+}
+
+// CalendarHandler handles calendar-related requests.
+type CalendarHandler struct {
+	*BaseHandler
+	service *gcalendar.Service
+	cache   *calendarAPICache
+}
+
+// AdminLogHandler handles admin log requests.
+type AdminLogHandler struct {
+	*BaseHandler
 }
 
 type cachedCalendarEventsResponse struct {

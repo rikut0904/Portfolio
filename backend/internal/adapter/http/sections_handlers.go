@@ -56,19 +56,17 @@ func (sectionDataModel) TableName() string {
 	return "sections"
 }
 
-func (h *Handler) getSections(w http.ResponseWriter, r *http.Request) {
+func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
 	var metas []sectionMetaModel
 	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
 		log.Printf("getSections meta query error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch sections"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
 
 	var dataList []sectionDataModel
 	if err := h.store.DB.WithContext(r.Context()).Find(&dataList).Error; err != nil {
 		log.Printf("getSections data query error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch sections"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
 
 	dataMap := make(map[string]sectionDataModel)
@@ -105,9 +103,10 @@ func (h *Handler) getSections(w http.ResponseWriter, r *http.Request) {
 
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"sections": sections})
+	return nil
 }
 
-func (h *Handler) createSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body struct {
 		ID          string          `json:"id"`
 		DisplayName string          `json:"displayName"`
@@ -117,12 +116,10 @@ func (h *Handler) createSection(w http.ResponseWriter, r *http.Request, user *au
 		Data        json.RawMessage `json:"data"`
 	}
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	if body.ID == "" || body.DisplayName == "" || body.Type == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "id, displayName, and type are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "id, displayName, and type are required", nil)
 	}
 	if len(body.Data) == 0 {
 		body.Data = json.RawMessage(`{}`)
@@ -171,23 +168,21 @@ func (h *Handler) createSection(w http.ResponseWriter, r *http.Request, user *au
 
 	if err != nil {
 		if err.Error() == "conflict" {
-			writeJSON(w, http.StatusConflict, map[string]any{"error": "Section with this ID already exists"})
-			return
+			return NewAppError(http.StatusConflict, "Section with this ID already exists", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create section", err)
 	}
 
 	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID})
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
+	return nil
 }
 
-func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *SectionHandler) updateSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
@@ -214,23 +209,21 @@ func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *au
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update section"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update section", err)
 	}
 
 	h.logAdmin(r.Context(), "update", "section", id, "info", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+	return nil
 }
 
-func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	updates := make(map[string]any)
 	for k, v := range patch {
@@ -247,22 +240,21 @@ func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user 
 	}
 	if len(updates) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
-		return
+		return nil
 	}
 	result := h.store.DB.WithContext(r.Context()).Model(&sectionMetaModel{}).Where("id = ?", id).Updates(updates)
 	if result.Error != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update section meta"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update section meta", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", nil)
 	}
 	h.logAdmin(r.Context(), "update", "sectionMeta", id, "info", user, map[string]any{"updates": patch})
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
+	return nil
 }
 
-func (h *Handler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *SectionHandler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("id = ?", id).Delete(&sectionDataModel{}).Error; err != nil {
@@ -279,14 +271,13 @@ func (h *Handler) deleteSection(w http.ResponseWriter, r *http.Request, user *au
 	})
 	if err != nil {
 		if err.Error() == "not found" {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete section"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to delete section", err)
 	}
 	h.logAdmin(r.Context(), "delete", "section", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Section deleted successfully"})
+	return nil
 }
 
 func normalizeSectionType(v string) string {

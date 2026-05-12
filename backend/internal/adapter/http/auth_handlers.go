@@ -11,7 +11,7 @@ import (
 	"portfolio-backend/internal/infrastructure/auth"
 )
 
-func (h *Handler) getAppMode(w http.ResponseWriter, _ *http.Request) {
+func (h *BaseHandler) getAppMode(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"appMode": h.appMode,
 	})
@@ -19,7 +19,7 @@ func (h *Handler) getAppMode(w http.ResponseWriter, _ *http.Request) {
 
 // auth endpoints
 
-func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
+func (h *BaseHandler) login(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -82,7 +82,7 @@ func (h *Handler) login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) refreshToken(w http.ResponseWriter, r *http.Request) {
+func (h *BaseHandler) refreshToken(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		RefreshToken string `json:"refreshToken"`
 	}
@@ -140,7 +140,7 @@ func (h *Handler) refreshToken(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) me(w http.ResponseWriter, _ *http.Request, user *auth.Claims) {
+func (h *BaseHandler) me(w http.ResponseWriter, _ *http.Request, user *auth.Claims) {
 	writeJSON(w, http.StatusOK, map[string]any{
 		"user": map[string]any{
 			"uid":   user.UID,
@@ -149,7 +149,7 @@ func (h *Handler) me(w http.ResponseWriter, _ *http.Request, user *auth.Claims) 
 	})
 }
 
-func (h *Handler) withAdmin(next func(http.ResponseWriter, *http.Request, *auth.Claims)) http.HandlerFunc {
+func (h *BaseHandler) withAdmin(next func(http.ResponseWriter, *http.Request, *auth.Claims)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		claims, err := h.verifier.VerifyRequest(r)
 		if err != nil {
@@ -164,7 +164,7 @@ func (h *Handler) withAdmin(next func(http.ResponseWriter, *http.Request, *auth.
 	}
 }
 
-func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
+func (h *BaseHandler) handleHealth(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	sqlDB, err := h.store.DB.DB()

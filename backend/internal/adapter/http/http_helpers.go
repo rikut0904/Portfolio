@@ -6,12 +6,34 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
 )
+
+type AppError struct {
+	Status  int    `json:"-"`
+	Message string `json:"error"`
+	Err     error  `json:"-"`
+}
+
+func (e *AppError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("%s: %v", e.Message, e.Err)
+	}
+	return e.Message
+}
+
+func NewAppError(status int, message string, err error) *AppError {
+	return &AppError{
+		Status:  status,
+		Message: message,
+		Err:     err,
+	}
+}
 
 func decodeBody(r *http.Request, dst any) error {
 	defer r.Body.Close()
@@ -81,6 +103,24 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
+func handleError(w http.ResponseWriter, err error) {
+	if err == nil {
+		return
+	}
+
+	var appErr *AppError
+	if errors.As(err, &appErr) {
+		if appErr.Status >= 500 {
+			log.Printf("Internal Server Error: %v", appErr)
+		}
+		writeJSON(w, appErr.Status, appErr)
+		return
+	}
+
+	log.Printf("Unhandled error: %v", err)
+	writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Internal Server Error"})
+}
+
 func writeCacheHeader(w http.ResponseWriter) {
 	w.Header().Set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=30")
 }
@@ -89,7 +129,7 @@ func toISO(t time.Time) string {
 	return t.UTC().Format(time.RFC3339)
 }
 
-func (h *Handler) logAdmin(ctx context.Context, action, entity, entityID, level string, user *auth.Claims, details any) {
+func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, level string, user *auth.Claims, details any) {
 	if level == "" {
 		level = "info"
 	}

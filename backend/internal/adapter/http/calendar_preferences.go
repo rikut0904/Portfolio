@@ -36,31 +36,29 @@ type calendarPreferencesResponse struct {
 	CalendarDisplayName map[string]string `json:"calendarDisplayNames"`
 }
 
-func (h *Handler) getCalendarPreferences(w http.ResponseWriter, r *http.Request, _ *auth.Claims) {
-	if h.calendar == nil || !h.calendar.Enabled() {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
-		return
+func (h *CalendarHandler) getCalendarPreferences(w http.ResponseWriter, r *http.Request, _ *auth.Claims) error {
+	if h.service == nil || !h.service.Enabled() {
+		return NewAppError(http.StatusServiceUnavailable, "Google Calendar is not configured", nil)
 	}
 
-	cacheKey := strings.Join(h.calendar.CalendarIDs(), ",")
-	if cached, ok := h.calendarCache.getPreferences(cacheKey); ok {
+	cacheKey := strings.Join(h.service.CalendarIDs(), ",")
+	if cached, ok := h.cache.getPreferences(cacheKey); ok {
 		writeJSON(w, http.StatusOK, cached.response)
-		return
+		return nil
 	}
 
 	preferences, err := h.resolveCalendarPreferences(r.Context())
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to load calendar preferences", err)
 	}
-	h.calendarCache.setPreferences(cacheKey, cachedCalendarPreferences{response: preferences}, calendarPreferencesCacheTTL)
+	h.cache.setPreferences(cacheKey, cachedCalendarPreferences{response: preferences}, calendarPreferencesCacheTTL)
 	writeJSON(w, http.StatusOK, preferences)
+	return nil
 }
 
-func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if h.calendar == nil || !h.calendar.Enabled() {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
-		return
+func (h *CalendarHandler) patchCalendarPreferences(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if h.service == nil || !h.service.Enabled() {
+		return NewAppError(http.StatusServiceUnavailable, "Google Calendar is not configured", nil)
 	}
 
 	var body struct {
@@ -68,29 +66,26 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		Labels map[string]string `json:"labels"`
 	}
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	if len(body.Colors) == 0 && len(body.Labels) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "colors or labels is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "colors or labels is required", nil)
 	}
 
-	allowed := make(map[string]struct{}, len(h.calendar.CalendarIDs()))
-	for _, calendarID := range h.calendar.CalendarIDs() {
+	allowed := make(map[string]struct{}, len(h.service.CalendarIDs()))
+	for _, calendarID := range h.service.CalendarIDs() {
 		allowed[calendarID] = struct{}{}
 	}
 
 	tx := h.store.DB.WithContext(r.Context()).Begin()
 	if tx.Error != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", tx.Error)
 	}
 	defer tx.Rollback()
 
 	updatedColors := make(map[string]string)
 	updatedLabels := make(map[string]string)
-	for _, calendarID := range h.calendar.CalendarIDs() {
+	for _, calendarID := range h.service.CalendarIDs() {
 		id := strings.TrimSpace(calendarID)
 		if id == "" {
 			continue
@@ -109,8 +104,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		if hasColor {
 			normalizedColor = normalizeCalendarColor(color)
 			if normalizedColor == "" {
-				writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid color for " + id})
-				return
+				return NewAppError(http.StatusBadRequest, "Invalid color for "+id, nil)
 			}
 			updatedColors[id] = normalizedColor
 		}
@@ -123,8 +117,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		var pref calendarPreferenceModel
 		err := tx.Where("calendar_id = ?", id).First(&pref).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
-			return
+			return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
 		}
 
 		if err == gorm.ErrRecordNotFound {
@@ -134,7 +127,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 			if hasColor {
 				pref.Color = normalizedColor
 			} else {
-				pref.Color = h.calendar.DefaultCalendarColors()[id]
+				pref.Color = h.service.DefaultCalendarColors()[id]
 			}
 			if hasLabel {
 				pref.Label = normalizedLabel
@@ -142,8 +135,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 				pref.Label = ""
 			}
 			if err := tx.Create(&pref).Error; err != nil {
-				writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
-				return
+				return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
 			}
 		} else {
 			updates := map[string]interface{}{}
@@ -155,44 +147,41 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 			}
 			if len(updates) > 0 {
 				if err := tx.Model(&pref).Updates(updates).Error; err != nil {
-					writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
-					return
+					return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
 				}
 			}
 		}
 	}
 
 	if len(updatedColors) == 0 && len(updatedLabels) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "No valid preferences to update"})
-		return
+		return NewAppError(http.StatusBadRequest, "No valid preferences to update", nil)
 	}
 
 	if err := tx.Commit().Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
 	}
 
 	preferences, err := h.resolveCalendarPreferences(r.Context())
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to load calendar preferences"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to load calendar preferences", err)
 	}
 
 	h.logAdmin(r.Context(), "update", "calendar_preferences", "", "info", user, map[string]any{
 		"colors": updatedColors,
 		"labels": updatedLabels,
 	})
-	h.calendarCache.clearPreferences()
-	h.calendarCache.clearEvents()
+	h.cache.clearPreferences()
+	h.cache.clearEvents()
 	writeJSON(w, http.StatusOK, preferences)
+	return nil
 }
 
-func (h *Handler) resolveCalendarPreferences(ctx context.Context) (calendarPreferencesResponse, error) {
+func (h *CalendarHandler) resolveCalendarPreferences(ctx context.Context) (calendarPreferencesResponse, error) {
 	defaultColors := map[string]string{}
-	if h.calendar != nil {
-		defaultColors = h.calendar.DefaultCalendarColors()
+	if h.service != nil {
+		defaultColors = h.service.DefaultCalendarColors()
 	}
-	allIDs := h.calendar.CalendarIDs()
+	allIDs := h.service.CalendarIDs()
 	response := calendarPreferencesResponse{
 		CalendarIds:         allIDs,
 		CalendarColors:      make(map[string]string, len(defaultColors)),

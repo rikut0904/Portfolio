@@ -13,11 +13,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func (h *Handler) getAppModeEcho(c echo.Context) error {
+func (h *BaseHandler) getAppModeEcho(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]any{"appMode": h.appMode})
 }
 
-func (h *Handler) loginEcho(c echo.Context) error {
+func (h *BaseHandler) loginEcho(c echo.Context) error {
 	var body struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
@@ -68,7 +68,7 @@ func (h *Handler) loginEcho(c echo.Context) error {
 	})
 }
 
-func (h *Handler) refreshTokenEcho(c echo.Context) error {
+func (h *BaseHandler) refreshTokenEcho(c echo.Context) error {
 	var body struct {
 		RefreshToken string `json:"refreshToken"`
 	}
@@ -118,7 +118,7 @@ func (h *Handler) refreshTokenEcho(c echo.Context) error {
 	})
 }
 
-func (h *Handler) meEcho(c echo.Context, user *auth.Claims) error {
+func (h *BaseHandler) meEcho(c echo.Context, user *auth.Claims) error {
 	return c.JSON(http.StatusOK, map[string]any{
 		"user": map[string]any{
 			"uid":   user.UID,
@@ -127,7 +127,7 @@ func (h *Handler) meEcho(c echo.Context, user *auth.Claims) error {
 	})
 }
 
-func (h *Handler) meEchoFromContext(c echo.Context) error {
+func (h *BaseHandler) meEchoFromContext(c echo.Context) error {
 	claims, _ := c.Get(adminClaimsContextKey).(*auth.Claims)
 	if claims == nil {
 		return c.JSON(http.StatusUnauthorized, map[string]any{"error": http.StatusText(http.StatusUnauthorized)})
@@ -135,7 +135,7 @@ func (h *Handler) meEchoFromContext(c echo.Context) error {
 	return h.meEcho(c, claims)
 }
 
-func (h *Handler) withAdminEcho(next func(echo.Context, *auth.Claims) error) echo.HandlerFunc {
+func (h *BaseHandler) withAdminEcho(next func(echo.Context, *auth.Claims) error) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		claims, err := h.verifier.VerifyRequest(c.Request())
 		if err != nil {
@@ -149,7 +149,7 @@ func (h *Handler) withAdminEcho(next func(echo.Context, *auth.Claims) error) ech
 	}
 }
 
-func (h *Handler) handleHealthEcho(c echo.Context) error {
+func (h *BaseHandler) handleHealthEcho(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 2*time.Second)
 	defer cancel()
 	sqlDB, err := h.store.DB.DB()

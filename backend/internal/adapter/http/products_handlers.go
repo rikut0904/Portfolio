@@ -20,9 +20,9 @@ func nullToString(v sql.NullString) string {
 
 type productPayload = domain.Payload
 
-func (h *Handler) getProducts(w http.ResponseWriter, r *http.Request) {
+func (h *ProductHandler) getProducts(w http.ResponseWriter, r *http.Request) error {
 	q := r.URL.Query()
-	out, err := h.products.List(r.Context(), productusecase.ListInput{
+	out, err := h.usecase.List(r.Context(), productusecase.ListInput{
 		Category:     q.Get("category"),
 		Status:       q.Get("status"),
 		DeployStatus: q.Get("deployStatus"),
@@ -35,72 +35,64 @@ func (h *Handler) getProducts(w http.ResponseWriter, r *http.Request) {
 	})
 	if err != nil {
 		log.Printf("getProducts usecase error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch products"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch products", err)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
 		"products":   out.Products,
 		"pagination": out.Pagination,
 	})
+	return nil
 }
 
-func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ProductHandler) createProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body productPayload
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	product, err := h.products.Create(r.Context(), body)
+	product, err := h.usecase.Create(r.Context(), body)
 	if errors.Is(err, productusecase.ErrInvalidProduct) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Title and description are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Title and description are required", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create product"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create product", err)
 	}
 
 	h.logAdmin(r.Context(), "create", "product", product.ID, "info", user, map[string]any{"title": product.Title, "status": product.Status, "deployStatus": product.Deploy})
 	writeJSON(w, http.StatusCreated, map[string]any{"product": product})
+	return nil
 }
 
-func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ProductHandler) updateProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var body productPayload
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	err := h.products.Update(r.Context(), id, body)
+	err := h.usecase.Update(r.Context(), id, body)
 	if errors.Is(err, productusecase.ErrInvalidProduct) {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Title and description are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Title and description are required", err)
 	}
 	if errors.Is(err, productusecase.ErrNotFound) {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update product"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update product", err)
 	}
 	h.logAdmin(r.Context(), "update", "product", id, "info", user, map[string]any{"title": body.Title, "status": body.Status, "deployStatus": body.Deploy})
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+	return nil
 }
 
-func (h *Handler) deleteProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ProductHandler) deleteProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
-	err := h.products.Delete(r.Context(), id)
+	err := h.usecase.Delete(r.Context(), id)
 	if errors.Is(err, productusecase.ErrNotFound) {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Not found", err)
 	}
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete product"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to delete product", err)
 	}
 	h.logAdmin(r.Context(), "delete", "product", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
+	return nil
 }
-
-// sections

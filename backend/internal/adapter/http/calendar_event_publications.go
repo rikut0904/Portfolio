@@ -33,7 +33,7 @@ func calendarEventPublicationKey(calendarID, eventID string) string {
 	return calendarID + "\x00" + eventID
 }
 
-func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events []gcalendar.Event) (map[string]calendarEventPublication, error) {
+func (h *CalendarHandler) resolveCalendarEventPublications(ctx context.Context, events []gcalendar.Event) (map[string]calendarEventPublication, error) {
 	publications := make(map[string]calendarEventPublication, len(events))
 	if len(events) == 0 {
 		return publications, nil
@@ -92,10 +92,9 @@ func applyCalendarEventPublications(events []gcalendar.Event, publications map[s
 	return applied
 }
 
-func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	if h.calendar == nil || !h.calendar.Enabled() {
-		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"error": "Google Calendar is not configured"})
-		return
+func (h *CalendarHandler) patchCalendarEventPublication(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	if h.service == nil || !h.service.Enabled() {
+		return NewAppError(http.StatusServiceUnavailable, "Google Calendar is not configured", nil)
 	}
 
 	var body struct {
@@ -105,27 +104,24 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 		PublicDescription string `json:"publicDescription"`
 	}
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	calendarID := strings.TrimSpace(body.CalendarID)
 	eventID := strings.TrimSpace(body.EventID)
 	if calendarID == "" || eventID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "calendarId and eventId are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "calendarId and eventId are required", nil)
 	}
 
 	allowed := false
-	for _, id := range h.calendar.CalendarIDs() {
+	for _, id := range h.service.CalendarIDs() {
 		if id == calendarID {
 			allowed = true
 			break
 		}
 	}
 	if !allowed {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid calendarId"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid calendarId", nil)
 	}
 
 	publicDescription := strings.TrimSpace(body.PublicDescription)
@@ -141,11 +137,10 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 		Columns:   []clause.Column{{Name: "calendar_id"}, {Name: "event_id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"is_public", "public_description", "updated_at"}),
 	}).Create(&model).Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar event publication"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update calendar event publication", err)
 	}
 
-	h.calendarCache.clearEvents()
+	h.cache.clearEvents()
 	h.logAdmin(r.Context(), "update", "calendar_event_publications", eventID, "info", user, map[string]any{
 		"calendarId":        calendarID,
 		"isPublished":       body.IsPublished,
@@ -157,4 +152,5 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 		"isPublished":       body.IsPublished,
 		"publicDescription": publicDescription,
 	})
+	return nil
 }

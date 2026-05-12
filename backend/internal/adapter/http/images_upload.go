@@ -48,50 +48,42 @@ func githubPathEscape(fullPath string) string {
 	return strings.Join(parts, "/")
 }
 
-func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *BaseHandler) uploadImage(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	if h.githubToken == "" || h.githubOwner == "" || h.githubRepo == "" {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "GitHub upload is not configured"})
-		return
+		return NewAppError(http.StatusInternalServerError, "GitHub upload is not configured", nil)
 	}
 
 	if err := r.ParseMultipartForm(maxImageUploadBytes + (1 << 20)); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid multipart form"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid multipart form", err)
 	}
 
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "No file provided"})
-		return
+		return NewAppError(http.StatusBadRequest, "No file provided", err)
 	}
 	defer file.Close()
 
 	repoDir, publicDir, err := resolveUploadDir(r.FormValue("path"))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid upload path"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid upload path", err)
 	}
 
 	fileName := sanitizeFileName(header.Filename)
 	if fileName == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid file name"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid file name", nil)
 	}
 
 	raw, err := io.ReadAll(io.LimitReader(file, maxImageUploadBytes+1))
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Failed to read file"})
-		return
+		return NewAppError(http.StatusBadRequest, "Failed to read file", err)
 	}
 	if int64(len(raw)) > maxImageUploadBytes {
-		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]any{"error": "File too large (max 10MB)"})
-		return
+		return NewAppError(http.StatusRequestEntityTooLarge, "File too large (max 10MB)", nil)
 	}
 
 	detected := http.DetectContentType(raw)
 	if !strings.HasPrefix(detected, "image/") {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Only image files are allowed"})
-		return
+		return NewAppError(http.StatusBadRequest, "Only image files are allowed", nil)
 	}
 
 	repoPath := path.Join("public", "img", repoDir, fileName)
@@ -102,21 +94,19 @@ func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request, user *auth
 
 	exists, err := h.githubFileExists(r.Context(), repoPath)
 	if err != nil {
-		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to check existing file"})
-		return
+		return NewAppError(http.StatusBadGateway, "Failed to check existing file", err)
 	}
 	if exists {
 		writeJSON(w, http.StatusConflict, map[string]any{
 			"error": "File already exists",
 			"path":  publicPath,
 		})
-		return
+		return nil
 	}
 
 	sha, err := h.githubPutFile(r.Context(), repoPath, fileName, raw)
 	if err != nil {
-		writeJSON(w, http.StatusBadGateway, map[string]any{"error": "Failed to upload image to GitHub"})
-		return
+		return NewAppError(http.StatusBadGateway, "Failed to upload image to GitHub", err)
 	}
 
 	h.logAdmin(r.Context(), "upload", "image", "", "info", user, map[string]any{
@@ -131,9 +121,10 @@ func (h *Handler) uploadImage(w http.ResponseWriter, r *http.Request, user *auth
 		"fileName": fileName,
 		"sha":      sha,
 	})
+	return nil
 }
 
-func (h *Handler) githubFileExists(ctx context.Context, repoPath string) (bool, error) {
+func (h *BaseHandler) githubFileExists(ctx context.Context, repoPath string) (bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -168,7 +159,7 @@ func (h *Handler) githubFileExists(ctx context.Context, repoPath string) (bool, 
 	return false, fmt.Errorf("github get content failed: status=%d body=%s", res.StatusCode, strings.TrimSpace(string(body)))
 }
 
-func (h *Handler) githubPutFile(ctx context.Context, repoPath, fileName string, data []byte) (string, error) {
+func (h *BaseHandler) githubPutFile(ctx context.Context, repoPath, fileName string, data []byte) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 	defer cancel()
 

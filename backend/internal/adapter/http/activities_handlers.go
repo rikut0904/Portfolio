@@ -47,12 +47,11 @@ func (activityModel) TableName() string {
 	return "activities"
 }
 
-func (h *Handler) getActivities(w http.ResponseWriter, r *http.Request) {
+func (h *ActivityHandler) getActivities(w http.ResponseWriter, r *http.Request) error {
 	var models []activityModel
 	err := h.store.DB.WithContext(r.Context()).Order("\"order\" DESC").Find(&models).Error
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch activities"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch activities", err)
 	}
 	list := make([]activity, 0, len(models))
 	for _, m := range models {
@@ -75,19 +74,18 @@ func (h *Handler) getActivities(w http.ResponseWriter, r *http.Request) {
 	}
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"activities": list})
+	return nil
 }
 
-func (h *Handler) getActivity(w http.ResponseWriter, r *http.Request) {
+func (h *ActivityHandler) getActivity(w http.ResponseWriter, r *http.Request) error {
 	id := routeParam(r, "id")
 	var m activityModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Activity not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch activity"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch activity", err)
 	}
 	a := activity{
 		ID:          m.ID,
@@ -105,17 +103,16 @@ func (h *Handler) getActivity(w http.ResponseWriter, r *http.Request) {
 		Techs:       []string{},
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"activity": a})
+	return nil
 }
 
-func (h *Handler) createActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ActivityHandler) createActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body activity
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	if strings.TrimSpace(body.Title) == "" || strings.TrimSpace(body.Category) == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Title and category are required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Title and category are required", nil)
 	}
 	if body.Order == 0 {
 		var maxOrder int
@@ -137,8 +134,7 @@ func (h *Handler) createActivity(w http.ResponseWriter, r *http.Request, user *a
 		Order:       body.Order,
 	}
 	if err := h.store.DB.WithContext(r.Context()).Create(&m).Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create activity"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create activity", err)
 	}
 	h.logAdmin(r.Context(), "create", "activity", id, "info", user, map[string]any{"title": body.Title, "category": body.Category, "status": body.Status})
 	body.ID = m.ID
@@ -148,31 +144,30 @@ func (h *Handler) createActivity(w http.ResponseWriter, r *http.Request, user *a
 	body.CreatedMon = int(m.CreatedAt.Month())
 	body.Techs = []string{}
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "Activity created successfully", "activity": body})
+	return nil
 }
 
-func (h *Handler) updateActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	h.upsertActivityByID(w, r, user, false)
+func (h *ActivityHandler) updateActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	return h.upsertActivityByID(w, r, user, false)
 }
 
-func (h *Handler) patchActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
-	h.upsertActivityByID(w, r, user, true)
+func (h *ActivityHandler) patchActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
+	return h.upsertActivityByID(w, r, user, true)
 }
 
-func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, user *auth.Claims, partial bool) {
+func (h *ActivityHandler) upsertActivityByID(w http.ResponseWriter, r *http.Request, user *auth.Claims, partial bool) error {
 	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	if len(patch) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Activity updated successfully"})
-		return
+		return nil
 	}
 	if !partial {
 		if _, ok := patch["title"]; !ok {
-			writeJSON(w, http.StatusBadRequest, map[string]any{"error": "title is required"})
-			return
+			return NewAppError(http.StatusBadRequest, "title is required", nil)
 		}
 	}
 
@@ -185,16 +180,14 @@ func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, use
 	}
 	if len(updates) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Activity updated successfully"})
-		return
+		return nil
 	}
 	result := h.store.DB.WithContext(r.Context()).Model(&activityModel{}).Where("id = ?", id).Updates(updates)
 	if result.Error != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update activity"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update activity", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Activity not found", nil)
 	}
 	h.logAdmin(r.Context(), "update", "activity", id, "info", user, func() any {
 		if partial {
@@ -203,21 +196,21 @@ func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, use
 		return map[string]any{}
 	}())
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Activity updated successfully"})
+	return nil
 }
 
-func (h *Handler) deleteActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ActivityHandler) deleteActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	result := h.store.DB.WithContext(r.Context()).Where("id = ?", id).Delete(&activityModel{})
 	if result.Error != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete activity"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to delete activity", result.Error)
 	}
 	if result.RowsAffected == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
-		return
+		return NewAppError(http.StatusNotFound, "Activity not found", nil)
 	}
 	h.logAdmin(r.Context(), "delete", "activity", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Activity deleted successfully"})
+	return nil
 }
 
 type activityCategory struct {
@@ -238,7 +231,7 @@ func (activityCategoryModel) TableName() string {
 	return "activityCategories"
 }
 
-func (h *Handler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
+func (h *ActivityHandler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
 	m := h.store.DB.WithContext(ctx).Migrator()
 	if m.HasTable("activityCategories") {
 		return "\"activityCategories\"", nil
@@ -252,20 +245,18 @@ func (h *Handler) resolveActivityCategoryTable(ctx context.Context) (string, err
 	return "", errors.New("activity categories table not found")
 }
 
-func (h *Handler) getActivityCategories(w http.ResponseWriter, r *http.Request) {
+func (h *ActivityHandler) getActivityCategories(w http.ResponseWriter, r *http.Request) error {
 	tableName, err := h.resolveActivityCategoryTable(r.Context())
 	if err != nil {
 		log.Printf("getActivityCategories resolve table error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch categories"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
 	}
 
 	var models []activityCategoryModel
 	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("\"order\" ASC").Find(&models).Error
 	if err != nil {
 		log.Printf("getActivityCategories query error: %v", err)
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch categories"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
 	}
 	list := make([]activityCategory, 0, len(models))
 	for _, m := range models {
@@ -278,20 +269,19 @@ func (h *Handler) getActivityCategories(w http.ResponseWriter, r *http.Request) 
 	}
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"categories": list})
+	return nil
 }
 
-func (h *Handler) createActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ActivityHandler) createActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body struct {
 		Name  string `json:"name"`
 		Order *int   `json:"order"`
 	}
 	if err := decodeBody(r, &body); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 	if strings.TrimSpace(body.Name) == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Category name is required"})
-		return
+		return NewAppError(http.StatusBadRequest, "Category name is required", nil)
 	}
 	orderNo := 0
 	if body.Order != nil {
@@ -307,14 +297,14 @@ func (h *Handler) createActivityCategory(w http.ResponseWriter, r *http.Request,
 		Order: orderNo,
 	}
 	if err := h.store.DB.WithContext(r.Context()).Create(&m).Error; err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create category"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to create category", err)
 	}
 	h.logAdmin(r.Context(), "create", "activityCategory", m.ID, "info", user, map[string]any{"name": m.Name, "order": m.Order})
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "Category created successfully", "category": map[string]any{"id": m.ID, "name": m.Name, "order": m.Order, "createdAt": toISO(m.CreatedAt)}})
+	return nil
 }
 
-func (h *Handler) deleteActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ActivityHandler) deleteActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		var m activityCategoryModel
@@ -331,22 +321,20 @@ func (h *Handler) deleteActivityCategory(w http.ResponseWriter, r *http.Request,
 	})
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Category not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Category not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to delete category", err)
 	}
 	h.logAdmin(r.Context(), "delete", "activityCategory", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Category and related activities deleted successfully"})
+	return nil
 }
 
-func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
+func (h *ActivityHandler) patchActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var patch map[string]any
 	if err := decodeBody(r, &patch); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-		return
+		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
@@ -378,17 +366,16 @@ func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, 
 
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Category not found"})
-			return
+			return NewAppError(http.StatusNotFound, "Category not found", err)
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update category"})
-		return
+		return NewAppError(http.StatusInternalServerError, "Failed to update category", err)
 	}
 
 	h.logAdmin(r.Context(), "update", "activityCategory", id, "info", user, map[string]any{"updates": patch})
 	if _, ok := patch["name"]; ok {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Category and related activities updated successfully"})
-		return
+		return nil
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Category updated successfully"})
+	return nil
 }
