@@ -3,7 +3,6 @@ package httpapi
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -11,6 +10,22 @@ import (
 
 	"portfolio-backend/internal/infrastructure/auth"
 )
+
+type adminLogModel struct {
+	ID        string          `gorm:"column:id;primaryKey"`
+	Action    string          `gorm:"column:action"`
+	Entity    string          `gorm:"column:entity"`
+	EntityID  string          `gorm:"column:entityId"`
+	UserID    string          `gorm:"column:userId"`
+	UserEmail string          `gorm:"column:userEmail"`
+	Level     string          `gorm:"column:level"`
+	Details   json.RawMessage `gorm:"column:details;type:jsonb"`
+	CreatedAt time.Time       `gorm:"column:createdAt"`
+}
+
+func (adminLogModel) TableName() string {
+	return "adminLogs"
+}
 
 func (h *Handler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	var body map[string]any
@@ -62,61 +77,46 @@ func (h *Handler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.C
 	}
 	cursorParam := strings.TrimSpace(r.URL.Query().Get("cursor"))
 
-	base := `
-		SELECT id, action, COALESCE(entity,''), COALESCE("entityId",''), COALESCE("userId",''), COALESCE("userEmail",''), level,
-		COALESCE(details,'{}'::jsonb), "createdAt"
-		FROM "adminLogs"
-	`
-	args := []any{}
-	where := ""
+	query := h.store.DB.WithContext(r.Context())
 	if cursorParam != "" {
 		if c, ok := decodeCursor(cursorParam); ok {
-			where = ` WHERE ("createdAt", id) < ($1::timestamptz, $2::text) `
-			args = append(args, c.CreatedAt, c.ID)
+			query = query.Where(`("createdAt", id) < (?, ?)`, c.CreatedAt, c.ID)
 		}
 	}
-	query := base + where + fmt.Sprintf(` ORDER BY "createdAt" DESC, id DESC LIMIT %d`, limit)
-	rows, err := h.store.Pool.Query(r.Context(), query, args...)
-	if err != nil {
+
+	var models []adminLogModel
+	if err := query.Order(`"createdAt" DESC, id DESC`).Limit(limit).Find(&models).Error; err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin logs"})
 		return
 	}
-	defer rows.Close()
 
-	logs := make([]map[string]any, 0)
+	logs := make([]map[string]any, 0, len(models))
 	var lastCreatedAt time.Time
 	var lastID string
-	for rows.Next() {
-		var id, action, entity, entityID, userID, userEmail, level string
-		var details []byte
-		var createdAt time.Time
-		if err := rows.Scan(&id, &action, &entity, &entityID, &userID, &userEmail, &level, &details, &createdAt); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch admin logs"})
-			return
-		}
+	for _, m := range models {
 		log := map[string]any{
-			"id":        id,
-			"action":    action,
-			"level":     level,
-			"createdAt": toISO(createdAt),
+			"id":        m.ID,
+			"action":    m.Action,
+			"level":     m.Level,
+			"createdAt": toISO(m.CreatedAt),
 		}
-		if entity != "" {
-			log["entity"] = entity
+		if m.Entity != "" {
+			log["entity"] = m.Entity
 		}
-		if entityID != "" {
-			log["entityId"] = entityID
+		if m.EntityID != "" {
+			log["entityId"] = m.EntityID
 		}
-		if userID != "" {
-			log["userId"] = userID
+		if m.UserID != "" {
+			log["userId"] = m.UserID
 		}
-		if userEmail != "" {
-			log["userEmail"] = userEmail
+		if m.UserEmail != "" {
+			log["userEmail"] = m.UserEmail
 		}
-		if string(details) != "{}" {
-			log["details"] = json.RawMessage(details)
+		if len(m.Details) > 0 && string(m.Details) != "{}" {
+			log["details"] = m.Details
 		}
 		logs = append(logs, log)
-		lastCreatedAt, lastID = createdAt, id
+		lastCreatedAt, lastID = m.CreatedAt, m.ID
 	}
 
 	nextCursor := any(nil)

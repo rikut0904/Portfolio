@@ -10,7 +10,10 @@ import (
 	domain "portfolio-backend/internal/domain/product"
 )
 
-var ErrInvalidProduct = errors.New("invalid product")
+var (
+	ErrInvalidProduct = errors.New("invalid product")
+	ErrNotFound       = errors.New("product not found")
+)
 
 type Repository interface {
 	List(ctx context.Context) ([]domain.Product, error)

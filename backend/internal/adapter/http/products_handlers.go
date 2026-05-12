@@ -76,7 +76,7 @@ func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request, user *au
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Title and description are required"})
 		return
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, productusecase.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
 		return
 	}
@@ -91,7 +91,7 @@ func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request, user *au
 func (h *Handler) deleteProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	id := routeParam(r, "id")
 	err := h.products.Delete(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, productusecase.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
 		return
 	}

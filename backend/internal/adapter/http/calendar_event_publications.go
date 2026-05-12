@@ -4,10 +4,25 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
+"portfolio-backend/internal/infrastructure/auth"
+"portfolio-backend/internal/infrastructure/gcalendar"
 
-	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/gcalendar"
+"gorm.io/gorm/clause"
 )
+
+type calendarEventPublicationModel struct {
+	CalendarID        string    `gorm:"column:calendar_id;primaryKey"`
+	EventID           string    `gorm:"column:event_id;primaryKey"`
+	IsPublic          bool      `gorm:"column:is_public"`
+	PublicDescription string    `gorm:"column:public_description"`
+	CreatedAt         time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt         time.Time `gorm:"column:updated_at;autoUpdateTime"`
+}
+
+func (calendarEventPublicationModel) TableName() string {
+	return "calendar_event_publications"
+}
 
 type calendarEventPublication struct {
 	IsPublic          bool
@@ -46,28 +61,19 @@ func (h *Handler) resolveCalendarEventPublications(ctx context.Context, events [
 		return publications, nil
 	}
 
-	rows, err := h.store.Pool.Query(ctx, `
-		SELECT calendar_id, event_id, is_public, public_description
-		FROM calendar_event_publications
-		WHERE calendar_id = ANY($1) AND event_id = ANY($2)
-	`, calendarIDs, eventIDs)
+	var models []calendarEventPublicationModel
+	err := h.store.DB.WithContext(ctx).
+		Where("calendar_id IN ? AND event_id IN ?", calendarIDs, eventIDs).
+		Find(&models).Error
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var calendarID string
-		var eventID string
-		var row calendarEventPublication
-		if err := rows.Scan(&calendarID, &eventID, &row.IsPublic, &row.PublicDescription); err != nil {
-			return nil, err
+	for _, m := range models {
+		publications[calendarEventPublicationKey(m.CalendarID, m.EventID)] = calendarEventPublication{
+			IsPublic:          m.IsPublic,
+			PublicDescription: strings.TrimSpace(m.PublicDescription),
 		}
-		row.PublicDescription = strings.TrimSpace(row.PublicDescription)
-		publications[calendarEventPublicationKey(calendarID, eventID)] = row
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 	return publications, nil
 }
@@ -124,17 +130,17 @@ func (h *Handler) patchCalendarEventPublication(w http.ResponseWriter, r *http.R
 
 	publicDescription := strings.TrimSpace(body.PublicDescription)
 
-	if _, err := h.store.Pool.Exec(r.Context(), `
-		INSERT INTO calendar_event_publications (
-			calendar_id, event_id, is_public, public_description, updated_at
-		)
-		VALUES ($1, $2, $3, $4, NOW())
-		ON CONFLICT (calendar_id, event_id)
-		DO UPDATE SET
-			is_public = EXCLUDED.is_public,
-			public_description = EXCLUDED.public_description,
-			updated_at = NOW()
-	`, calendarID, eventID, body.IsPublished, publicDescription); err != nil {
+	model := calendarEventPublicationModel{
+		CalendarID:        calendarID,
+		EventID:           eventID,
+		IsPublic:          body.IsPublished,
+		PublicDescription: publicDescription,
+	}
+
+	if err := h.store.DB.WithContext(r.Context()).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "calendar_id"}, {Name: "event_id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"is_public", "public_description", "updated_at"}),
+	}).Create(&model).Error; err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar event publication"})
 		return
 	}

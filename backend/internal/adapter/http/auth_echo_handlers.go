@@ -152,7 +152,8 @@ func (h *Handler) withAdminEcho(next func(echo.Context, *auth.Claims) error) ech
 func (h *Handler) handleHealthEcho(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 2*time.Second)
 	defer cancel()
-	if err := h.store.Pool.Ping(ctx); err != nil {
+	sqlDB, err := h.store.DB.DB()
+	if err != nil || sqlDB.PingContext(ctx) != nil {
 		return c.JSON(http.StatusServiceUnavailable, map[string]any{"ok": false})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"ok": true})

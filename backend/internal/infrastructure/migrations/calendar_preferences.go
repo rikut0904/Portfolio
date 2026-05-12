@@ -6,15 +6,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/gorm"
 )
 
 //go:embed sql/003_calendar_preferences.sql
 var calendarPreferencesMigrationSQL string
 
-func RunCalendarPreferences(ctx context.Context, pool *pgxpool.Pool) error {
-	if pool == nil {
-		return fmt.Errorf("migration pool is nil")
+func RunCalendarPreferences(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return fmt.Errorf("migration db is nil")
 	}
 
 	sql := strings.TrimSpace(calendarPreferencesMigrationSQL)
@@ -22,7 +22,7 @@ func RunCalendarPreferences(ctx context.Context, pool *pgxpool.Pool) error {
 		return fmt.Errorf("calendar preferences migration is empty")
 	}
 
-	if _, err := pool.Exec(ctx, sql); err != nil {
+	if err := db.Exec(sql).Error; err != nil {
 		return fmt.Errorf("run calendar preferences migration: %w", err)
 	}
 	return nil

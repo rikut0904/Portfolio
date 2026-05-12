@@ -167,7 +167,8 @@ func (h *Handler) withAdmin(next func(http.ResponseWriter, *http.Request, *auth.
 func (h *Handler) handleHealth(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
-	if err := h.store.Pool.Ping(ctx); err != nil {
+	sqlDB, err := h.store.DB.DB()
+	if err != nil || sqlDB.PingContext(ctx) != nil {
 		writeJSON(w, http.StatusServiceUnavailable, map[string]any{"ok": false})
 		return
 	}

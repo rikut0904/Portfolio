@@ -34,20 +34,20 @@ func main() {
 		log.Fatalf("db error: %v", err)
 	}
 	defer st.Close()
-	if err := migrations.RunCalendarPreferences(ctx, st.Pool); err != nil {
+	if err := migrations.RunCalendarPreferences(ctx, st.DB); err != nil {
 		log.Fatalf("migration error: %v", err)
 	}
-	if err := migrations.RunCalendarPreferencesLabel(ctx, st.Pool); err != nil {
+	if err := migrations.RunCalendarPreferencesLabel(ctx, st.DB); err != nil {
 		log.Fatalf("migration error: %v", err)
 	}
-	if err := migrations.RunCalendarEventPublications(ctx, st.Pool); err != nil {
+	if err := migrations.RunCalendarEventPublications(ctx, st.DB); err != nil {
 		log.Fatalf("migration error: %v", err)
 	}
-	if err := migrations.RunCalendarEventPublicationContent(ctx, st.Pool); err != nil {
+	if err := migrations.RunCalendarEventPublicationContent(ctx, st.DB); err != nil {
 		log.Fatalf("migration error: %v", err)
 	}
 	if cfg.RunInquiryThreadMigration {
-		if err := migrations.RunInquiryThreads(ctx, st.Pool); err != nil {
+		if err := migrations.RunInquiryThreads(ctx, st.DB); err != nil {
 			log.Fatalf("migration error: %v", err)
 		}
 		log.Printf("applied inquiry thread migration")

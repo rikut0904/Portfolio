@@ -2,6 +2,7 @@ package technology
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 var (
 	ErrInvalidTechnology   = domain.ErrInvalid
 	ErrDuplicateTechnology = domain.ErrDuplicate
+	ErrNotFound            = errors.New("technology not found")
 )
 
 type Repository interface {

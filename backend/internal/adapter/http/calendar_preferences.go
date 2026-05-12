@@ -9,7 +9,21 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+
+	"gorm.io/gorm"
 )
+
+type calendarPreferenceModel struct {
+	CalendarID string    `gorm:"column:calendar_id;primaryKey"`
+	Color      string    `gorm:"column:color"`
+	Label      string    `gorm:"column:label"`
+	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt  time.Time `gorm:"column:updated_at;autoUpdateTime"`
+}
+
+func (calendarPreferenceModel) TableName() string {
+	return "calendar_preferences"
+}
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
@@ -67,12 +81,12 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		allowed[calendarID] = struct{}{}
 	}
 
-	tx, err := h.store.Pool.Begin(r.Context())
-	if err != nil {
+	tx := h.store.DB.WithContext(r.Context()).Begin()
+	if tx.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
 		return
 	}
-	defer tx.Rollback(r.Context())
+	defer tx.Rollback()
 
 	updatedColors := make(map[string]string)
 	updatedLabels := make(map[string]string)
@@ -106,34 +120,45 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 			updatedLabels[id] = normalizedLabel
 		}
 
-		if _, err := tx.Exec(r.Context(), `
-				INSERT INTO calendar_preferences (calendar_id, color, label, updated_at)
-				VALUES (
-					$1,
-					CASE
-						WHEN $4 THEN $2
-						ELSE $3
-					END,
-					CASE
-						WHEN $5 THEN $6
-						ELSE ''
-					END,
-					NOW()
-				)
-				ON CONFLICT (calendar_id)
-				DO UPDATE SET
-					color = CASE
-						WHEN $4 THEN EXCLUDED.color
-						ELSE calendar_preferences.color
-					END,
-					label = CASE
-						WHEN $5 THEN EXCLUDED.label
-						ELSE calendar_preferences.label
-					END,
-					updated_at = NOW()
-			`, id, normalizedColor, h.calendar.DefaultCalendarColors()[id], hasColor, hasLabel, normalizedLabel); err != nil {
+		var pref calendarPreferenceModel
+		err := tx.Where("calendar_id = ?", id).First(&pref).Error
+		if err != nil && err != gorm.ErrRecordNotFound {
 			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
 			return
+		}
+
+		if err == gorm.ErrRecordNotFound {
+			pref = calendarPreferenceModel{
+				CalendarID: id,
+			}
+			if hasColor {
+				pref.Color = normalizedColor
+			} else {
+				pref.Color = h.calendar.DefaultCalendarColors()[id]
+			}
+			if hasLabel {
+				pref.Label = normalizedLabel
+			} else {
+				pref.Label = ""
+			}
+			if err := tx.Create(&pref).Error; err != nil {
+				writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
+				return
+			}
+		} else {
+			updates := map[string]interface{}{}
+			if hasColor {
+				updates["color"] = normalizedColor
+			}
+			if hasLabel {
+				updates["label"] = normalizedLabel
+			}
+			if len(updates) > 0 {
+				if err := tx.Model(&pref).Updates(updates).Error; err != nil {
+					writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
+					return
+				}
+			}
 		}
 	}
 
@@ -142,7 +167,7 @@ func (h *Handler) patchCalendarPreferences(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := tx.Commit(r.Context()); err != nil {
+	if err := tx.Commit().Error; err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update calendar preferences"})
 		return
 	}
@@ -183,34 +208,21 @@ func (h *Handler) resolveCalendarPreferences(ctx context.Context) (calendarPrefe
 		return response, nil
 	}
 
-	rows, err := h.store.Pool.Query(ctx, `
-		SELECT calendar_id, color, label
-		FROM calendar_preferences
-		WHERE calendar_id = ANY($1)
-	`, allIDs)
-	if err != nil {
+	var prefs []calendarPreferenceModel
+	if err := h.store.DB.WithContext(ctx).Where("calendar_id IN ?", allIDs).Find(&prefs).Error; err != nil {
 		log.Printf("calendar_preferences: query failed (using defaults): %v", err)
 		return response, nil
 	}
-	defer rows.Close()
 
-	for rows.Next() {
-		var calendarID string
-		var color string
-		var label string
-		if err := rows.Scan(&calendarID, &color, &label); err != nil {
-			return calendarPreferencesResponse{}, err
-		}
-		if normalized := normalizeCalendarColor(color); normalized != "" {
+	for _, p := range prefs {
+		calendarID := p.CalendarID
+		if normalized := normalizeCalendarColor(p.Color); normalized != "" {
 			response.CalendarColors[calendarID] = normalized
 		}
-		response.CalendarLabels[calendarID] = strings.TrimSpace(label)
+		response.CalendarLabels[calendarID] = strings.TrimSpace(p.Label)
 		if response.CalendarLabels[calendarID] != "" {
 			response.CalendarDisplayName[calendarID] = response.CalendarLabels[calendarID]
 		}
-	}
-	if err := rows.Err(); err != nil {
-		return calendarPreferencesResponse{}, err
 	}
 	return response, nil
 }

@@ -93,14 +93,48 @@ func (h *Handler) logAdmin(ctx context.Context, action, entity, entityID, level 
 	if level == "" {
 		level = "info"
 	}
-	if details == nil {
-		details = map[string]any{}
+
+	b, _ := json.Marshal(details)
+	if len(b) == 0 || string(b) == "null" {
+		b = []byte("{}")
 	}
-	_, _ = h.store.Pool.Exec(ctx, `
-		INSERT INTO "adminLogs" (id, action, entity, "entityId", "userId", "userEmail", level, details, "createdAt")
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8::jsonb, NOW())
-	`, fmt.Sprintf("log_%d", time.Now().UnixNano()), action, nullable(entity), nullable(entityID), nullable(user.UID), nullable(user.Email), level, mustJSON(details))
-	_, _ = h.store.Pool.Exec(ctx, `DELETE FROM "adminLogs" WHERE "createdAt" < NOW() - INTERVAL '2 months'`)
+
+	log := adminLog{
+		ID:        fmt.Sprintf("log_%d", time.Now().UnixNano()),
+		Action:    action,
+		Entity:    ptr(entity),
+		EntityID:  ptr(entityID),
+		UserID:    ptr(user.UID),
+		UserEmail: ptr(user.Email),
+		Level:     level,
+		Details:   b,
+	}
+
+	_ = h.store.DB.WithContext(ctx).Create(&log)
+	_ = h.store.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&adminLog{})
+}
+
+type adminLog struct {
+	ID        string          `gorm:"column:id;primaryKey"`
+	Action    string          `gorm:"column:action"`
+	Entity    *string         `gorm:"column:entity"`
+	EntityID  *string         `gorm:"column:entityId"`
+	UserID    *string         `gorm:"column:userId"`
+	UserEmail *string         `gorm:"column:userEmail"`
+	Level     string          `gorm:"column:level"`
+	Details   json.RawMessage `gorm:"column:details;type:jsonb"`
+	CreatedAt time.Time       `gorm:"column:createdAt;autoCreateTime"`
+}
+
+func (adminLog) TableName() string {
+	return "adminLogs"
+}
+
+func ptr(v string) *string {
+	if strings.TrimSpace(v) == "" {
+		return nil
+	}
+	return &v
 }
 
 func nullable(v string) any {
@@ -119,6 +153,30 @@ func mustJSON(v any) string {
 		return `{}`
 	}
 	return string(b)
+}
+
+func normalizeVisibilityStatus(v string) string {
+	s := strings.ToLower(strings.TrimSpace(v))
+	switch s {
+	case "", "public", "published", "open", "active", "visible", "公開":
+		return "公開"
+	case "private", "draft", "hidden", "inactive", "非公開":
+		return "非公開"
+	default:
+		return strings.TrimSpace(v)
+	}
+}
+
+func normalizeDeployStatus(v string) string {
+	s := strings.ToLower(strings.TrimSpace(v))
+	switch s {
+	case "", "deployed", "live", "production", "公開中":
+		return "公開中"
+	case "undeployed", "not_deployed", "draft", "staging", "未公開":
+		return "未公開"
+	default:
+		return strings.TrimSpace(v)
+	}
 }
 
 // products

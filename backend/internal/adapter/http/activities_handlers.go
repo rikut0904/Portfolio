@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -12,7 +11,7 @@ import (
 
 	"portfolio-backend/internal/infrastructure/auth"
 
-	"github.com/jackc/pgx/v5"
+	"gorm.io/gorm"
 )
 
 type activity struct {
@@ -31,53 +30,47 @@ type activity struct {
 	UpdatedAt   string   `json:"updatedAt"`
 }
 
+type activityModel struct {
+	ID          string    `gorm:"column:id;primaryKey"`
+	Title       string    `gorm:"column:title"`
+	Description string    `gorm:"column:description"`
+	Category    string    `gorm:"column:category"`
+	Link        string    `gorm:"column:link"`
+	Image       string    `gorm:"column:image"`
+	Status      string    `gorm:"column:status"`
+	Order       int       `gorm:"column:order"`
+	CreatedAt   time.Time `gorm:"column:createdAt;autoCreateTime"`
+	UpdatedAt   time.Time `gorm:"column:updatedAt;autoUpdateTime"`
+}
+
+func (activityModel) TableName() string {
+	return "activities"
+}
+
 func (h *Handler) getActivities(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.store.Pool.Query(r.Context(), `
-		SELECT
-			a.id,
-			a.title,
-			a.description,
-			a.category,
-			a.link,
-			a.image,
-			a.status,
-			COALESCE(NULLIF(to_jsonb(a)->>'order', '')::int, 0) AS order_no,
-			COALESCE(to_jsonb(a)->>'created_at', to_jsonb(a)->>'createdAt', to_jsonb(a)->>'createdat', '') AS created_at,
-			COALESCE(to_jsonb(a)->>'updated_at', to_jsonb(a)->>'updatedAt', to_jsonb(a)->>'updatedat', '') AS updated_at
-		FROM "activities" a
-		ORDER BY COALESCE(NULLIF(to_jsonb(a)->>'order', '')::int, 0) DESC
-	`)
+	var models []activityModel
+	err := h.store.DB.WithContext(r.Context()).Order("\"order\" DESC").Find(&models).Error
 	if err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch activities"})
 		return
 	}
-	defer rows.Close()
-	list := make([]activity, 0)
-	for rows.Next() {
-		var a activity
-		var description, category, link, image, status sql.NullString
-		var ct, ut sql.NullString
-		if err := rows.Scan(&a.ID, &a.Title, &description, &category, &link, &image, &status, &a.Order, &ct, &ut); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch activities"})
-			return
+	list := make([]activity, 0, len(models))
+	for _, m := range models {
+		a := activity{
+			ID:          m.ID,
+			Title:       m.Title,
+			Description: m.Description,
+			Category:    m.Category,
+			Link:        m.Link,
+			Image:       m.Image,
+			Status:      normalizeVisibilityStatus(m.Status),
+			Order:       m.Order,
+			CreatedAt:   toISO(m.CreatedAt),
+			UpdatedAt:   toISO(m.UpdatedAt),
+			CreatedYear: m.CreatedAt.Year(),
+			CreatedMon:  int(m.CreatedAt.Month()),
+			Techs:       []string{},
 		}
-		a.Description = nullToString(description)
-		a.Category = nullToString(category)
-		a.Link = nullToString(link)
-		a.Image = nullToString(image)
-		if ct.Valid {
-			a.CreatedAt = ct.String
-		}
-		if ut.Valid {
-			a.UpdatedAt = ut.String
-		}
-		parsedCreatedAt, err := time.Parse(time.RFC3339, a.CreatedAt)
-		if err == nil {
-			a.CreatedYear = parsedCreatedAt.Year()
-			a.CreatedMon = int(parsedCreatedAt.Month())
-		}
-		a.Status = normalizeVisibilityStatus(nullToString(status))
-		a.Techs = []string{}
 		list = append(list, a)
 	}
 	writeCacheHeader(w)
@@ -86,49 +79,31 @@ func (h *Handler) getActivities(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) getActivity(w http.ResponseWriter, r *http.Request) {
 	id := routeParam(r, "id")
-	var a activity
-	var description, category, link, image, status sql.NullString
-	var ct, ut sql.NullString
-	err := h.store.Pool.QueryRow(r.Context(), `
-		SELECT
-			a.id,
-			a.title,
-			a.description,
-			a.category,
-			a.link,
-			a.image,
-			a.status,
-			COALESCE(NULLIF(to_jsonb(a)->>'order', '')::int, 0) AS order_no,
-			COALESCE(to_jsonb(a)->>'created_at', to_jsonb(a)->>'createdAt', to_jsonb(a)->>'createdat', '') AS created_at,
-			COALESCE(to_jsonb(a)->>'updated_at', to_jsonb(a)->>'updatedAt', to_jsonb(a)->>'updatedat', '') AS updated_at
-		FROM "activities" a
-		WHERE a.id=$1
-	`, id).Scan(&a.ID, &a.Title, &description, &category, &link, &image, &status, &a.Order, &ct, &ut)
+	var m activityModel
+	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
 			return
 		}
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch activity"})
 		return
 	}
-	a.Description = nullToString(description)
-	a.Category = nullToString(category)
-	a.Link = nullToString(link)
-	a.Image = nullToString(image)
-	if ct.Valid {
-		a.CreatedAt = ct.String
+	a := activity{
+		ID:          m.ID,
+		Title:       m.Title,
+		Description: m.Description,
+		Category:    m.Category,
+		Link:        m.Link,
+		Image:       m.Image,
+		Status:      normalizeVisibilityStatus(m.Status),
+		Order:       m.Order,
+		CreatedAt:   toISO(m.CreatedAt),
+		UpdatedAt:   toISO(m.UpdatedAt),
+		CreatedYear: m.CreatedAt.Year(),
+		CreatedMon:  int(m.CreatedAt.Month()),
+		Techs:       []string{},
 	}
-	if ut.Valid {
-		a.UpdatedAt = ut.String
-	}
-	parsedCreatedAt, err := time.Parse(time.RFC3339, a.CreatedAt)
-	if err == nil {
-		a.CreatedYear = parsedCreatedAt.Year()
-		a.CreatedMon = int(parsedCreatedAt.Month())
-	}
-	a.Status = normalizeVisibilityStatus(nullToString(status))
-	a.Techs = []string{}
 	writeJSON(w, http.StatusOK, map[string]any{"activity": a})
 }
 
@@ -142,28 +117,35 @@ func (h *Handler) createActivity(w http.ResponseWriter, r *http.Request, user *a
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Title and category are required"})
 		return
 	}
-	now := time.Now().UTC()
 	if body.Order == 0 {
-		_ = h.store.Pool.QueryRow(r.Context(), `SELECT COALESCE(MAX("order"),0)+1 FROM "activities"`).Scan(&body.Order)
+		var maxOrder int
+		_ = h.store.DB.WithContext(r.Context()).Model(&activityModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		body.Order = maxOrder + 1
 	}
 	if body.Status == "" {
 		body.Status = "非公開"
 	}
-	var id string
-	err := h.store.Pool.QueryRow(r.Context(), `
-		INSERT INTO "activities" (id, title, description, category, link, image, status, "order", created_at, updated_at)
-		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),NOW()) RETURNING id
-	`, fmt.Sprintf("activity_%d", now.UnixNano()), body.Title, body.Description, body.Category, body.Link, body.Image, body.Status, body.Order).Scan(&id)
-	if err != nil {
+	id := fmt.Sprintf("activity_%d", time.Now().UnixNano())
+	m := activityModel{
+		ID:          id,
+		Title:       body.Title,
+		Description: body.Description,
+		Category:    body.Category,
+		Link:        body.Link,
+		Image:       body.Image,
+		Status:      body.Status,
+		Order:       body.Order,
+	}
+	if err := h.store.DB.WithContext(r.Context()).Create(&m).Error; err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create activity"})
 		return
 	}
 	h.logAdmin(r.Context(), "create", "activity", id, "info", user, map[string]any{"title": body.Title, "category": body.Category, "status": body.Status})
-	body.ID = id
-	body.CreatedAt = toISO(now)
-	body.UpdatedAt = toISO(now)
-	body.CreatedYear = now.Year()
-	body.CreatedMon = int(now.Month())
+	body.ID = m.ID
+	body.CreatedAt = toISO(m.CreatedAt)
+	body.UpdatedAt = toISO(m.UpdatedAt)
+	body.CreatedYear = m.CreatedAt.Year()
+	body.CreatedMon = int(m.CreatedAt.Month())
 	body.Techs = []string{}
 	writeJSON(w, http.StatusCreated, map[string]any{"message": "Activity created successfully", "activity": body})
 }
@@ -194,40 +176,23 @@ func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, use
 		}
 	}
 
-	mapping := map[string]string{
-		"title":       "title",
-		"description": "description",
-		"category":    "category",
-		"link":        "link",
-		"image":       "image",
-		"status":      "status",
-		"order":       `"order"`,
-	}
-	clauses := make([]string, 0)
-	args := make([]any, 0)
-	idx := 1
+	updates := make(map[string]any)
 	for k, v := range patch {
-		col, ok := mapping[k]
-		if !ok {
-			continue
+		switch k {
+		case "title", "description", "category", "link", "image", "status", "order":
+			updates[k] = v
 		}
-		clauses = append(clauses, fmt.Sprintf("%s=$%d", col, idx))
-		args = append(args, v)
-		idx++
 	}
-	clauses = append(clauses, "updated_at=NOW()")
-	if len(clauses) == 1 {
+	if len(updates) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Activity updated successfully"})
 		return
 	}
-	args = append(args, id)
-	query := fmt.Sprintf(`UPDATE "activities" SET %s WHERE id=$%d`, strings.Join(clauses, ","), idx)
-	cmd, err := h.store.Pool.Exec(r.Context(), query, args...)
-	if err != nil {
+	result := h.store.DB.WithContext(r.Context()).Model(&activityModel{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update activity"})
 		return
 	}
-	if cmd.RowsAffected() == 0 {
+	if result.RowsAffected == 0 {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
 		return
 	}
@@ -242,12 +207,12 @@ func (h *Handler) upsertActivityByID(w http.ResponseWriter, r *http.Request, use
 
 func (h *Handler) deleteActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	id := routeParam(r, "id")
-	cmd, err := h.store.Pool.Exec(r.Context(), `DELETE FROM "activities" WHERE id=$1`, id)
-	if err != nil {
+	result := h.store.DB.WithContext(r.Context()).Where("id = ?", id).Delete(&activityModel{})
+	if result.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete activity"})
 		return
 	}
-	if cmd.RowsAffected() == 0 {
+	if result.RowsAffected == 0 {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Activity not found"})
 		return
 	}
@@ -262,23 +227,29 @@ type activityCategory struct {
 	CreatedAt string `json:"createdAt"`
 }
 
+type activityCategoryModel struct {
+	ID        string    `gorm:"column:id;primaryKey"`
+	Name      string    `gorm:"column:name"`
+	Order     int       `gorm:"column:order"`
+	CreatedAt time.Time `gorm:"column:createdAt;autoCreateTime"`
+}
+
+func (activityCategoryModel) TableName() string {
+	return "activityCategories"
+}
+
 func (h *Handler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
-	var tableName string
-	err := h.store.Pool.QueryRow(ctx, `
-		SELECT CASE
-			WHEN to_regclass('public."activityCategories"') IS NOT NULL THEN '"activityCategories"'
-			WHEN to_regclass('public.activity_categories') IS NOT NULL THEN 'activity_categories'
-			WHEN to_regclass('public.activitycategories') IS NOT NULL THEN 'activitycategories'
-			ELSE ''
-		END
-	`).Scan(&tableName)
-	if err != nil {
-		return "", err
+	m := h.store.DB.WithContext(ctx).Migrator()
+	if m.HasTable("activityCategories") {
+		return "\"activityCategories\"", nil
 	}
-	if tableName == "" {
-		return "", errors.New("activity categories table not found")
+	if m.HasTable("activity_categories") {
+		return "activity_categories", nil
 	}
-	return tableName, nil
+	if m.HasTable("activitycategories") {
+		return "activitycategories", nil
+	}
+	return "", errors.New("activity categories table not found")
 }
 
 func (h *Handler) getActivityCategories(w http.ResponseWriter, r *http.Request) {
@@ -289,30 +260,21 @@ func (h *Handler) getActivityCategories(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	rows, err := h.store.Pool.Query(r.Context(), fmt.Sprintf(`
-		SELECT
-			ac.id,
-			ac.name,
-			COALESCE(NULLIF(to_jsonb(ac)->>'order', '')::int, 0) AS order_no,
-			COALESCE(to_jsonb(ac)->>'createdAt', to_jsonb(ac)->>'created_at', to_jsonb(ac)->>'createdat', '') AS created_at
-		FROM %s ac
-		ORDER BY COALESCE(NULLIF(to_jsonb(ac)->>'order', '')::int, 0) ASC
-	`, tableName))
+	var models []activityCategoryModel
+	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("\"order\" ASC").Find(&models).Error
 	if err != nil {
 		log.Printf("getActivityCategories query error: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch categories"})
 		return
 	}
-	defer rows.Close()
-	list := make([]activityCategory, 0)
-	for rows.Next() {
-		var c activityCategory
-		if err := rows.Scan(&c.ID, &c.Name, &c.Order, &c.CreatedAt); err != nil {
-			log.Printf("getActivityCategories scan error: %v", err)
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch categories"})
-			return
-		}
-		list = append(list, c)
+	list := make([]activityCategory, 0, len(models))
+	for _, m := range models {
+		list = append(list, activityCategory{
+			ID:        m.ID,
+			Name:      m.Name,
+			Order:     m.Order,
+			CreatedAt: toISO(m.CreatedAt),
+		})
 	}
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"categories": list})
@@ -335,48 +297,43 @@ func (h *Handler) createActivityCategory(w http.ResponseWriter, r *http.Request,
 	if body.Order != nil {
 		orderNo = *body.Order
 	} else {
-		_ = h.store.Pool.QueryRow(r.Context(), `SELECT COALESCE(MAX("order"),0)+1 FROM "activityCategories"`).Scan(&orderNo)
+		var maxOrder int
+		_ = h.store.DB.WithContext(r.Context()).Model(&activityCategoryModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		orderNo = maxOrder + 1
 	}
-	var id string
-	err := h.store.Pool.QueryRow(r.Context(), `
-		INSERT INTO "activityCategories" (id, name, "order", created_at) VALUES ($1,$2,$3,NOW()) RETURNING id
-	`, fmt.Sprintf("activity_category_%d", time.Now().UnixNano()), body.Name, orderNo).Scan(&id)
-	if err != nil {
+	m := activityCategoryModel{
+		ID:    fmt.Sprintf("activity_category_%d", time.Now().UnixNano()),
+		Name:  body.Name,
+		Order: orderNo,
+	}
+	if err := h.store.DB.WithContext(r.Context()).Create(&m).Error; err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create category"})
 		return
 	}
-	h.logAdmin(r.Context(), "create", "activityCategory", id, "info", user, map[string]any{"name": body.Name, "order": orderNo})
-	writeJSON(w, http.StatusCreated, map[string]any{"message": "Category created successfully", "category": map[string]any{"id": id, "name": body.Name, "order": orderNo, "createdAt": toISO(time.Now())}})
+	h.logAdmin(r.Context(), "create", "activityCategory", m.ID, "info", user, map[string]any{"name": m.Name, "order": m.Order})
+	writeJSON(w, http.StatusCreated, map[string]any{"message": "Category created successfully", "category": map[string]any{"id": m.ID, "name": m.Name, "order": m.Order, "createdAt": toISO(m.CreatedAt)}})
 }
 
 func (h *Handler) deleteActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	id := routeParam(r, "id")
-	tx, err := h.store.Pool.Begin(r.Context())
+	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
+		var m activityCategoryModel
+		if err := tx.First(&m, "id = ?", id).Error; err != nil {
+			return err
+		}
+		if err := tx.Delete(&m).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&activityModel{}).Where("category = ?", m.Name).Delete(&activityModel{}).Error; err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
-		return
-	}
-	defer tx.Rollback(r.Context())
-	var name string
-	if err := tx.QueryRow(r.Context(), `SELECT name FROM "activityCategories" WHERE id=$1`, id).Scan(&name); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Category not found"})
 			return
 		}
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
-		return
-	}
-	_, err = tx.Exec(r.Context(), `DELETE FROM "activityCategories" WHERE id=$1`, id)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
-		return
-	}
-	_, err = tx.Exec(r.Context(), `DELETE FROM "activities" WHERE category=$1`, name)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
-		return
-	}
-	if err := tx.Commit(r.Context()); err != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete category"})
 		return
 	}
@@ -392,16 +349,35 @@ func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	tx, err := h.store.Pool.Begin(r.Context())
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update category"})
-		return
-	}
-	defer tx.Rollback(r.Context())
+	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
+		var old activityCategoryModel
+		if err := tx.First(&old, "id = ?", id).Error; err != nil {
+			return err
+		}
 
-	var oldName string
-	if err := tx.QueryRow(r.Context(), `SELECT name FROM "activityCategories" WHERE id=$1`, id).Scan(&oldName); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		updates := make(map[string]any)
+		for k, v := range patch {
+			if k == "name" || k == "order" {
+				updates[k] = v
+			}
+		}
+
+		if len(updates) > 0 {
+			if err := tx.Model(&old).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+
+		if newName, ok := updates["name"].(string); ok && strings.TrimSpace(newName) != "" && newName != old.Name {
+			if err := tx.Model(&activityModel{}).Where("category = ?", old.Name).Update("category", newName).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Category not found"})
 			return
 		}
@@ -409,45 +385,6 @@ func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 
-	set := []string{}
-	args := []any{}
-	idx := 1
-	for k, v := range patch {
-		col := ""
-		switch k {
-		case "name":
-			col = "name"
-		case "order":
-			col = `"order"`
-		}
-		if col == "" {
-			continue
-		}
-		set = append(set, fmt.Sprintf("%s=$%d", col, idx))
-		args = append(args, v)
-		idx++
-	}
-	if len(set) > 0 {
-		args = append(args, id)
-		query := fmt.Sprintf(`UPDATE "activityCategories" SET %s WHERE id=$%d`, strings.Join(set, ","), idx)
-		if _, err := tx.Exec(r.Context(), query, args...); err != nil {
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update category"})
-			return
-		}
-	}
-
-	if newNameAny, ok := patch["name"]; ok {
-		if newName, ok := newNameAny.(string); ok && strings.TrimSpace(newName) != "" && newName != oldName {
-			if _, err := tx.Exec(r.Context(), `UPDATE "activities" SET category=$1 WHERE category=$2`, newName, oldName); err != nil {
-				writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update category"})
-				return
-			}
-		}
-	}
-	if err := tx.Commit(r.Context()); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update category"})
-		return
-	}
 	h.logAdmin(r.Context(), "update", "activityCategory", id, "info", user, map[string]any{"updates": patch})
 	if _, ok := patch["name"]; ok {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Category and related activities updated successfully"})
@@ -455,5 +392,3 @@ func (h *Handler) patchActivityCategory(w http.ResponseWriter, r *http.Request, 
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Category updated successfully"})
 }
-
-// technologies

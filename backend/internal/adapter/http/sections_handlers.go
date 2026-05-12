@@ -2,12 +2,14 @@ package httpapi
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"log"
 	"net/http"
 	"strings"
 
 	"portfolio-backend/internal/infrastructure/auth"
+
+	"gorm.io/gorm"
 )
 
 type sectionMeta struct {
@@ -15,7 +17,7 @@ type sectionMeta struct {
 	Type        string `json:"type"`
 	Order       int    `json:"order"`
 	Editable    bool   `json:"editable"`
-	SortOrder   string `json:"sortOrder,omitempty"`
+	SortOrder   string `json:"sortOrder"`
 }
 
 type section struct {
@@ -24,199 +26,83 @@ type section struct {
 	Data json.RawMessage `json:"data"`
 }
 
-func isZeroJSON(raw []byte) bool {
-	trimmed := strings.TrimSpace(string(raw))
-	return trimmed == "" || trimmed == "null" || trimmed == "{}"
+type sectionMetaModel struct {
+	ID          string `gorm:"primaryKey;column:id"`
+	SectionID   string `gorm:"column:section_id"`
+	DisplayName string `gorm:"column:displayName"`
+	TypeName    string `gorm:"column:type_name"`
+	Order       int    `gorm:"column:order"`
+	Editable    bool   `gorm:"column:editable"`
 }
 
-func isEmptyJSONArray(raw []byte) bool {
-	return strings.TrimSpace(string(raw)) == "[]"
+func (sectionMetaModel) TableName() string {
+	return "sectionMeta"
 }
 
-func normalizeVisibilityStatus(v string) string {
-	s := strings.ToLower(strings.TrimSpace(v))
-	switch s {
-	case "", "public", "published", "open", "active", "visible", "公開":
-		return "公開"
-	case "private", "draft", "hidden", "inactive", "非公開":
-		return "非公開"
-	default:
-		return strings.TrimSpace(v)
-	}
+type sectionDataModel struct {
+	ID               string          `gorm:"primaryKey;column:id"`
+	TypeName         string          `gorm:"column:type_name"`
+	Data             json.RawMessage `gorm:"column:data;type:jsonb"`
+	DataName         string          `gorm:"column:data_name"`
+	DataHometown     string          `gorm:"column:data_hometown"`
+	DataHobbies      string          `gorm:"column:data_hobbies"`
+	DataProfileImage string          `gorm:"column:data_profileImage"`
+	DataUniversity   string          `gorm:"column:data_university"`
+	Items            json.RawMessage `gorm:"column:items;type:jsonb"`
+	Histories        json.RawMessage `gorm:"column:histories;type:jsonb"`
 }
 
-func normalizeDeployStatus(v string) string {
-	s := strings.ToLower(strings.TrimSpace(v))
-	switch s {
-	case "", "deployed", "live", "production", "公開中":
-		return "公開中"
-	case "undeployed", "not_deployed", "draft", "staging", "未公開":
-		return "未公開"
-	default:
-		return strings.TrimSpace(v)
-	}
-}
-
-func normalizeSectionType(v string) string {
-	s := strings.ToLower(strings.TrimSpace(v))
-	switch s {
-	case "single", "profile":
-		return "single"
-	case "categorized", "category":
-		return "categorized"
-	case "list":
-		return "list"
-	case "history", "timeline":
-		return "history"
-	default:
-		if s == "" {
-			return "list"
-		}
-		return strings.TrimSpace(v)
-	}
-}
-
-func buildSectionData(rawData, rawItems, rawHistories []byte, sectionType string, name, hometown, hobbies, profileImage, university string) []byte {
-	sectionType = strings.ToLower(strings.TrimSpace(sectionType))
-	var rawObj map[string]any
-	if !isZeroJSON(rawData) {
-		_ = json.Unmarshal(rawData, &rawObj)
-	}
-	if rawObj == nil {
-		rawObj = map[string]any{}
-	}
-
-	profile := map[string]string{
-		"name":         strings.TrimSpace(name),
-		"hometown":     strings.TrimSpace(hometown),
-		"hobbies":      strings.TrimSpace(hobbies),
-		"profileImage": strings.TrimSpace(profileImage),
-		"university":   strings.TrimSpace(university),
-	}
-
-	switch sectionType {
-	case "single", "profile":
-		if len(rawObj) > 0 {
-			return rawData
-		}
-		if profile["name"] != "" || profile["hometown"] != "" || profile["hobbies"] != "" || profile["profileImage"] != "" || profile["university"] != "" {
-			b, _ := json.Marshal(map[string]any{"data": profile})
-			return b
-		}
-	case "history", "timeline":
-		if v, ok := rawObj["histories"]; ok && v != nil {
-			return rawData
-		}
-		if v, ok := rawObj["items"]; ok && v != nil {
-			return rawData
-		}
-		if !isZeroJSON(rawHistories) && !isEmptyJSONArray(rawHistories) {
-			b, _ := json.Marshal(map[string]any{"histories": json.RawMessage(rawHistories)})
-			return b
-		}
-		if !isZeroJSON(rawItems) && !isEmptyJSONArray(rawItems) {
-			b, _ := json.Marshal(map[string]any{"histories": json.RawMessage(rawItems)})
-			return b
-		}
-		if len(rawObj) > 0 {
-			return rawData
-		}
-	case "list":
-		if v, ok := rawObj["lists"]; ok && v != nil {
-			return rawData
-		}
-		if v, ok := rawObj["items"]; ok && v != nil {
-			return rawData
-		}
-		if !isZeroJSON(rawItems) {
-			b, _ := json.Marshal(map[string]any{"lists": json.RawMessage(rawItems)})
-			return b
-		}
-		if len(rawObj) > 0 {
-			return rawData
-		}
-	default:
-		if len(rawObj) > 0 {
-			return rawData
-		}
-		if !isZeroJSON(rawHistories) || !isZeroJSON(rawItems) {
-			payload := map[string]any{}
-			if !isZeroJSON(rawHistories) {
-				payload["histories"] = json.RawMessage(rawHistories)
-			}
-			if !isZeroJSON(rawItems) {
-				payload["items"] = json.RawMessage(rawItems)
-			}
-			if len(payload) > 0 {
-				b, _ := json.Marshal(payload)
-				return b
-			}
-		}
-	}
-
-	return []byte(`{}`)
+func (sectionDataModel) TableName() string {
+	return "sections"
 }
 
 func (h *Handler) getSections(w http.ResponseWriter, r *http.Request) {
-	rows, err := h.store.Pool.Query(r.Context(), `
-		SELECT
-			sm.id,
-			COALESCE(to_jsonb(sm)->>'displayName', to_jsonb(sm)->>'display_name', '') AS display_name,
-			COALESCE(NULLIF(to_jsonb(sm)->>'type_name', ''), NULLIF(to_jsonb(sm)->>'type', ''), NULLIF(to_jsonb(s)->>'type_name', ''), NULLIF(to_jsonb(s)->>'type', ''), 'list') AS section_type,
-			COALESCE(NULLIF(to_jsonb(sm)->>'order', '')::int, 0),
-			COALESCE(NULLIF(to_jsonb(sm)->>'editable', '')::boolean, true),
-			'' as sort_order,
-			COALESCE(to_jsonb(s)->'data', '{}'::jsonb),
-			COALESCE(to_jsonb(s)->>'data_name', to_jsonb(s)->>'name', ''),
-			COALESCE(to_jsonb(s)->>'data_hometown', to_jsonb(s)->>'hometown', ''),
-			COALESCE(to_jsonb(s)->>'data_hobbies', to_jsonb(s)->>'hobbies', ''),
-			COALESCE(to_jsonb(s)->>'data_profileImage', to_jsonb(s)->>'data_profile_image', to_jsonb(s)->>'profileImage', to_jsonb(s)->>'profile_image', ''),
-			COALESCE(to_jsonb(s)->>'data_university', to_jsonb(s)->>'university', ''),
-			COALESCE(to_jsonb(s)->'items', '[]'::jsonb),
-			COALESCE(to_jsonb(s)->'histories', '[]'::jsonb)
-		FROM "sectionMeta" sm
-		LEFT JOIN "sections" s ON (
-			s.id = sm.id
-			OR s.id = COALESCE(NULLIF(to_jsonb(sm)->>'section_id', ''), NULLIF(to_jsonb(sm)->>'sectionId', ''), NULLIF(to_jsonb(sm)->>'sectionid', ''))
-		)
-		ORDER BY COALESCE(NULLIF(to_jsonb(sm)->>'order', '')::int, 0) ASC
-	`)
-	if err != nil {
-		log.Printf("getSections query error: %v", err)
+	var metas []sectionMetaModel
+	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
+		log.Printf("getSections meta query error: %v", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch sections"})
 		return
 	}
-	defer rows.Close()
 
-	sections := make([]section, 0)
-	for rows.Next() {
-		var s section
-		var rawData, rawItems, rawHistories []byte
-		var dataName, dataHometown, dataHobbies, dataProfileImage, dataUniversity string
-		if err := rows.Scan(
-			&s.ID,
-			&s.Meta.DisplayName,
-			&s.Meta.Type,
-			&s.Meta.Order,
-			&s.Meta.Editable,
-			&s.Meta.SortOrder,
-			&rawData,
-			&dataName,
-			&dataHometown,
-			&dataHobbies,
-			&dataProfileImage,
-			&dataUniversity,
-			&rawItems,
-			&rawHistories,
-		); err != nil {
-			log.Printf("getSections scan error: %v", err)
-			writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch sections"})
-			return
+	var dataList []sectionDataModel
+	if err := h.store.DB.WithContext(r.Context()).Find(&dataList).Error; err != nil {
+		log.Printf("getSections data query error: %v", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to fetch sections"})
+		return
+	}
+
+	dataMap := make(map[string]sectionDataModel)
+	for _, d := range dataList {
+		dataMap[d.ID] = d
+	}
+
+	sections := make([]section, 0, len(metas))
+	for _, m := range metas {
+		s := section{
+			ID: m.ID,
+			Meta: sectionMeta{
+				DisplayName: m.DisplayName,
+				Type:        normalizeSectionType(m.TypeName),
+				Order:       m.Order,
+				Editable:    m.Editable,
+			},
 		}
-		s.Meta.Type = normalizeSectionType(s.Meta.Type)
-		s.Data = json.RawMessage(buildSectionData(rawData, rawItems, rawHistories, s.Meta.Type, dataName, dataHometown, dataHobbies, dataProfileImage, dataUniversity))
+
+		// Handle mapping between sectionMeta and sections
+		lookupID := m.ID
+		if m.SectionID != "" {
+			lookupID = m.SectionID
+		}
+
+		if d, ok := dataMap[lookupID]; ok {
+			s.Data = buildSectionData(d.Data, d.Items, d.Histories, s.Meta.Type, d.DataName, d.DataHometown, d.DataHobbies, d.DataProfileImage, d.DataUniversity)
+		} else {
+			s.Data = json.RawMessage(`{}`)
+		}
+
 		sections = append(sections, s)
 	}
+
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"sections": sections})
 }
@@ -242,51 +128,58 @@ func (h *Handler) createSection(w http.ResponseWriter, r *http.Request, user *au
 		body.Data = json.RawMessage(`{}`)
 	}
 
-	tx, err := h.store.Pool.Begin(r.Context())
+	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := tx.Model(&sectionMetaModel{}).Where("id = ?", body.ID).Count(&count).Error; err != nil {
+			return err
+		}
+		if count > 0 {
+			return errors.New("conflict")
+		}
+
+		orderNo := 0
+		if body.Order != nil {
+			orderNo = *body.Order
+		} else {
+			var maxOrder int
+			_ = tx.Model(&sectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+			orderNo = maxOrder + 1
+		}
+
+		meta := sectionMetaModel{
+			ID:          body.ID,
+			SectionID:   body.ID,
+			DisplayName: body.DisplayName,
+			TypeName:    body.Type,
+			Order:       orderNo,
+			Editable:    true,
+		}
+		if err := tx.Create(&meta).Error; err != nil {
+			return err
+		}
+
+		data := sectionDataModel{
+			ID:       body.ID,
+			TypeName: body.Type,
+			Data:     body.Data,
+		}
+		if err := tx.Create(&data).Error; err != nil {
+			return err
+		}
+		return nil
+	})
+
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
-		return
-	}
-	defer tx.Rollback(r.Context())
-
-	var exists bool
-	if err := tx.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM "sectionMeta" WHERE id=$1)`, body.ID).Scan(&exists); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
-		return
-	}
-	if exists {
-		writeJSON(w, http.StatusConflict, map[string]any{"error": "Section with this ID already exists"})
-		return
-	}
-
-	orderNo := 0
-	if body.Order != nil {
-		orderNo = *body.Order
-	} else {
-		_ = tx.QueryRow(r.Context(), `SELECT COALESCE(MAX("order"),0)+1 FROM "sectionMeta"`).Scan(&orderNo)
-	}
-
-	_, err = tx.Exec(r.Context(), `
-		INSERT INTO "sectionMeta" (id, section_id, "displayName", type_name, "order", editable)
-		VALUES ($1,$1,$2,$3,$4,true)
-	`, body.ID, body.DisplayName, body.Type, orderNo)
-	if err != nil {
+		if err.Error() == "conflict" {
+			writeJSON(w, http.StatusConflict, map[string]any{"error": "Section with this ID already exists"})
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
 		return
 	}
 
-	_, err = tx.Exec(r.Context(), `INSERT INTO "sections" (id, type_name, data) VALUES ($1, $2, $3::jsonb)`, body.ID, body.Type, string(body.Data))
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
-		return
-	}
-	if err := tx.Commit(r.Context()); err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to create section"})
-		return
-	}
-
-	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": orderNo})
-	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": orderNo, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
+	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID})
+	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
 }
 
 func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
@@ -296,18 +189,38 @@ func (h *Handler) updateSection(w http.ResponseWriter, r *http.Request, user *au
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
 		return
 	}
-	b, _ := json.Marshal(patch)
-	cmd, err := h.store.Pool.Exec(r.Context(), `
-		UPDATE "sections" SET data = COALESCE(data,'{}'::jsonb) || $2::jsonb WHERE id=$1
-	`, id, string(b))
+
+	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
+		var d sectionDataModel
+		if err := tx.First(&d, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		var currentData map[string]any
+		if len(d.Data) > 0 {
+			_ = json.Unmarshal(d.Data, &currentData)
+		}
+		if currentData == nil {
+			currentData = make(map[string]any)
+		}
+
+		for k, v := range patch {
+			currentData[k] = v
+		}
+
+		newData, _ := json.Marshal(currentData)
+		return tx.Model(&d).Update("data", newData).Error
+	})
+
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update section"})
 		return
 	}
-	if cmd.RowsAffected() == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
-	}
+
 	h.logAdmin(r.Context(), "update", "section", id, "info", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
 }
@@ -319,42 +232,29 @@ func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user 
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
 		return
 	}
-	setClauses := make([]string, 0)
-	args := make([]any, 0)
-	idx := 1
+	updates := make(map[string]any)
 	for k, v := range patch {
-		sqlCol := ""
 		switch k {
 		case "displayName":
-			sqlCol = `"displayName"`
+			updates["displayName"] = v
 		case "type":
-			sqlCol = "type_name"
+			updates["type_name"] = v
 		case "order":
-			sqlCol = `"order"`
+			updates["order"] = v
 		case "editable":
-			sqlCol = "editable"
-		case "sortOrder":
-			sqlCol = ""
+			updates["editable"] = v
 		}
-		if sqlCol == "" {
-			continue
-		}
-		setClauses = append(setClauses, fmt.Sprintf("%s=$%d", sqlCol, idx))
-		args = append(args, v)
-		idx++
 	}
-	if len(setClauses) == 0 {
+	if len(updates) == 0 {
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
 		return
 	}
-	args = append(args, id)
-	query := fmt.Sprintf(`UPDATE "sectionMeta" SET %s WHERE id=$%d`, strings.Join(setClauses, ","), idx)
-	cmd, err := h.store.Pool.Exec(r.Context(), query, args...)
-	if err != nil {
+	result := h.store.DB.WithContext(r.Context()).Model(&sectionMetaModel{}).Where("id = ?", id).Updates(updates)
+	if result.Error != nil {
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to update section meta"})
 		return
 	}
-	if cmd.RowsAffected() == 0 {
+	if result.RowsAffected == 0 {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
 		return
 	}
@@ -364,23 +264,24 @@ func (h *Handler) patchSectionMeta(w http.ResponseWriter, r *http.Request, user 
 
 func (h *Handler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	id := routeParam(r, "id")
-	tx, err := h.store.Pool.Begin(r.Context())
+	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("id = ?", id).Delete(&sectionDataModel{}).Error; err != nil {
+			return err
+		}
+		result := tx.Where("id = ?", id).Delete(&sectionMetaModel{})
+		if result.Error != nil {
+			return result.Error
+		}
+		if result.RowsAffected == 0 {
+			return errors.New("not found")
+		}
+		return nil
+	})
 	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete section"})
-		return
-	}
-	defer tx.Rollback(r.Context())
-	_, _ = tx.Exec(r.Context(), `DELETE FROM "sections" WHERE id=$1`, id)
-	cmd, err := tx.Exec(r.Context(), `DELETE FROM "sectionMeta" WHERE id=$1`, id)
-	if err != nil {
-		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete section"})
-		return
-	}
-	if cmd.RowsAffected() == 0 {
-		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
-		return
-	}
-	if err := tx.Commit(r.Context()); err != nil {
+		if err.Error() == "not found" {
+			writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
+			return
+		}
 		writeJSON(w, http.StatusInternalServerError, map[string]any{"error": "Failed to delete section"})
 		return
 	}
@@ -388,4 +289,57 @@ func (h *Handler) deleteSection(w http.ResponseWriter, r *http.Request, user *au
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Section deleted successfully"})
 }
 
-// activities and categories
+func normalizeSectionType(v string) string {
+	v = strings.ToLower(strings.TrimSpace(v))
+	if v == "" {
+		return "list"
+	}
+	return v
+}
+
+func buildSectionData(raw, items, histories []byte, sectionType, name, hometown, hobbies, profileImage, university string) json.RawMessage {
+	data := make(map[string]any)
+	if len(raw) > 0 {
+		_ = json.Unmarshal(raw, &data)
+	}
+	if data == nil {
+		data = make(map[string]any)
+	}
+
+	switch sectionType {
+	case "profile":
+		if name != "" {
+			data["name"] = name
+		}
+		if hometown != "" {
+			data["hometown"] = hometown
+		}
+		if hobbies != "" {
+			data["hobbies"] = hobbies
+		}
+		if profileImage != "" {
+			data["profileImage"] = profileImage
+		}
+		if university != "" {
+			data["university"] = university
+		}
+	case "list", "categorized":
+		var itms []any
+		if len(items) > 0 {
+			_ = json.Unmarshal(items, &itms)
+		}
+		if itms != nil {
+			data["items"] = itms
+		}
+	case "history":
+		var hists []any
+		if len(histories) > 0 {
+			_ = json.Unmarshal(histories, &hists)
+		}
+		if hists != nil {
+			data["histories"] = hists
+		}
+	}
+	b, _ := json.Marshal(data)
+	return json.RawMessage(b)
+}

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -60,7 +59,7 @@ func (h *Handler) updateTechnology(w http.ResponseWriter, r *http.Request, user 
 		writeJSON(w, http.StatusBadRequest, map[string]any{"error": "Technology with this name already exists"})
 		return
 	}
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, technologyusecase.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
 		return
 	}
@@ -75,7 +74,7 @@ func (h *Handler) updateTechnology(w http.ResponseWriter, r *http.Request, user 
 func (h *Handler) deleteTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) {
 	id := routeParam(r, "id")
 	err := h.technologies.Delete(r.Context(), id)
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, technologyusecase.ErrNotFound) {
 		writeJSON(w, http.StatusNotFound, map[string]any{"error": "Not found"})
 		return
 	}

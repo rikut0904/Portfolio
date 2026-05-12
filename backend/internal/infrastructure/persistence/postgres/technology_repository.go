@@ -2,11 +2,11 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
 	domain "portfolio-backend/internal/domain/technology"
+	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
 type TechnologyRepository struct {
@@ -17,87 +17,95 @@ func NewTechnologyRepository(store *Store) *TechnologyRepository {
 	return &TechnologyRepository{store: store}
 }
 
+type technologyModel struct {
+	ID        string    `gorm:"primaryKey;column:id"`
+	Name      string    `gorm:"column:name"`
+	Category  string    `gorm:"column:category"`
+	CreatedAt time.Time `gorm:"column:createdAt"`
+	UpdatedAt time.Time `gorm:"column:updatedAt"`
+}
+
+func (technologyModel) TableName() string {
+	return "technologies"
+}
+
 func (r *TechnologyRepository) List(ctx context.Context) ([]domain.Technology, error) {
-	rows, err := r.store.Pool.Query(ctx, `
-		SELECT
-			t.id,
-			t.name,
-			t.category,
-			COALESCE(to_jsonb(t)->>'createdAt', to_jsonb(t)->>'created_at', to_jsonb(t)->>'createdat', '') AS created_at
-		FROM "technologies" t
-		ORDER BY t.name ASC
-	`)
-	if err != nil {
+	var models []technologyModel
+	if err := r.store.DB.WithContext(ctx).Order("name ASC").Find(&models).Error; err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
-	list := make([]domain.Technology, 0)
-	for rows.Next() {
-		var t domain.Technology
-		var id, name, category, createdAt sql.NullString
-		if err := rows.Scan(&id, &name, &category, &createdAt); err != nil {
-			return nil, err
-		}
-		t.ID = nullString(id)
-		t.Name = nullString(name)
-		t.Category = nullString(category)
-		if createdAt.Valid {
-			t.CreatedAt = createdAt.String
-		}
-		list = append(list, t)
+	list := make([]domain.Technology, 0, len(models))
+	for _, m := range models {
+		list = append(list, domain.Technology{
+			ID:        m.ID,
+			Name:      m.Name,
+			Category:  m.Category,
+			CreatedAt: m.CreatedAt.Format(time.RFC3339),
+		})
 	}
-	return list, rows.Err()
+	return list, nil
 }
 
 func (r *TechnologyRepository) Create(ctx context.Context, input domain.Payload, now time.Time) (domain.Technology, error) {
-	var exists bool
-	if err := r.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM technologies WHERE LOWER(name)=LOWER($1))`, input.Name).Scan(&exists); err != nil {
+	var count int64
+	if err := r.store.DB.WithContext(ctx).Model(&technologyModel{}).Where("LOWER(name) = LOWER(?)", input.Name).Count(&count).Error; err != nil {
 		return domain.Technology{}, err
 	}
-	if exists {
+	if count > 0 {
 		return domain.Technology{}, domain.ErrDuplicate
 	}
 
-	var id string
-	err := r.store.Pool.QueryRow(ctx, `INSERT INTO "technologies" (id, name, category, "createdAt", "updatedAt") VALUES ($1,$2,$3,NOW(),NOW()) RETURNING id`, fmt.Sprintf("tech_%d", now.UnixNano()), input.Name, input.Category).Scan(&id)
-	if err != nil {
-		return domain.Technology{}, err
-	}
-	return domain.Technology{
-		ID:        id,
+	model := technologyModel{
+		ID:        fmt.Sprintf("tech_%d", now.UnixNano()),
 		Name:      input.Name,
 		Category:  input.Category,
-		CreatedAt: now.UTC().Format(time.RFC3339),
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := r.store.DB.WithContext(ctx).Create(&model).Error; err != nil {
+		return domain.Technology{}, err
+	}
+
+	return domain.Technology{
+		ID:        model.ID,
+		Name:      model.Name,
+		Category:  model.Category,
+		CreatedAt: model.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
 
 func (r *TechnologyRepository) Update(ctx context.Context, id string, input domain.Payload) error {
-	var dup bool
-	if err := r.store.Pool.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM "technologies" WHERE LOWER(name)=LOWER($1) AND id<>$2)`, input.Name, id).Scan(&dup); err != nil {
+	var count int64
+	if err := r.store.DB.WithContext(ctx).Model(&technologyModel{}).Where("LOWER(name) = LOWER(?) AND id <> ?", input.Name, id).Count(&count).Error; err != nil {
 		return err
 	}
-	if dup {
+	if count > 0 {
 		return domain.ErrDuplicate
 	}
 
-	cmd, err := r.store.Pool.Exec(ctx, `UPDATE "technologies" SET name=$1, category=$2, "updatedAt"=NOW() WHERE id=$3`, input.Name, input.Category, id)
-	if err != nil {
-		return err
+	result := r.store.DB.WithContext(ctx).Model(&technologyModel{}).Where("id = ?", id).Updates(map[string]any{
+		"name":      input.Name,
+		"category":  input.Category,
+		"updatedAt": time.Now(),
+	})
+	if result.Error != nil {
+		return result.Error
 	}
-	if cmd.RowsAffected() == 0 {
-		return sql.ErrNoRows
+	if result.RowsAffected == 0 {
+		return technologyusecase.ErrNotFound
 	}
 	return nil
 }
 
 func (r *TechnologyRepository) Delete(ctx context.Context, id string) error {
-	cmd, err := r.store.Pool.Exec(ctx, `DELETE FROM "technologies" WHERE id=$1`, id)
-	if err != nil {
-		return err
+	result := r.store.DB.WithContext(ctx).Delete(&technologyModel{}, "id = ?", id)
+	if result.Error != nil {
+		return result.Error
 	}
-	if cmd.RowsAffected() == 0 {
-		return sql.ErrNoRows
+	if result.RowsAffected == 0 {
+		return technologyusecase.ErrNotFound
 	}
 	return nil
 }

@@ -2,41 +2,56 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Store struct {
-	Pool *pgxpool.Pool
+	DB *gorm.DB
 }
 
 func New(ctx context.Context, databaseURL string) (*Store, error) {
-	cfg, err := pgxpool.ParseConfig(databaseURL)
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Info),
+	})
 	if err != nil {
-		return nil, fmt.Errorf("parse database url: %w", err)
+		return nil, fmt.Errorf("open database: %w", err)
 	}
-	cfg.MaxConns = 20
-	cfg.MinConns = 2
-	cfg.MaxConnLifetime = 45 * time.Minute
-	cfg.MaxConnIdleTime = 10 * time.Minute
-	cfg.HealthCheckPeriod = 30 * time.Second
 
-	pool, err := pgxpool.NewWithConfig(ctx, cfg)
+	sqlDB, err := db.DB()
 	if err != nil {
-		return nil, fmt.Errorf("create pool: %w", err)
+		return nil, fmt.Errorf("get sql db: %w", err)
 	}
-	if err := pool.Ping(ctx); err != nil {
-		pool.Close()
+
+	sqlDB.SetMaxIdleConns(2)
+	sqlDB.SetMaxOpenConns(20)
+	sqlDB.SetConnMaxLifetime(45 * time.Minute)
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+
+	if err := sqlDB.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
 
-	return &Store{Pool: pool}, nil
+	return &Store{DB: db}, nil
 }
 
 func (s *Store) Close() {
-	if s != nil && s.Pool != nil {
-		s.Pool.Close()
+	if s != nil && s.DB != nil {
+		sqlDB, err := s.DB.DB()
+		if err == nil {
+			sqlDB.Close()
+		}
 	}
+}
+
+func nullString(v sql.NullString) string {
+	if v.Valid {
+		return v.String
+	}
+	return ""
 }
