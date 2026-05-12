@@ -18,22 +18,40 @@ func (h *Handler) Register(e *echo.Echo) {
 	e.GET("/health", h.handleHealthEcho)
 
 	api := e.Group("/api")
+	h.registerSystemRoutes(api)
+	h.registerAuthRoutes(api)
+	h.registerCatalogRoutes(api)
+	h.registerContactRoutes(api)
+
+	admin := api.Group("", h.requireAdmin)
+	h.registerAdminAuthRoutes(admin)
+	h.registerAdminCalendarRoutes(admin)
+	h.registerAdminCatalogRoutes(admin)
+	h.registerAdminContactRoutes(admin)
+	h.registerAdminAssetRoutes(admin)
+	h.registerAdminLogRoutes(admin)
+}
+
+func (h *Handler) registerSystemRoutes(api *echo.Group) {
 	api.GET("/app-mode", h.getAppModeEcho)
-	api.GET("/calendar/events", wrapHTTP(h.getCalendarPublicEvents))
+}
+
+func (h *Handler) registerAuthRoutes(api *echo.Group) {
 	api.POST("/auth/login", h.loginEcho)
 	api.POST("/auth/refresh", h.refreshTokenEcho)
+}
 
+func (h *Handler) registerCatalogRoutes(api *echo.Group) {
+	api.GET("/calendar/events", wrapHTTP(h.getCalendarPublicEvents))
 	api.GET("/products", wrapHTTP(h.getProducts))
-
 	api.GET("/sections", wrapHTTP(h.getSections))
-
 	api.GET("/activities", wrapHTTP(h.getActivities))
 	api.GET("/activities/:id", wrapHTTP(h.getActivity))
-
 	api.GET("/activity-categories", wrapHTTP(h.getActivityCategories))
-
 	api.GET("/technologies", wrapHTTP(h.getTechnologies))
+}
 
+func (h *Handler) registerContactRoutes(api *echo.Group) {
 	api.POST("/contact", wrapHTTP(h.createInquiry))
 	api.GET("/contact/thread/:threadId", wrapHTTP(h.getInquiryThread))
 	api.POST("/contact/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
@@ -41,14 +59,20 @@ func (h *Handler) Register(e *echo.Echo) {
 	api.POST("/inquiries", wrapHTTP(h.createInquiry))
 	api.GET("/inquiries/thread/:threadId", wrapHTTP(h.getInquiryThread))
 	api.POST("/inquiries/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
+}
 
-	admin := api.Group("", h.requireAdmin)
+func (h *Handler) registerAdminAuthRoutes(admin *echo.Group) {
+	admin.GET("/auth/me", h.meEchoFromContext)
+}
+
+func (h *Handler) registerAdminCalendarRoutes(admin *echo.Group) {
 	admin.GET("/admin/calendar/events", adminHTTP(h.getCalendarEvents))
 	admin.PATCH("/admin/calendar/events/publication", adminHTTP(h.patchCalendarEventPublication))
 	admin.GET("/admin/calendar/preferences", adminHTTP(h.getCalendarPreferences))
 	admin.PATCH("/admin/calendar/preferences", adminHTTP(h.patchCalendarPreferences))
-	admin.GET("/auth/me", h.meEchoFromContext)
+}
 
+func (h *Handler) registerAdminCatalogRoutes(admin *echo.Group) {
 	admin.POST("/products", adminHTTP(h.createProduct))
 	admin.PUT("/products/:id", adminHTTP(h.updateProduct))
 	admin.DELETE("/products/:id", adminHTTP(h.deleteProduct))
@@ -70,8 +94,9 @@ func (h *Handler) Register(e *echo.Echo) {
 	admin.POST("/technologies", adminHTTP(h.createTechnology))
 	admin.PUT("/technologies/:id", adminHTTP(h.updateTechnology))
 	admin.DELETE("/technologies/:id", adminHTTP(h.deleteTechnology))
-	admin.POST("/images/upload", adminHTTP(h.uploadImage))
+}
 
+func (h *Handler) registerAdminContactRoutes(admin *echo.Group) {
 	admin.GET("/contact", adminHTTP(h.getInquiries))
 	admin.GET("/contact/:id", adminHTTP(h.getInquiry))
 	admin.PATCH("/contact/:id", adminHTTP(h.patchInquiryStatus))
@@ -81,7 +106,13 @@ func (h *Handler) Register(e *echo.Echo) {
 	admin.GET("/inquiries/:id", adminHTTP(h.getInquiry))
 	admin.PATCH("/inquiries/:id", adminHTTP(h.patchInquiryStatus))
 	admin.POST("/inquiries/:id/reply", adminHTTP(h.replyInquiry))
+}
 
+func (h *Handler) registerAdminAssetRoutes(admin *echo.Group) {
+	admin.POST("/images/upload", adminHTTP(h.uploadImage))
+}
+
+func (h *Handler) registerAdminLogRoutes(admin *echo.Group) {
 	admin.POST("/admin-logs", adminHTTP(h.createAuthLog))
 	admin.GET("/admin-logs", adminHTTP(h.getAdminLogs))
 }

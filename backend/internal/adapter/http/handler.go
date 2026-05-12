@@ -13,7 +13,7 @@ import (
 )
 
 type Handler struct {
-	store             *store.Store
+	store             *postgres.Store
 	verifier          *auth.Verifier
 	mailer            *mail.Client
 	discord           *discord.Client
@@ -30,7 +30,7 @@ type Handler struct {
 }
 
 func NewHandler(
-	store *store.Store,
+	store *postgres.Store,
 	verifier *auth.Verifier,
 	mailer *mail.Client,
 	discord *discord.Client,
