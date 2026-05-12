@@ -16,6 +16,8 @@ import (
 	"portfolio-backend/internal/infrastructure/mail"
 	"portfolio-backend/internal/infrastructure/migrations"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	productusecase "portfolio-backend/internal/usecase/product"
+	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
 func main() {
@@ -90,8 +92,15 @@ func main() {
 		cfg.GoogleCalendarTimezone,
 	)
 
+	productRepository := postgres.NewProductRepository(st)
+	productUsecase := productusecase.New(productRepository)
+	technologyRepository := postgres.NewTechnologyRepository(st)
+	technologyUsecase := technologyusecase.New(technologyRepository)
+
 	handler := httpapi.NewHandler(
 		st,
+		productUsecase,
+		technologyUsecase,
 		verifier,
 		mailer,
 		discordClient,

@@ -10,10 +10,14 @@ import (
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	productusecase "portfolio-backend/internal/usecase/product"
+	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
 type Handler struct {
 	store             *postgres.Store
+	products          *productusecase.Usecase
+	technologies      *technologyusecase.Usecase
 	verifier          *auth.Verifier
 	mailer            *mail.Client
 	discord           *discord.Client
@@ -31,6 +35,8 @@ type Handler struct {
 
 func NewHandler(
 	store *postgres.Store,
+	products *productusecase.Usecase,
+	technologies *technologyusecase.Usecase,
 	verifier *auth.Verifier,
 	mailer *mail.Client,
 	discord *discord.Client,
@@ -46,6 +52,8 @@ func NewHandler(
 ) *Handler {
 	return &Handler{
 		store:             store,
+		products:          products,
+		technologies:      technologies,
 		verifier:          verifier,
 		mailer:            mailer,
 		discord:           discord,
