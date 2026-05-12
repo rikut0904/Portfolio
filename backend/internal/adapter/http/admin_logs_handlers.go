@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 func (h *Handler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) {

@@ -9,13 +9,13 @@ import (
 	"time"
 
 	httpapi "portfolio-backend/internal/adapter/http"
-	"portfolio-backend/internal/auth"
-	"portfolio-backend/internal/config"
-	"portfolio-backend/internal/discord"
-	"portfolio-backend/internal/gcalendar"
-	"portfolio-backend/internal/mail"
-	"portfolio-backend/internal/migrations"
-	"portfolio-backend/internal/store"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/config"
+	"portfolio-backend/internal/infrastructure/discord"
+	"portfolio-backend/internal/infrastructure/gcalendar"
+	"portfolio-backend/internal/infrastructure/mail"
+	"portfolio-backend/internal/infrastructure/migrations"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 )
 
 func main() {

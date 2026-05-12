@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
-	"portfolio-backend/internal/gcalendar"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/gcalendar"
 )
 
 const publicCalendarEventLabel = "予定あり"

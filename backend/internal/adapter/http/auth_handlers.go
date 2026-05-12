@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 func (h *Handler) getAppMode(w http.ResponseWriter, _ *http.Request) {

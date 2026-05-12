@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"portfolio-backend/internal/auth"
-	"portfolio-backend/internal/gcalendar"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/gcalendar"
 )
 
 type calendarEventPublication struct {

@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 const maxImageUploadBytes = 10 << 20 // 10MB

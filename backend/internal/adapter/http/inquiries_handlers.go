@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
-	"portfolio-backend/internal/gcalendar"
-	"portfolio-backend/internal/mail"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/gcalendar"
+	"portfolio-backend/internal/infrastructure/mail"
 
 	"github.com/jackc/pgx/v5"
 )

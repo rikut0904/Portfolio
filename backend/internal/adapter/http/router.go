@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"portfolio-backend/internal/config"
+	"portfolio-backend/internal/infrastructure/config"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"

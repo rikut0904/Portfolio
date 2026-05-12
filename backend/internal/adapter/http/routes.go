@@ -3,11 +3,16 @@ package httpapi
 import (
 	"context"
 	"net/http"
+	"strings"
+
+	"portfolio-backend/internal/infrastructure/auth"
 
 	"github.com/labstack/echo/v4"
 )
 
 type echoContextKey struct{}
+
+const adminClaimsContextKey = "adminClaims"
 
 func (h *Handler) Register(e *echo.Echo) {
 	e.GET("/health", h.handleHealthEcho)
@@ -15,62 +20,94 @@ func (h *Handler) Register(e *echo.Echo) {
 	api := e.Group("/api")
 	api.GET("/app-mode", h.getAppModeEcho)
 	api.GET("/calendar/events", wrapHTTP(h.getCalendarPublicEvents))
-
-	api.GET("/admin/calendar/events", wrapHTTP(h.withAdmin(h.getCalendarEvents)))
-	api.PATCH("/admin/calendar/events/publication", wrapHTTP(h.withAdmin(h.patchCalendarEventPublication)))
-	api.GET("/admin/calendar/preferences", wrapHTTP(h.withAdmin(h.getCalendarPreferences)))
-	api.PATCH("/admin/calendar/preferences", wrapHTTP(h.withAdmin(h.patchCalendarPreferences)))
 	api.POST("/auth/login", h.loginEcho)
 	api.POST("/auth/refresh", h.refreshTokenEcho)
-	api.GET("/auth/me", h.withAdminEcho(h.meEcho))
 
 	api.GET("/products", wrapHTTP(h.getProducts))
-	api.POST("/products", wrapHTTP(h.withAdmin(h.createProduct)))
-	api.PUT("/products/:id", wrapHTTP(h.withAdmin(h.updateProduct)))
-	api.DELETE("/products/:id", wrapHTTP(h.withAdmin(h.deleteProduct)))
 
 	api.GET("/sections", wrapHTTP(h.getSections))
-	api.POST("/sections", wrapHTTP(h.withAdmin(h.createSection)))
-	api.PUT("/sections/:id", wrapHTTP(h.withAdmin(h.updateSection)))
-	api.PATCH("/sections/:id/meta", wrapHTTP(h.withAdmin(h.patchSectionMeta)))
-	api.DELETE("/sections/:id/delete", wrapHTTP(h.withAdmin(h.deleteSection)))
 
 	api.GET("/activities", wrapHTTP(h.getActivities))
-	api.POST("/activities", wrapHTTP(h.withAdmin(h.createActivity)))
 	api.GET("/activities/:id", wrapHTTP(h.getActivity))
-	api.PUT("/activities/:id", wrapHTTP(h.withAdmin(h.updateActivity)))
-	api.PATCH("/activities/:id", wrapHTTP(h.withAdmin(h.patchActivity)))
-	api.DELETE("/activities/:id", wrapHTTP(h.withAdmin(h.deleteActivity)))
 
 	api.GET("/activity-categories", wrapHTTP(h.getActivityCategories))
-	api.POST("/activity-categories", wrapHTTP(h.withAdmin(h.createActivityCategory)))
-	api.PATCH("/activity-categories/:id", wrapHTTP(h.withAdmin(h.patchActivityCategory)))
-	api.DELETE("/activity-categories/:id", wrapHTTP(h.withAdmin(h.deleteActivityCategory)))
 
 	api.GET("/technologies", wrapHTTP(h.getTechnologies))
-	api.POST("/technologies", wrapHTTP(h.withAdmin(h.createTechnology)))
-	api.PUT("/technologies/:id", wrapHTTP(h.withAdmin(h.updateTechnology)))
-	api.DELETE("/technologies/:id", wrapHTTP(h.withAdmin(h.deleteTechnology)))
-	api.POST("/images/upload", wrapHTTP(h.withAdmin(h.uploadImage)))
 
 	api.POST("/contact", wrapHTTP(h.createInquiry))
 	api.GET("/contact/thread/:threadId", wrapHTTP(h.getInquiryThread))
 	api.POST("/contact/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
-	api.GET("/contact", wrapHTTP(h.withAdmin(h.getInquiries)))
-	api.GET("/contact/:id", wrapHTTP(h.withAdmin(h.getInquiry)))
-	api.PATCH("/contact/:id", wrapHTTP(h.withAdmin(h.patchInquiryStatus)))
-	api.POST("/contact/:id/reply", wrapHTTP(h.withAdmin(h.replyInquiry)))
 
 	api.POST("/inquiries", wrapHTTP(h.createInquiry))
 	api.GET("/inquiries/thread/:threadId", wrapHTTP(h.getInquiryThread))
 	api.POST("/inquiries/thread/:threadId/reply", wrapHTTP(h.replyInquiryThread))
-	api.GET("/inquiries", wrapHTTP(h.withAdmin(h.getInquiries)))
-	api.GET("/inquiries/:id", wrapHTTP(h.withAdmin(h.getInquiry)))
-	api.PATCH("/inquiries/:id", wrapHTTP(h.withAdmin(h.patchInquiryStatus)))
-	api.POST("/inquiries/:id/reply", wrapHTTP(h.withAdmin(h.replyInquiry)))
 
-	api.POST("/admin-logs", wrapHTTP(h.withAdmin(h.createAuthLog)))
-	api.GET("/admin-logs", wrapHTTP(h.withAdmin(h.getAdminLogs)))
+	admin := api.Group("", h.requireAdmin)
+	admin.GET("/admin/calendar/events", adminHTTP(h.getCalendarEvents))
+	admin.PATCH("/admin/calendar/events/publication", adminHTTP(h.patchCalendarEventPublication))
+	admin.GET("/admin/calendar/preferences", adminHTTP(h.getCalendarPreferences))
+	admin.PATCH("/admin/calendar/preferences", adminHTTP(h.patchCalendarPreferences))
+	admin.GET("/auth/me", h.meEchoFromContext)
+
+	admin.POST("/products", adminHTTP(h.createProduct))
+	admin.PUT("/products/:id", adminHTTP(h.updateProduct))
+	admin.DELETE("/products/:id", adminHTTP(h.deleteProduct))
+
+	admin.POST("/sections", adminHTTP(h.createSection))
+	admin.PUT("/sections/:id", adminHTTP(h.updateSection))
+	admin.PATCH("/sections/:id/meta", adminHTTP(h.patchSectionMeta))
+	admin.DELETE("/sections/:id/delete", adminHTTP(h.deleteSection))
+
+	admin.POST("/activities", adminHTTP(h.createActivity))
+	admin.PUT("/activities/:id", adminHTTP(h.updateActivity))
+	admin.PATCH("/activities/:id", adminHTTP(h.patchActivity))
+	admin.DELETE("/activities/:id", adminHTTP(h.deleteActivity))
+
+	admin.POST("/activity-categories", adminHTTP(h.createActivityCategory))
+	admin.PATCH("/activity-categories/:id", adminHTTP(h.patchActivityCategory))
+	admin.DELETE("/activity-categories/:id", adminHTTP(h.deleteActivityCategory))
+
+	admin.POST("/technologies", adminHTTP(h.createTechnology))
+	admin.PUT("/technologies/:id", adminHTTP(h.updateTechnology))
+	admin.DELETE("/technologies/:id", adminHTTP(h.deleteTechnology))
+	admin.POST("/images/upload", adminHTTP(h.uploadImage))
+
+	admin.GET("/contact", adminHTTP(h.getInquiries))
+	admin.GET("/contact/:id", adminHTTP(h.getInquiry))
+	admin.PATCH("/contact/:id", adminHTTP(h.patchInquiryStatus))
+	admin.POST("/contact/:id/reply", adminHTTP(h.replyInquiry))
+
+	admin.GET("/inquiries", adminHTTP(h.getInquiries))
+	admin.GET("/inquiries/:id", adminHTTP(h.getInquiry))
+	admin.PATCH("/inquiries/:id", adminHTTP(h.patchInquiryStatus))
+	admin.POST("/inquiries/:id/reply", adminHTTP(h.replyInquiry))
+
+	admin.POST("/admin-logs", adminHTTP(h.createAuthLog))
+	admin.GET("/admin-logs", adminHTTP(h.getAdminLogs))
+}
+
+func (h *Handler) requireAdmin(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		claims, err := h.verifier.VerifyRequest(c.Request())
+		if err != nil {
+			status := http.StatusUnauthorized
+			if strings.Contains(strings.ToLower(err.Error()), "forbidden") {
+				status = http.StatusForbidden
+			}
+			return c.JSON(status, map[string]any{"error": http.StatusText(status)})
+		}
+		c.Set(adminClaimsContextKey, claims)
+		return next(c)
+	}
+}
+
+func adminHTTP(next func(http.ResponseWriter, *http.Request, *auth.Claims)) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := c.Request().WithContext(context.WithValue(c.Request().Context(), echoContextKey{}, c))
+		claims, _ := c.Get(adminClaimsContextKey).(*auth.Claims)
+		next(c.Response(), req, claims)
+		return nil
+	}
 }
 
 func wrapHTTP(next http.HandlerFunc) echo.HandlerFunc {

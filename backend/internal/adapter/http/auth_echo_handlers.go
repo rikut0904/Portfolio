@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 
 	"github.com/labstack/echo/v4"
 )
@@ -125,6 +125,14 @@ func (h *Handler) meEcho(c echo.Context, user *auth.Claims) error {
 			"email": user.Email,
 		},
 	})
+}
+
+func (h *Handler) meEchoFromContext(c echo.Context) error {
+	claims, _ := c.Get(adminClaimsContextKey).(*auth.Claims)
+	if claims == nil {
+		return c.JSON(http.StatusUnauthorized, map[string]any{"error": http.StatusText(http.StatusUnauthorized)})
+	}
+	return h.meEcho(c, claims)
 }
 
 func (h *Handler) withAdminEcho(next func(echo.Context, *auth.Claims) error) echo.HandlerFunc {

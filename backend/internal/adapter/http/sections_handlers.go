@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 type sectionMeta struct {

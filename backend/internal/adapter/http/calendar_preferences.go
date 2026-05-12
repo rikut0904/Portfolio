@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"portfolio-backend/internal/auth"
+	"portfolio-backend/internal/infrastructure/auth"
 )
 
 func decodeBody(r *http.Request, dst any) error {
