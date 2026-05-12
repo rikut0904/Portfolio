@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 )
 
 type AppError struct {
@@ -139,7 +140,7 @@ func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, le
 		b = []byte("{}")
 	}
 
-	log := adminLog{
+	logEntry := postgres.AdminLogModel{
 		ID:        fmt.Sprintf("log_%d", time.Now().UnixNano()),
 		Action:    action,
 		Entity:    ptr(entity),
@@ -150,24 +151,8 @@ func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, le
 		Details:   b,
 	}
 
-	_ = h.store.DB.WithContext(ctx).Create(&log)
-	_ = h.store.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&adminLog{})
-}
-
-type adminLog struct {
-	ID        string          `gorm:"column:id;primaryKey"`
-	Action    string          `gorm:"column:action"`
-	Entity    *string         `gorm:"column:entity"`
-	EntityID  *string         `gorm:"column:entityId"`
-	UserID    *string         `gorm:"column:userId"`
-	UserEmail *string         `gorm:"column:userEmail"`
-	Level     string          `gorm:"column:level"`
-	Details   json.RawMessage `gorm:"column:details;type:jsonb"`
-	CreatedAt time.Time       `gorm:"column:createdAt;autoCreateTime"`
-}
-
-func (adminLog) TableName() string {
-	return "adminLogs"
+	_ = h.store.DB.WithContext(ctx).Create(&logEntry)
+	_ = h.store.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&postgres.AdminLogModel{})
 }
 
 func ptr(v string) *string {
@@ -218,5 +203,3 @@ func normalizeDeployStatus(v string) string {
 		return strings.TrimSpace(v)
 	}
 }
-
-// products

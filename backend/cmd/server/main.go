@@ -14,7 +14,6 @@ import (
 	"portfolio-backend/internal/infrastructure/discord"
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
-	"portfolio-backend/internal/infrastructure/migrations"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
 	productusecase "portfolio-backend/internal/usecase/product"
 	technologyusecase "portfolio-backend/internal/usecase/technology"
@@ -34,24 +33,6 @@ func main() {
 		log.Fatalf("db error: %v", err)
 	}
 	defer st.Close()
-	if err := migrations.RunCalendarPreferences(ctx, st.DB); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarPreferencesLabel(ctx, st.DB); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarEventPublications(ctx, st.DB); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarEventPublicationContent(ctx, st.DB); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if cfg.RunInquiryThreadMigration {
-		if err := migrations.RunInquiryThreads(ctx, st.DB); err != nil {
-			log.Fatalf("migration error: %v", err)
-		}
-		log.Printf("applied inquiry thread migration")
-	}
 
 	verifier, err := auth.NewVerifier(ctx, cfg.FirebaseCredentials, cfg.FirebaseProjectID, cfg.AdminEmails, cfg.AdminUIDs)
 	if err != nil {

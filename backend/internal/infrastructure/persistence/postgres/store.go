@@ -37,6 +37,11 @@ func New(ctx context.Context, databaseURL string) (*Store, error) {
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
 
+	// Run AutoMigration
+	if err := db.AutoMigrate(GetModels()...); err != nil {
+		return nil, fmt.Errorf("auto migrate: %w", err)
+	}
+
 	return &Store{DB: db}, nil
 }
 

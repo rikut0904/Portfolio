@@ -9,23 +9,8 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 )
-
-type adminLogModel struct {
-	ID        string          `gorm:"column:id;primaryKey"`
-	Action    string          `gorm:"column:action"`
-	Entity    string          `gorm:"column:entity"`
-	EntityID  string          `gorm:"column:entityId"`
-	UserID    string          `gorm:"column:userId"`
-	UserEmail string          `gorm:"column:userEmail"`
-	Level     string          `gorm:"column:level"`
-	Details   json.RawMessage `gorm:"column:details;type:jsonb"`
-	CreatedAt time.Time       `gorm:"column:createdAt"`
-}
-
-func (adminLogModel) TableName() string {
-	return "adminLogs"
-}
 
 func (h *AdminLogHandler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	var body map[string]any
@@ -83,7 +68,7 @@ func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _
 		}
 	}
 
-	var models []adminLogModel
+	var models []postgres.AdminLogModel
 	if err := query.Order(`"createdAt" DESC, id DESC`).Limit(limit).Find(&models).Error; err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch admin logs", err)
 	}
@@ -98,17 +83,17 @@ func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _
 			"level":     m.Level,
 			"createdAt": toISO(m.CreatedAt),
 		}
-		if m.Entity != "" {
-			log["entity"] = m.Entity
+		if m.Entity != nil && *m.Entity != "" {
+			log["entity"] = *m.Entity
 		}
-		if m.EntityID != "" {
-			log["entityId"] = m.EntityID
+		if m.EntityID != nil && *m.EntityID != "" {
+			log["entityId"] = *m.EntityID
 		}
-		if m.UserID != "" {
-			log["userId"] = m.UserID
+		if m.UserID != nil && *m.UserID != "" {
+			log["userId"] = *m.UserID
 		}
-		if m.UserEmail != "" {
-			log["userEmail"] = m.UserEmail
+		if m.UserEmail != nil && *m.UserEmail != "" {
+			log["userEmail"] = *m.UserEmail
 		}
 		if len(m.Details) > 0 && string(m.Details) != "{}" {
 			log["details"] = m.Details

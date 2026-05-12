@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"gorm.io/gorm"
 )
@@ -30,25 +31,8 @@ type activity struct {
 	UpdatedAt   string   `json:"updatedAt"`
 }
 
-type activityModel struct {
-	ID          string    `gorm:"column:id;primaryKey"`
-	Title       string    `gorm:"column:title"`
-	Description string    `gorm:"column:description"`
-	Category    string    `gorm:"column:category"`
-	Link        string    `gorm:"column:link"`
-	Image       string    `gorm:"column:image"`
-	Status      string    `gorm:"column:status"`
-	Order       int       `gorm:"column:order"`
-	CreatedAt   time.Time `gorm:"column:createdAt;autoCreateTime"`
-	UpdatedAt   time.Time `gorm:"column:updatedAt;autoUpdateTime"`
-}
-
-func (activityModel) TableName() string {
-	return "activities"
-}
-
 func (h *ActivityHandler) getActivities(w http.ResponseWriter, r *http.Request) error {
-	var models []activityModel
+	var models []postgres.ActivityModel
 	err := h.store.DB.WithContext(r.Context()).Order("\"order\" DESC").Find(&models).Error
 	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch activities", err)
@@ -79,7 +63,7 @@ func (h *ActivityHandler) getActivities(w http.ResponseWriter, r *http.Request) 
 
 func (h *ActivityHandler) getActivity(w http.ResponseWriter, r *http.Request) error {
 	id := routeParam(r, "id")
-	var m activityModel
+	var m postgres.ActivityModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -116,14 +100,14 @@ func (h *ActivityHandler) createActivity(w http.ResponseWriter, r *http.Request,
 	}
 	if body.Order == 0 {
 		var maxOrder int
-		_ = h.store.DB.WithContext(r.Context()).Model(&activityModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
 		body.Order = maxOrder + 1
 	}
 	if body.Status == "" {
 		body.Status = "非公開"
 	}
 	id := fmt.Sprintf("activity_%d", time.Now().UnixNano())
-	m := activityModel{
+	m := postgres.ActivityModel{
 		ID:          id,
 		Title:       body.Title,
 		Description: body.Description,
@@ -182,7 +166,7 @@ func (h *ActivityHandler) upsertActivityByID(w http.ResponseWriter, r *http.Requ
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Activity updated successfully"})
 		return nil
 	}
-	result := h.store.DB.WithContext(r.Context()).Model(&activityModel{}).Where("id = ?", id).Updates(updates)
+	result := h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityModel{}).Where("id = ?", id).Updates(updates)
 	if result.Error != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to update activity", result.Error)
 	}
@@ -201,7 +185,7 @@ func (h *ActivityHandler) upsertActivityByID(w http.ResponseWriter, r *http.Requ
 
 func (h *ActivityHandler) deleteActivity(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
-	result := h.store.DB.WithContext(r.Context()).Where("id = ?", id).Delete(&activityModel{})
+	result := h.store.DB.WithContext(r.Context()).Where("id = ?", id).Delete(&postgres.ActivityModel{})
 	if result.Error != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to delete activity", result.Error)
 	}
@@ -218,17 +202,6 @@ type activityCategory struct {
 	Name      string `json:"name"`
 	Order     int    `json:"order"`
 	CreatedAt string `json:"createdAt"`
-}
-
-type activityCategoryModel struct {
-	ID        string    `gorm:"column:id;primaryKey"`
-	Name      string    `gorm:"column:name"`
-	Order     int       `gorm:"column:order"`
-	CreatedAt time.Time `gorm:"column:createdAt;autoCreateTime"`
-}
-
-func (activityCategoryModel) TableName() string {
-	return "activityCategories"
 }
 
 func (h *ActivityHandler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
@@ -252,7 +225,7 @@ func (h *ActivityHandler) getActivityCategories(w http.ResponseWriter, r *http.R
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
 	}
 
-	var models []activityCategoryModel
+	var models []postgres.ActivityCategoryModel
 	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("\"order\" ASC").Find(&models).Error
 	if err != nil {
 		log.Printf("getActivityCategories query error: %v", err)
@@ -288,10 +261,10 @@ func (h *ActivityHandler) createActivityCategory(w http.ResponseWriter, r *http.
 		orderNo = *body.Order
 	} else {
 		var maxOrder int
-		_ = h.store.DB.WithContext(r.Context()).Model(&activityCategoryModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityCategoryModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
 		orderNo = maxOrder + 1
 	}
-	m := activityCategoryModel{
+	m := postgres.ActivityCategoryModel{
 		ID:    fmt.Sprintf("activity_category_%d", time.Now().UnixNano()),
 		Name:  body.Name,
 		Order: orderNo,
@@ -307,14 +280,14 @@ func (h *ActivityHandler) createActivityCategory(w http.ResponseWriter, r *http.
 func (h *ActivityHandler) deleteActivityCategory(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		var m activityCategoryModel
+		var m postgres.ActivityCategoryModel
 		if err := tx.First(&m, "id = ?", id).Error; err != nil {
 			return err
 		}
 		if err := tx.Delete(&m).Error; err != nil {
 			return err
 		}
-		if err := tx.Model(&activityModel{}).Where("category = ?", m.Name).Delete(&activityModel{}).Error; err != nil {
+		if err := tx.Model(&postgres.ActivityModel{}).Where("category = ?", m.Name).Delete(&postgres.ActivityModel{}).Error; err != nil {
 			return err
 		}
 		return nil
@@ -338,7 +311,7 @@ func (h *ActivityHandler) patchActivityCategory(w http.ResponseWriter, r *http.R
 	}
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		var old activityCategoryModel
+		var old postgres.ActivityCategoryModel
 		if err := tx.First(&old, "id = ?", id).Error; err != nil {
 			return err
 		}
@@ -357,7 +330,7 @@ func (h *ActivityHandler) patchActivityCategory(w http.ResponseWriter, r *http.R
 		}
 
 		if newName, ok := updates["name"].(string); ok && strings.TrimSpace(newName) != "" && newName != old.Name {
-			if err := tx.Model(&activityModel{}).Where("category = ?", old.Name).Update("category", newName).Error; err != nil {
+			if err := tx.Model(&postgres.ActivityModel{}).Where("category = ?", old.Name).Update("category", newName).Error; err != nil {
 				return err
 			}
 		}

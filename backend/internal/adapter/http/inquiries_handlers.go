@@ -13,6 +13,7 @@ import (
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"gorm.io/gorm"
 )
@@ -31,14 +32,6 @@ type inquiryReplyItem struct {
 	SenderEmail string `json:"senderEmail,omitempty"`
 	Message     string `json:"message"`
 	CreatedAt   string `json:"createdAt"`
-}
-
-func (h *InquiryHandler) ensureInquiriesTable(ctx context.Context) error {
-	m := h.store.DB.WithContext(ctx).Migrator()
-	if !m.HasTable("inquiries") || !m.HasTable("inquiry_replies") || !m.HasColumn("inquiries", "thread_id") {
-		return NewAppError(http.StatusNotImplemented, "inquiry thread schema is not found. Please apply the latest inquiry migration first", nil)
-	}
-	return nil
 }
 
 func (h *InquiryHandler) buildContactLink(threadID string) string {
@@ -64,40 +57,8 @@ func buildGoogleCalendarTemplateURL(summary, description string, start, end time
 	return "https://calendar.google.com/calendar/render?" + values.Encode()
 }
 
-type inquiryModel struct {
-	ID           string    `gorm:"column:id;primaryKey;default:gen_random_uuid()"`
-	Category     string    `gorm:"column:category"`
-	Subject      string    `gorm:"column:subject"`
-	Message      string    `gorm:"column:message"`
-	ContactName  string    `gorm:"column:contact_name"`
-	ContactEmail string    `gorm:"column:contact_email"`
-	ThreadID     string    `gorm:"column:thread_id;default:gen_random_uuid()"`
-	Status       string    `gorm:"column:status"`
-	CreatedAt    time.Time `gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt    time.Time `gorm:"column:updated_at;autoUpdateTime"`
-}
-
-func (inquiryModel) TableName() string {
-	return "inquiries"
-}
-
-type inquiryReplyModel struct {
-	ID          string    `gorm:"column:id;primaryKey"`
-	InquiryID   string    `gorm:"column:inquiry_id"`
-	ThreadID    string    `gorm:"column:thread_id"`
-	SenderType  string    `gorm:"column:sender_type"`
-	SenderName  string    `gorm:"column:sender_name"`
-	SenderEmail string    `gorm:"column:sender_email"`
-	Message     string    `gorm:"column:message"`
-	CreatedAt   time.Time `gorm:"column:created_at;autoCreateTime"`
-}
-
-func (inquiryReplyModel) TableName() string {
-	return "inquiry_replies"
-}
-
 func (h *InquiryHandler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
-	var models []inquiryReplyModel
+	var models []postgres.InquiryReplyModel
 	err := h.store.DB.WithContext(ctx).
 		Where("inquiry_id = ?", inquiryID).
 		Order("created_at ASC, id ASC").
@@ -124,9 +85,6 @@ func (h *InquiryHandler) fetchInquiryReplies(ctx context.Context, inquiryID stri
 }
 
 func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	var body struct {
 		Category       string `json:"category"`
 		Subject        string `json:"subject"`
@@ -168,7 +126,7 @@ func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) e
 		}
 	}
 
-	inquiry := inquiryModel{
+	inquiry := postgres.InquiryModel{
 		Category:     category,
 		Subject:      subject,
 		Message:      message,
@@ -246,10 +204,7 @@ func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) e
 }
 
 func (h *InquiryHandler) getInquiries(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
-	var models []inquiryModel
+	var models []postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).Order("created_at DESC").Find(&models).Error
 	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiries", err)
@@ -276,11 +231,8 @@ func (h *InquiryHandler) getInquiries(w http.ResponseWriter, r *http.Request, us
 }
 
 func (h *InquiryHandler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	id := routeParam(r, "id")
-	var m inquiryModel
+	var m postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -313,15 +265,12 @@ func (h *InquiryHandler) getInquiry(w http.ResponseWriter, r *http.Request, user
 }
 
 func (h *InquiryHandler) getInquiryThread(w http.ResponseWriter, r *http.Request) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
 	}
 
-	var m inquiryModel
+	var m postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).First(&m, "thread_id = ?", threadID).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -354,9 +303,6 @@ func (h *InquiryHandler) getInquiryThread(w http.ResponseWriter, r *http.Request
 }
 
 func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Request) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
@@ -373,13 +319,13 @@ func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Reque
 
 	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	var inquiry inquiryModel
+	var inquiry postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&inquiry, "thread_id = ?", threadID).Error; err != nil {
 			return err
 		}
 
-		reply := inquiryReplyModel{
+		reply := postgres.InquiryReplyModel{
 			ID:           replyID,
 			InquiryID:    inquiry.ID,
 			ThreadID:     threadID,
@@ -426,9 +372,6 @@ func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
@@ -439,7 +382,7 @@ func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Reque
 		return NewAppError(http.StatusBadRequest, "Invalid status", nil)
 	}
 
-	result := h.store.DB.WithContext(r.Context()).Model(&inquiryModel{}).Where("id = ?", id).Updates(map[string]any{"status": status, "updated_at": time.Now()})
+	result := h.store.DB.WithContext(r.Context()).Model(&postgres.InquiryModel{}).Where("id = ?", id).Updates(map[string]any{"status": status, "updated_at": time.Now()})
 	if result.Error != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to update inquiry", result.Error)
 	}
@@ -452,9 +395,6 @@ func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	if err := h.ensureInquiriesTable(r.Context()); err != nil {
-		return err
-	}
 	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
@@ -471,7 +411,7 @@ func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, us
 	}
 	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	var inquiry inquiryModel
+	var inquiry postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&inquiry, "id = ?", id).Error; err != nil {
 			return err
@@ -482,7 +422,7 @@ func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, us
 			nextStatus = "in_progress"
 		}
 
-		reply := inquiryReplyModel{
+		reply := postgres.InquiryReplyModel{
 			ID:           replyID,
 			InquiryID:    inquiry.ID,
 			ThreadID:     inquiry.ThreadID,

@@ -18,29 +18,8 @@ func NewProductRepository(store *Store) *ProductRepository {
 	return &ProductRepository{store: store}
 }
 
-type productModel struct {
-	ID           string          `gorm:"primaryKey;column:id"`
-	Title        string          `gorm:"column:title"`
-	Description  string          `gorm:"column:description"`
-	Image        string          `gorm:"column:image"`
-	Link         string          `gorm:"column:link"`
-	GithubURL    string          `gorm:"column:githubUrl"`
-	Category     string          `gorm:"column:category"`
-	Technologies json.RawMessage `gorm:"column:technologies;type:jsonb"`
-	Status       string          `gorm:"column:status"`
-	DeployStatus string          `gorm:"column:deployStatus"`
-	CreatedYear  int             `gorm:"column:createdYear"`
-	CreatedMonth int             `gorm:"column:createdMonth"`
-	CreatedAt    string          `gorm:"column:createdAt"`
-	UpdatedAt    time.Time       `gorm:"column:updatedAt"`
-}
-
-func (productModel) TableName() string {
-	return "products"
-}
-
 func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) {
-	var models []productModel
+	var models []ProductModel
 	if err := r.store.DB.WithContext(ctx).Find(&models).Error; err != nil {
 		return nil, err
 	}
@@ -57,7 +36,7 @@ func (r *ProductRepository) Create(ctx context.Context, input domain.Payload, no
 	createdAt := now.UTC().Format(time.RFC3339)
 	techs, _ := json.Marshal(input.Techs)
 
-	model := productModel{
+	model := ProductModel{
 		ID:           id,
 		Title:        input.Title,
 		Description:  input.Description,
@@ -98,7 +77,7 @@ func (r *ProductRepository) Update(ctx context.Context, id string, input domain.
 		"updatedAt":    time.Now(),
 	}
 
-	result := r.store.DB.WithContext(ctx).Model(&productModel{}).Where("id = ?", id).Updates(updates)
+	result := r.store.DB.WithContext(ctx).Model(&ProductModel{}).Where("id = ?", id).Updates(updates)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -109,7 +88,7 @@ func (r *ProductRepository) Update(ctx context.Context, id string, input domain.
 }
 
 func (r *ProductRepository) Delete(ctx context.Context, id string) error {
-	result := r.store.DB.WithContext(ctx).Delete(&productModel{}, "id = ?", id)
+	result := r.store.DB.WithContext(ctx).Delete(&ProductModel{}, "id = ?", id)
 	if result.Error != nil {
 		return result.Error
 	}
@@ -119,7 +98,7 @@ func (r *ProductRepository) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (m *productModel) toDomain() domain.Product {
+func (m *ProductModel) toDomain() domain.Product {
 	var techs []string
 	if len(m.Technologies) > 0 {
 		_ = json.Unmarshal(m.Technologies, &techs)

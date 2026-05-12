@@ -9,21 +9,10 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"gorm.io/gorm"
 )
-
-type calendarPreferenceModel struct {
-	CalendarID string    `gorm:"column:calendar_id;primaryKey"`
-	Color      string    `gorm:"column:color"`
-	Label      string    `gorm:"column:label"`
-	CreatedAt  time.Time `gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt  time.Time `gorm:"column:updated_at;autoUpdateTime"`
-}
-
-func (calendarPreferenceModel) TableName() string {
-	return "calendar_preferences"
-}
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
@@ -114,14 +103,14 @@ func (h *CalendarHandler) patchCalendarPreferences(w http.ResponseWriter, r *htt
 			updatedLabels[id] = normalizedLabel
 		}
 
-		var pref calendarPreferenceModel
+		var pref postgres.CalendarPreferenceModel
 		err := tx.Where("calendar_id = ?", id).First(&pref).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
 			return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
 		}
 
 		if err == gorm.ErrRecordNotFound {
-			pref = calendarPreferenceModel{
+			pref = postgres.CalendarPreferenceModel{
 				CalendarID: id,
 			}
 			if hasColor {
@@ -197,7 +186,7 @@ func (h *CalendarHandler) resolveCalendarPreferences(ctx context.Context) (calen
 		return response, nil
 	}
 
-	var prefs []calendarPreferenceModel
+	var prefs []postgres.CalendarPreferenceModel
 	if err := h.store.DB.WithContext(ctx).Where("calendar_id IN ?", allIDs).Find(&prefs).Error; err != nil {
 		log.Printf("calendar_preferences: query failed (using defaults): %v", err)
 		return response, nil

@@ -4,25 +4,13 @@ import (
 	"context"
 	"net/http"
 	"strings"
-	"time"
-"portfolio-backend/internal/infrastructure/auth"
-"portfolio-backend/internal/infrastructure/gcalendar"
 
-"gorm.io/gorm/clause"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/gcalendar"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
+
+	"gorm.io/gorm/clause"
 )
-
-type calendarEventPublicationModel struct {
-	CalendarID        string    `gorm:"column:calendar_id;primaryKey"`
-	EventID           string    `gorm:"column:event_id;primaryKey"`
-	IsPublic          bool      `gorm:"column:is_public"`
-	PublicDescription string    `gorm:"column:public_description"`
-	CreatedAt         time.Time `gorm:"column:created_at;autoCreateTime"`
-	UpdatedAt         time.Time `gorm:"column:updated_at;autoUpdateTime"`
-}
-
-func (calendarEventPublicationModel) TableName() string {
-	return "calendar_event_publications"
-}
 
 type calendarEventPublication struct {
 	IsPublic          bool
@@ -61,7 +49,7 @@ func (h *CalendarHandler) resolveCalendarEventPublications(ctx context.Context, 
 		return publications, nil
 	}
 
-	var models []calendarEventPublicationModel
+	var models []postgres.CalendarEventPublicationModel
 	err := h.store.DB.WithContext(ctx).
 		Where("calendar_id IN ? AND event_id IN ?", calendarIDs, eventIDs).
 		Find(&models).Error
@@ -126,7 +114,7 @@ func (h *CalendarHandler) patchCalendarEventPublication(w http.ResponseWriter, r
 
 	publicDescription := strings.TrimSpace(body.PublicDescription)
 
-	model := calendarEventPublicationModel{
+	model := postgres.CalendarEventPublicationModel{
 		CalendarID:        calendarID,
 		EventID:           eventID,
 		IsPublic:          body.IsPublished,

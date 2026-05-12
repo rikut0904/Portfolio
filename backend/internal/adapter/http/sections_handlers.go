@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"gorm.io/gorm"
 )
@@ -26,50 +27,20 @@ type section struct {
 	Data json.RawMessage `json:"data"`
 }
 
-type sectionMetaModel struct {
-	ID          string `gorm:"primaryKey;column:id"`
-	SectionID   string `gorm:"column:section_id"`
-	DisplayName string `gorm:"column:displayName"`
-	TypeName    string `gorm:"column:type_name"`
-	Order       int    `gorm:"column:order"`
-	Editable    bool   `gorm:"column:editable"`
-}
-
-func (sectionMetaModel) TableName() string {
-	return "sectionMeta"
-}
-
-type sectionDataModel struct {
-	ID               string          `gorm:"primaryKey;column:id"`
-	TypeName         string          `gorm:"column:type_name"`
-	Data             json.RawMessage `gorm:"column:data;type:jsonb"`
-	DataName         string          `gorm:"column:data_name"`
-	DataHometown     string          `gorm:"column:data_hometown"`
-	DataHobbies      string          `gorm:"column:data_hobbies"`
-	DataProfileImage string          `gorm:"column:data_profileImage"`
-	DataUniversity   string          `gorm:"column:data_university"`
-	Items            json.RawMessage `gorm:"column:items;type:jsonb"`
-	Histories        json.RawMessage `gorm:"column:histories;type:jsonb"`
-}
-
-func (sectionDataModel) TableName() string {
-	return "sections"
-}
-
 func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
-	var metas []sectionMetaModel
+	var metas []postgres.SectionMetaModel
 	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
 		log.Printf("getSections meta query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
 
-	var dataList []sectionDataModel
+	var dataList []postgres.SectionDataModel
 	if err := h.store.DB.WithContext(r.Context()).Find(&dataList).Error; err != nil {
 		log.Printf("getSections data query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
 
-	dataMap := make(map[string]sectionDataModel)
+	dataMap := make(map[string]postgres.SectionDataModel)
 	for _, d := range dataList {
 		dataMap[d.ID] = d
 	}
@@ -127,7 +98,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		var count int64
-		if err := tx.Model(&sectionMetaModel{}).Where("id = ?", body.ID).Count(&count).Error; err != nil {
+		if err := tx.Model(&postgres.SectionMetaModel{}).Where("id = ?", body.ID).Count(&count).Error; err != nil {
 			return err
 		}
 		if count > 0 {
@@ -139,11 +110,11 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			orderNo = *body.Order
 		} else {
 			var maxOrder int
-			_ = tx.Model(&sectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
 			orderNo = maxOrder + 1
 		}
 
-		meta := sectionMetaModel{
+		meta := postgres.SectionMetaModel{
 			ID:          body.ID,
 			SectionID:   body.ID,
 			DisplayName: body.DisplayName,
@@ -155,7 +126,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			return err
 		}
 
-		data := sectionDataModel{
+		data := postgres.SectionDataModel{
 			ID:       body.ID,
 			TypeName: body.Type,
 			Data:     body.Data,
@@ -186,7 +157,7 @@ func (h *SectionHandler) updateSection(w http.ResponseWriter, r *http.Request, u
 	}
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		var d sectionDataModel
+		var d postgres.SectionDataModel
 		if err := tx.First(&d, "id = ?", id).Error; err != nil {
 			return err
 		}
@@ -242,7 +213,7 @@ func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request
 		writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
 		return nil
 	}
-	result := h.store.DB.WithContext(r.Context()).Model(&sectionMetaModel{}).Where("id = ?", id).Updates(updates)
+	result := h.store.DB.WithContext(r.Context()).Model(&postgres.SectionMetaModel{}).Where("id = ?", id).Updates(updates)
 	if result.Error != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to update section meta", result.Error)
 	}
@@ -257,10 +228,10 @@ func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request
 func (h *SectionHandler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).Delete(&sectionDataModel{}).Error; err != nil {
+		if err := tx.Where("id = ?", id).Delete(&postgres.SectionDataModel{}).Error; err != nil {
 			return err
 		}
-		result := tx.Where("id = ?", id).Delete(&sectionMetaModel{})
+		result := tx.Where("id = ?", id).Delete(&postgres.SectionMetaModel{})
 		if result.Error != nil {
 			return result.Error
 		}
