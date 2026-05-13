@@ -33,7 +33,7 @@ type activity struct {
 
 func (h *ActivityHandler) getActivities(w http.ResponseWriter, r *http.Request) error {
 	var models []postgres.ActivityModel
-	err := h.store.DB.WithContext(r.Context()).Order("\"order\" DESC").Find(&models).Error
+	err := h.store.DB.WithContext(r.Context()).Order("order_no DESC").Find(&models).Error
 	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch activities", err)
 	}
@@ -100,7 +100,7 @@ func (h *ActivityHandler) createActivity(w http.ResponseWriter, r *http.Request,
 	}
 	if body.Order == 0 {
 		var maxOrder int
-		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityModel{}).Select("MAX(order_no)").Scan(&maxOrder)
 		body.Order = maxOrder + 1
 	}
 	if body.Status == "" {
@@ -158,8 +158,10 @@ func (h *ActivityHandler) upsertActivityByID(w http.ResponseWriter, r *http.Requ
 	updates := make(map[string]any)
 	for k, v := range patch {
 		switch k {
-		case "title", "description", "category", "link", "image", "status", "order":
+		case "title", "description", "category", "link", "image", "status":
 			updates[k] = v
+		case "order":
+			updates["order_no"] = v
 		}
 	}
 	if len(updates) == 0 {
@@ -206,16 +208,16 @@ type activityCategory struct {
 
 func (h *ActivityHandler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
 	m := h.store.DB.WithContext(ctx).Migrator()
-	if m.HasTable("activityCategories") {
-		return "\"activityCategories\"", nil
-	}
 	if m.HasTable("activity_categories") {
 		return "activity_categories", nil
+	}
+	if m.HasTable("activityCategories") {
+		return "\"activityCategories\"", nil
 	}
 	if m.HasTable("activitycategories") {
 		return "activitycategories", nil
 	}
-	return "", errors.New("activity categories table not found")
+	return "activity_categories", nil // Default to the new standard
 }
 
 func (h *ActivityHandler) getActivityCategories(w http.ResponseWriter, r *http.Request) error {
@@ -226,7 +228,7 @@ func (h *ActivityHandler) getActivityCategories(w http.ResponseWriter, r *http.R
 	}
 
 	var models []postgres.ActivityCategoryModel
-	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("\"order\" ASC").Find(&models).Error
+	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("order_no ASC").Find(&models).Error
 	if err != nil {
 		log.Printf("getActivityCategories query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
@@ -261,7 +263,7 @@ func (h *ActivityHandler) createActivityCategory(w http.ResponseWriter, r *http.
 		orderNo = *body.Order
 	} else {
 		var maxOrder int
-		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityCategoryModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+		_ = h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityCategoryModel{}).Select("MAX(order_no)").Scan(&maxOrder)
 		orderNo = maxOrder + 1
 	}
 	m := postgres.ActivityCategoryModel{
@@ -318,8 +320,10 @@ func (h *ActivityHandler) patchActivityCategory(w http.ResponseWriter, r *http.R
 
 		updates := make(map[string]any)
 		for k, v := range patch {
-			if k == "name" || k == "order" {
-				updates[k] = v
+			if k == "name" {
+				updates["name"] = v
+			} else if k == "order" {
+				updates["order_no"] = v
 			}
 		}
 

@@ -11,15 +11,15 @@ type ProductModel struct {
 	Description  string          `gorm:"column:description;not null"`
 	Image        string          `gorm:"column:image;not null;default:''"`
 	Link         string          `gorm:"column:link;not null;default:''"`
-	GithubURL    string          `gorm:"column:githubUrl;not null;default:''"`
+	GithubURL    string          `gorm:"column:github_url;not null;default:''"`
 	Category     string          `gorm:"column:category;not null;default:''"`
 	Technologies json.RawMessage `gorm:"column:technologies;type:jsonb;not null;default:'[]'"`
 	Status       string          `gorm:"column:status;not null;default:'公開'"`
-	DeployStatus string          `gorm:"column:deployStatus;not null;default:'未公開'"`
-	CreatedYear  int             `gorm:"column:createdYear;not null"`
-	CreatedMonth int             `gorm:"column:createdMonth;not null"`
-	CreatedAt    string          `gorm:"column:createdAt;not null"`
-	UpdatedAt    time.Time       `gorm:"column:updatedAt;not null"`
+	DeployStatus string          `gorm:"column:deploy_status;not null;default:'未公開'"`
+	CreatedYear  int             `gorm:"column:created_year;not null"`
+	CreatedMonth int             `gorm:"column:created_month;not null"`
+	CreatedAt    string          `gorm:"column:created_at;not null"`
+	UpdatedAt    time.Time       `gorm:"column:updated_at;not null"`
 }
 
 func (ProductModel) TableName() string {
@@ -34,9 +34,9 @@ type ActivityModel struct {
 	Link        string    `gorm:"column:link;not null;default:''"`
 	Image       string    `gorm:"column:image;not null;default:''"`
 	Status      string    `gorm:"column:status;not null;default:'非公開'"`
-	Order       int       `gorm:"column:order;not null;default:0"`
-	CreatedAt   time.Time `gorm:"column:createdAt;autoCreateTime"`
-	UpdatedAt   time.Time `gorm:"column:updatedAt;autoUpdateTime"`
+	Order       int       `gorm:"column:order_no;not null;default:0"`
+	CreatedAt   time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt   time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }
 
 func (ActivityModel) TableName() string {
@@ -46,20 +46,20 @@ func (ActivityModel) TableName() string {
 type ActivityCategoryModel struct {
 	ID        string    `gorm:"primaryKey;column:id"`
 	Name      string    `gorm:"column:name;uniqueIndex;not null"`
-	Order     int       `gorm:"column:order;not null;default:0"`
-	CreatedAt time.Time `gorm:"column:createdAt;autoCreateTime"`
+	Order     int       `gorm:"column:order_no;not null;default:0"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
 }
 
 func (ActivityCategoryModel) TableName() string {
-	return "activityCategories"
+	return "activity_categories"
 }
 
 type TechnologyModel struct {
 	ID        string    `gorm:"primaryKey;column:id"`
 	Name      string    `gorm:"column:name;uniqueIndex;not null"`
 	Category  string    `gorm:"column:category;not null;default:''"`
-	CreatedAt time.Time `gorm:"column:createdAt;autoCreateTime"`
-	UpdatedAt time.Time `gorm:"column:updatedAt;autoUpdateTime"`
+	CreatedAt time.Time `gorm:"column:created_at;autoCreateTime"`
+	UpdatedAt time.Time `gorm:"column:updated_at;autoUpdateTime"`
 }
 
 func (TechnologyModel) TableName() string {
@@ -103,29 +103,29 @@ type AdminLogModel struct {
 	ID        string          `gorm:"primaryKey;column:id"`
 	Action    string          `gorm:"column:action;not null"`
 	Entity    *string         `gorm:"column:entity"`
-	EntityID  *string         `gorm:"column:entityId"`
-	UserID    *string         `gorm:"column:userId"`
-	UserEmail *string         `gorm:"column:userEmail"`
+	EntityID  *string         `gorm:"column:entity_id"`
+	UserID    *string         `gorm:"column:user_id"`
+	UserEmail *string         `gorm:"column:user_email"`
 	Level     string          `gorm:"column:level;not null;default:'info'"`
 	Details   json.RawMessage `gorm:"column:details;type:jsonb"`
-	CreatedAt time.Time       `gorm:"column:createdAt;autoCreateTime"`
+	CreatedAt time.Time       `gorm:"column:created_at;autoCreateTime"`
 }
 
 func (AdminLogModel) TableName() string {
-	return "adminLogs"
+	return "admin_logs"
 }
 
 type SectionMetaModel struct {
 	ID          string `gorm:"primaryKey;column:id"`
 	SectionID   string `gorm:"column:section_id"`
-	DisplayName string `gorm:"column:displayName;not null"`
+	DisplayName string `gorm:"column:display_name;not null"`
 	TypeName    string `gorm:"column:type_name;not null"`
-	Order       int    `gorm:"column:order;not null;default:0"`
+	Order       int    `gorm:"column:order_no;not null;default:0"`
 	Editable    bool   `gorm:"column:editable;not null;default:true"`
 }
 
 func (SectionMetaModel) TableName() string {
-	return "sectionMeta"
+	return "section_meta"
 }
 
 type SectionDataModel struct {
@@ -135,7 +135,7 @@ type SectionDataModel struct {
 	DataName         string          `gorm:"column:data_name;not null;default:''"`
 	DataHometown     string          `gorm:"column:data_hometown;not null;default:''"`
 	DataHobbies      string          `gorm:"column:data_hobbies;not null;default:''"`
-	DataProfileImage string          `gorm:"column:data_profileImage;not null;default:''"`
+	DataProfileImage string          `gorm:"column:data_profile_image;not null;default:''"`
 	DataUniversity   string          `gorm:"column:data_university;not null;default:''"`
 	Items            json.RawMessage `gorm:"column:items;type:jsonb;not null;default:'[]'"`
 	Histories        json.RawMessage `gorm:"column:histories;type:jsonb;not null;default:'[]'"`

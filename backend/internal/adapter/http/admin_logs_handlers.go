@@ -64,12 +64,12 @@ func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _
 	query := h.store.DB.WithContext(r.Context())
 	if cursorParam != "" {
 		if c, ok := decodeCursor(cursorParam); ok {
-			query = query.Where(`("createdAt", id) < (?, ?)`, c.CreatedAt, c.ID)
+			query = query.Where(`(created_at, id) < (?, ?)`, c.CreatedAt, c.ID)
 		}
 	}
 
 	var models []postgres.AdminLogModel
-	if err := query.Order(`"createdAt" DESC, id DESC`).Limit(limit).Find(&models).Error; err != nil {
+	if err := query.Order("created_at DESC, id DESC").Limit(limit).Find(&models).Error; err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch admin logs", err)
 	}
 

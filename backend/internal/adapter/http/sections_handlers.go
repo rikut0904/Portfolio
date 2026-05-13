@@ -29,7 +29,7 @@ type section struct {
 
 func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
 	var metas []postgres.SectionMetaModel
-	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
+	if err := h.store.DB.WithContext(r.Context()).Order("order_no ASC").Find(&metas).Error; err != nil {
 		log.Printf("getSections meta query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
@@ -110,7 +110,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			orderNo = *body.Order
 		} else {
 			var maxOrder int
-			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
+			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(order_no)").Scan(&maxOrder)
 			orderNo = maxOrder + 1
 		}
 
@@ -200,11 +200,11 @@ func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request
 	for k, v := range patch {
 		switch k {
 		case "displayName":
-			updates["displayName"] = v
+			updates["display_name"] = v
 		case "type":
 			updates["type_name"] = v
 		case "order":
-			updates["order"] = v
+			updates["order_no"] = v
 		case "editable":
 			updates["editable"] = v
 		}
