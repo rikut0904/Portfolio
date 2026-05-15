@@ -3,7 +3,6 @@ package httpapi
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"

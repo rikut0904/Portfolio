@@ -1,13 +1,10 @@
 package httpapi
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"

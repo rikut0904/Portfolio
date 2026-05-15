@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	domain "portfolio-backend/internal/domain/product"
