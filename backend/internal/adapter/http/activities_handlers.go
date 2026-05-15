@@ -204,29 +204,9 @@ type activityCategory struct {
 	CreatedAt string `json:"createdAt"`
 }
 
-func (h *ActivityHandler) resolveActivityCategoryTable(ctx context.Context) (string, error) {
-	m := h.store.DB.WithContext(ctx).Migrator()
-	if m.HasTable("activity_categories") {
-		return "activity_categories", nil
-	}
-	if m.HasTable("activityCategories") {
-		return "\"activityCategories\"", nil
-	}
-	if m.HasTable("activitycategories") {
-		return "activitycategories", nil
-	}
-	return "activity_categories", nil // Default to the new standard
-}
-
 func (h *ActivityHandler) getActivityCategories(w http.ResponseWriter, r *http.Request) error {
-	tableName, err := h.resolveActivityCategoryTable(r.Context())
-	if err != nil {
-		log.Printf("getActivityCategories resolve table error: %v", err)
-		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
-	}
-
 	var models []postgres.ActivityCategoryModel
-	err = h.store.DB.WithContext(r.Context()).Table(tableName).Order("\"order\" ASC").Find(&models).Error
+	err := h.store.DB.WithContext(r.Context()).Model(&postgres.ActivityCategoryModel{}).Order("\"order\" ASC").Find(&models).Error
 	if err != nil {
 		log.Printf("getActivityCategories query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch categories", err)
@@ -312,7 +292,7 @@ func (h *ActivityHandler) patchActivityCategory(w http.ResponseWriter, r *http.R
 
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		var old postgres.ActivityCategoryModel
-		if err := tx.First(&old, "id = ?", id).Error; err != nil {
+		if err := tx.Model(&postgres.ActivityCategoryModel{}).First(&old, "id = ?", id).Error; err != nil {
 			return err
 		}
 
