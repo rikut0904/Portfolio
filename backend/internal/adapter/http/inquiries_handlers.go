@@ -135,29 +135,43 @@ func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) e
 		Status:       "pending",
 	}
 
+	// 1. Database Transaction (Save inquiry only)
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Create(&inquiry).Error; err != nil {
 			return err
 		}
+		return nil
+	})
 
-		if category == "mtg" {
-			calendarSummary := "MTG"
-			if strings.TrimSpace(contactName) != "" {
-				calendarSummary = strings.TrimSpace(contactName) + "-MTG"
-			}
-			calendarDescription := strings.TrimSpace(strings.Join([]string{
-				"MTG詳細",
-				message,
-			}, "\n"))
-			calendarEvent, err := h.calendar.CreateEvent(r.Context(), gcalendar.CreateEventInput{
-				Summary:     calendarSummary,
-				Description: calendarDescription,
-				Start:       requestedStart,
-				End:         requestedEnd,
-			})
-			if err != nil {
-				return err
-			}
+	if err != nil {
+		log.Printf("failed to create inquiry: %v", err)
+		if err.Error() == "conflict" {
+			return NewAppError(http.StatusConflict, "Section with this ID already exists", err)
+		}
+		return NewAppError(http.StatusInternalServerError, "Failed to create inquiry", err)
+	}
+
+	// 2. External API Call (Google Calendar) - OUTSIDE Transaction
+	if category == "mtg" {
+		calendarSummary := "MTG"
+		if strings.TrimSpace(contactName) != "" {
+			calendarSummary = strings.TrimSpace(contactName) + "-MTG"
+		}
+		calendarDescription := strings.TrimSpace(strings.Join([]string{
+			"MTG詳細",
+			message,
+		}, "\n"))
+
+		calendarEvent, err := h.calendar.CreateEvent(r.Context(), gcalendar.CreateEventInput{
+			Summary:     calendarSummary,
+			Description: calendarDescription,
+			Start:       requestedStart,
+			End:         requestedEnd,
+		})
+		if err != nil {
+			// Log error but don't fail the whole request since DB record is already saved
+			log.Printf("Warning: failed to create calendar event: %v", err)
+		} else {
 			h.calendarCache.clearEvents()
 			calendarEventURL = buildGoogleCalendarTemplateURL(
 				calendarSummary,
@@ -169,14 +183,9 @@ func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) e
 				calendarEventURL = calendarEvent.HTMLLink
 			}
 		}
-		return nil
-	})
-
-	if err != nil {
-		log.Printf("failed to create inquiry: %v", err)
-		return NewAppError(http.StatusInternalServerError, "Failed to create inquiry", err)
 	}
 
+	// 3. Post-processing (Notifications, etc.)
 	threadURL := h.buildContactLink(inquiry.ThreadID)
 	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
 		ID:                inquiry.ID,
