@@ -15,6 +15,7 @@ import (
 	"portfolio-backend/internal/infrastructure/mail"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -326,7 +327,7 @@ func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Reque
 		return NewAppError(http.StatusBadRequest, "message is required", nil)
 	}
 
-	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
+	replyID := uuid.New().String()
 
 	var inquiry postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
@@ -418,7 +419,7 @@ func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, us
 	if strings.TrimSpace(user.Email) != "" {
 		senderName = user.Email
 	}
-	replyID := fmt.Sprintf("%d", time.Now().UnixNano())
+	replyID := uuid.New().String()
 
 	var inquiry postgres.InquiryModel
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {

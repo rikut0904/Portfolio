@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.7
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.59.1
+	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.15.2
 	google.golang.org/api v0.247.0
 	gorm.io/driver/postgres v1.6.0
@@ -52,7 +53,6 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.15.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect

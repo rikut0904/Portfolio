@@ -8,6 +8,8 @@ import (
 
 	domain "portfolio-backend/internal/domain/product"
 	productusecase "portfolio-backend/internal/usecase/product"
+
+	"github.com/google/uuid"
 )
 
 type ProductRepository struct {
@@ -32,7 +34,7 @@ func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) 
 }
 
 func (r *ProductRepository) Create(ctx context.Context, input domain.Payload, now time.Time) (domain.Product, error) {
-	id := fmt.Sprintf("product_%d", now.UnixNano())
+	id := uuid.New().String()
 	createdAt := now.UTC().Format(time.RFC3339)
 	techs, _ := json.Marshal(input.Techs)
 

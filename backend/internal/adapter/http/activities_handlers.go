@@ -12,6 +12,7 @@ import (
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -106,7 +107,7 @@ func (h *ActivityHandler) createActivity(w http.ResponseWriter, r *http.Request,
 	if body.Status == "" {
 		body.Status = "非公開"
 	}
-	id := fmt.Sprintf("activity_%d", time.Now().UnixNano())
+	id := uuid.New().String()
 	m := postgres.ActivityModel{
 		ID:          id,
 		Title:       body.Title,
@@ -245,7 +246,7 @@ func (h *ActivityHandler) createActivityCategory(w http.ResponseWriter, r *http.
 		orderNo = maxOrder + 1
 	}
 	m := postgres.ActivityCategoryModel{
-		ID:    fmt.Sprintf("activity_category_%d", time.Now().UnixNano()),
+		ID:    uuid.New().String(),
 		Name:  body.Name,
 		Order: orderNo,
 	}

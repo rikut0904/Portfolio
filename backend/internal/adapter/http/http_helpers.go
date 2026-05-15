@@ -13,6 +13,8 @@ import (
 
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
+
+	"github.com/google/uuid"
 )
 
 type AppError struct {
@@ -141,7 +143,7 @@ func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, le
 	}
 
 	logEntry := postgres.AdminLogModel{
-		ID:        fmt.Sprintf("log_%d", time.Now().UnixNano()),
+		ID:        uuid.New().String(),
 		Action:    action,
 		Entity:    ptr(entity),
 		EntityID:  ptr(entityID),

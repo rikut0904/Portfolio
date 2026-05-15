@@ -7,6 +7,8 @@ import (
 
 	domain "portfolio-backend/internal/domain/technology"
 	technologyusecase "portfolio-backend/internal/usecase/technology"
+
+	"github.com/google/uuid"
 )
 
 type TechnologyRepository struct {
@@ -45,7 +47,7 @@ func (r *TechnologyRepository) Create(ctx context.Context, input domain.Payload,
 	}
 
 	model := TechnologyModel{
-		ID:        fmt.Sprintf("tech_%d", now.UnixNano()),
+		ID:        uuid.New().String(),
 		Name:      input.Name,
 		Category:  input.Category,
 		CreatedAt: now,
