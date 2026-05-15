@@ -29,7 +29,7 @@ type section struct {
 
 func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
 	var metas []postgres.SectionMetaModel
-	if err := h.store.DB.WithContext(r.Context()).Order("order_no ASC").Find(&metas).Error; err != nil {
+	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
 		log.Printf("getSections meta query error: %v", err)
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
@@ -64,7 +64,7 @@ func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) err
 		}
 
 		if d, ok := dataMap[lookupID]; ok {
-			s.Data = buildSectionData(d.Data, d.Items, d.Histories, s.Meta.Type, d.DataName, d.DataHometown, d.DataHobbies, d.DataProfileImage, d.DataUniversity)
+			s.Data = buildSectionData(d.Data, d.Items, d.Histories, s.Meta.Type)
 		} else {
 			s.Data = json.RawMessage(`{}`)
 		}
@@ -110,7 +110,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			orderNo = *body.Order
 		} else {
 			var maxOrder int
-			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(order_no)").Scan(&maxOrder)
+			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
 			orderNo = maxOrder + 1
 		}
 
@@ -126,12 +126,36 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			return err
 		}
 
-		data := postgres.SectionDataModel{
+		dataModel := postgres.SectionDataModel{
 			ID:       body.ID,
 			TypeName: body.Type,
-			Data:     body.Data,
+			Data:     json.RawMessage(`{}`),
+			Items:    json.RawMessage(`[]`),
+			Histories: json.RawMessage(`[]`),
 		}
-		if err := tx.Create(&data).Error; err != nil {
+
+		// Extract fields from body.Data if provided
+		if len(body.Data) > 0 {
+			var m map[string]any
+			_ = json.Unmarshal(body.Data, &m)
+			
+			if items, ok := m["items"]; ok {
+				b, _ := json.Marshal(items)
+				dataModel.Items = json.RawMessage(b)
+				delete(m, "items")
+			}
+			if histories, ok := m["histories"]; ok {
+				b, _ := json.Marshal(histories)
+				dataModel.Histories = json.RawMessage(b)
+				delete(m, "histories")
+			}
+			if len(m) > 0 {
+				b, _ := json.Marshal(m)
+				dataModel.Data = json.RawMessage(b)
+			}
+		}
+
+		if err := tx.Create(&dataModel).Error; err != nil {
 			return err
 		}
 		return nil
@@ -162,20 +186,43 @@ func (h *SectionHandler) updateSection(w http.ResponseWriter, r *http.Request, u
 			return err
 		}
 
-		var currentData map[string]any
-		if len(d.Data) > 0 {
-			_ = json.Unmarshal(d.Data, &currentData)
-		}
-		if currentData == nil {
-			currentData = make(map[string]any)
+		updates := make(map[string]any)
+
+		// Handle 'items' field
+		if items, ok := patch["items"]; ok {
+			b, _ := json.Marshal(items)
+			updates["items"] = json.RawMessage(b)
+			delete(patch, "items")
 		}
 
-		for k, v := range patch {
-			currentData[k] = v
+		// Handle 'histories' field
+		if histories, ok := patch["histories"]; ok {
+			b, _ := json.Marshal(histories)
+			updates["histories"] = json.RawMessage(b)
+			delete(patch, "histories")
 		}
 
-		newData, _ := json.Marshal(currentData)
-		return tx.Model(&d).Update("data", newData).Error
+		// Handle remaining fields in 'data' column
+		if len(patch) > 0 {
+			var currentData map[string]any
+			if len(d.Data) > 0 {
+				_ = json.Unmarshal(d.Data, &currentData)
+			}
+			if currentData == nil {
+				currentData = make(map[string]any)
+			}
+			for k, v := range patch {
+				currentData[k] = v
+			}
+			newData, _ := json.Marshal(currentData)
+			updates["data"] = json.RawMessage(newData)
+		}
+
+		if len(updates) == 0 {
+			return nil
+		}
+
+		return tx.Model(&d).Updates(updates).Error
 	})
 
 	if err != nil {
@@ -200,11 +247,11 @@ func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request
 	for k, v := range patch {
 		switch k {
 		case "displayName":
-			updates["display_name"] = v
+			updates["displayName"] = v
 		case "type":
 			updates["type_name"] = v
 		case "order":
-			updates["order_no"] = v
+			updates["order"] = v
 		case "editable":
 			updates["editable"] = v
 		}
@@ -259,7 +306,7 @@ func normalizeSectionType(v string) string {
 	return v
 }
 
-func buildSectionData(raw, items, histories []byte, sectionType, name, hometown, hobbies, profileImage, university string) json.RawMessage {
+func buildSectionData(raw, items, histories []byte, sectionType string) json.RawMessage {
 	data := make(map[string]any)
 	if len(raw) > 0 {
 		_ = json.Unmarshal(raw, &data)
@@ -270,21 +317,7 @@ func buildSectionData(raw, items, histories []byte, sectionType, name, hometown,
 
 	switch sectionType {
 	case "profile":
-		if name != "" {
-			data["name"] = name
-		}
-		if hometown != "" {
-			data["hometown"] = hometown
-		}
-		if hobbies != "" {
-			data["hobbies"] = hobbies
-		}
-		if profileImage != "" {
-			data["profileImage"] = profileImage
-		}
-		if university != "" {
-			data["university"] = university
-		}
+		// Data is already in 'raw' (merged into 'data' map)
 	case "list", "categorized":
 		var itms []any
 		if len(items) > 0 {

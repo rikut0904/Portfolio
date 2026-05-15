@@ -18,40 +18,25 @@ export default function ProfileSectionForm({
   const rawProfileData = formData.data || formData;
   const getString = (value: unknown) =>
     typeof value === "string" ? value : undefined;
+  
   const profileData: Record<string, string | undefined> = {
     name: getString(rawProfileData?.name) || "",
-    hometown:
-      getString(rawProfileData?.hometown) ||
-      getString(rawProfileData?.from) ||
-      "",
+    hometown: getString(rawProfileData?.hometown) || "",
     hobbies: getString(rawProfileData?.hobbies) || "",
-    university:
-      getString(rawProfileData?.university) ||
-      getString(rawProfileData?.affiliation) ||
-      "",
-    profileImage:
-      getString(rawProfileData?.profileImage) ||
-      getString(rawProfileData?.imageUrl) ||
-      "",
+    affiliation: getString(rawProfileData?.affiliation) || getString(rawProfileData?.university) || "",
+    profileImage: getString(rawProfileData?.profileImage) || "",
   };
 
   const updateProfileData = (field: string, value: string) => {
-    const normalizedPatch =
-      field === "hometown"
-        ? { hometown: value, from: value }
-        : field === "university"
-          ? { university: value, affiliation: value }
-          : field === "profileImage"
-            ? { profileImage: value, imageUrl: value }
-            : { [field]: value };
+    const patch = { [field]: value };
 
     if (formData.data) {
       setFormData({
         ...formData,
-        data: { ...formData.data, ...normalizedPatch },
+        data: { ...formData.data, ...patch },
       });
     } else {
-      setFormData({ ...formData, ...normalizedPatch });
+      setFormData({ ...formData, ...patch });
     }
   };
 
@@ -74,7 +59,7 @@ export default function ProfileSectionForm({
         </label>
         <input
           type="text"
-          value={profileData.hometown || profileData.from || ""}
+          value={profileData.hometown || ""}
           onChange={(e) => updateProfileData("hometown", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         />
@@ -96,8 +81,8 @@ export default function ProfileSectionForm({
         </label>
         <input
           type="text"
-          value={profileData.university || profileData.affiliation || ""}
-          onChange={(e) => updateProfileData("university", e.target.value)}
+          value={profileData.affiliation || ""}
+          onChange={(e) => updateProfileData("affiliation", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
         />
       </div>
@@ -107,7 +92,7 @@ export default function ProfileSectionForm({
         </label>
         <input
           type="text"
-          value={profileData.profileImage || profileData.imageUrl || ""}
+          value={profileData.profileImage || ""}
           onChange={(e) => updateProfileData("profileImage", e.target.value)}
           className="w-full px-3 py-2 border border-gray-300 rounded-md"
           placeholder="/img/profile.jpg"

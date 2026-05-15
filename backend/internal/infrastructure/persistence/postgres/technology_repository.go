@@ -74,9 +74,9 @@ func (r *TechnologyRepository) Update(ctx context.Context, id string, input doma
 	}
 
 	result := r.store.DB.WithContext(ctx).Model(&TechnologyModel{}).Where("id = ?", id).Updates(map[string]any{
-		"name":       input.Name,
-		"category":   input.Category,
-		"updated_at": time.Now(),
+		"name":      input.Name,
+		"category":  input.Category,
+		"updatedAt": time.Now(),
 	})
 	if result.Error != nil {
 		return result.Error

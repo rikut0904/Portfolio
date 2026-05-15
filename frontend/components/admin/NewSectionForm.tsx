@@ -55,7 +55,7 @@ export default function NewSectionForm({
       switch (type) {
         case "list":
           initialData = {
-            lists: [],
+            items: [],
           };
           break;
         case "history":

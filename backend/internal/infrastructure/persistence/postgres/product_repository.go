@@ -63,18 +63,18 @@ func (r *ProductRepository) Create(ctx context.Context, input domain.Payload, no
 func (r *ProductRepository) Update(ctx context.Context, id string, input domain.Payload, _ time.Time) error {
 	techs, _ := json.Marshal(input.Techs)
 	updates := map[string]any{
-		"title":         input.Title,
-		"description":   input.Description,
-		"image":         input.Image,
-		"link":          input.Link,
-		"github_url":    input.GithubURL,
-		"category":      input.Category,
-		"technologies":  techs,
-		"status":        input.Status,
-		"deploy_status": input.Deploy,
-		"created_year":  input.CreatedYear,
-		"created_month": input.CreatedMon,
-		"updated_at":    time.Now(),
+		"title":        input.Title,
+		"description":  input.Description,
+		"image":        input.Image,
+		"link":         input.Link,
+		"githubUrl":    input.GithubURL,
+		"category":     input.Category,
+		"technologies": techs,
+		"status":       input.Status,
+		"deployStatus": input.Deploy,
+		"createdYear":  input.CreatedYear,
+		"createdMonth": input.CreatedMon,
+		"updatedAt":    time.Now(),
 	}
 
 	result := r.store.DB.WithContext(ctx).Model(&ProductModel{}).Where("id = ?", id).Updates(updates)

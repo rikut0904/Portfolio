@@ -78,9 +78,9 @@ export function useProductManagement() {
       const token = await user.getIdToken();
       const dataToSave = {
         ...formData,
-        image: formData.image.startsWith("/img/product/")
-          ? formData.image
-          : `/img/product/${formData.image}`,
+        image: formData.image 
+          ? (formData.image.startsWith("/img/product/") ? formData.image : `/img/product/${formData.image}`)
+          : "",
       };
 
       if (editingProduct) {

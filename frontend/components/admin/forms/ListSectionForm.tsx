@@ -6,8 +6,8 @@ interface ListItem {
 }
 
 interface ListSectionFormProps {
-  formData: { lists?: ListItem[] };
-  setFormData: (data: { lists?: ListItem[] }) => void;
+  formData: { items?: ListItem[] };
+  setFormData: (data: { items?: ListItem[] }) => void;
 }
 
 const normalizeItems = (
@@ -26,14 +26,14 @@ export default function ListSectionForm({
   formData,
   setFormData,
 }: ListSectionFormProps) {
-  const lists = Array.isArray(formData.lists) ? formData.lists : [];
+  const lists = Array.isArray(formData.items) ? formData.items : [];
 
   const commitLists = (
     nextLists: Array<{ title: string; items: string[] }>,
   ) => {
     setFormData({
       ...formData,
-      lists: nextLists.map((list) => ({
+      items: nextLists.map((list) => ({
         title: list.title,
         items: list.items,
       })),
