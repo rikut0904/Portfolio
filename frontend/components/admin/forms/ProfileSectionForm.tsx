@@ -23,10 +23,7 @@ export default function ProfileSectionForm({
     name: getString(rawProfileData?.name) || "",
     hometown: getString(rawProfileData?.hometown) || "",
     hobbies: getString(rawProfileData?.hobbies) || "",
-    affiliation:
-      getString(rawProfileData?.affiliation) ||
-      getString(rawProfileData?.university) ||
-      "",
+    affiliation: getString(rawProfileData?.affiliation) || "",
     profileImage: getString(rawProfileData?.profileImage) || "",
   };
 

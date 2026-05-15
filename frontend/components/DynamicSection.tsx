@@ -97,7 +97,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       data?.data && typeof data.data === "object" ? data.data : null;
     const singleData: ProfileData = nested || data || {};
     const profileImageSrc = singleData.profileImage || "";
-    const affiliation = singleData.affiliation || singleData.university || "";
+    const affiliation = singleData.affiliation || "";
 
     return (
       <FadeInSection>
