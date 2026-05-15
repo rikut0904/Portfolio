@@ -8,14 +8,15 @@ import (
 	"syscall"
 	"time"
 
-	"portfolio-backend/internal/api"
-	"portfolio-backend/internal/auth"
-	"portfolio-backend/internal/config"
-	"portfolio-backend/internal/discord"
-	"portfolio-backend/internal/gcalendar"
-	"portfolio-backend/internal/mail"
-	"portfolio-backend/internal/migrations"
-	"portfolio-backend/internal/store"
+	httpapi "portfolio-backend/internal/adapter/http"
+	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/config"
+	"portfolio-backend/internal/infrastructure/discord"
+	"portfolio-backend/internal/infrastructure/gcalendar"
+	"portfolio-backend/internal/infrastructure/mail"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	productusecase "portfolio-backend/internal/usecase/product"
+	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
 func main() {
@@ -27,29 +28,11 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	st, err := store.New(ctx, cfg.DatabaseURL)
+	st, err := postgres.New(ctx, cfg.DatabaseURL, cfg.SkipDBMigration)
 	if err != nil {
 		log.Fatalf("db error: %v", err)
 	}
 	defer st.Close()
-	if err := migrations.RunCalendarPreferences(ctx, st.Pool); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarPreferencesLabel(ctx, st.Pool); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarEventPublications(ctx, st.Pool); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if err := migrations.RunCalendarEventPublicationContent(ctx, st.Pool); err != nil {
-		log.Fatalf("migration error: %v", err)
-	}
-	if cfg.RunInquiryThreadMigration {
-		if err := migrations.RunInquiryThreads(ctx, st.Pool); err != nil {
-			log.Fatalf("migration error: %v", err)
-		}
-		log.Printf("applied inquiry thread migration")
-	}
 
 	verifier, err := auth.NewVerifier(ctx, cfg.FirebaseCredentials, cfg.FirebaseProjectID, cfg.AdminEmails, cfg.AdminUIDs)
 	if err != nil {
@@ -90,22 +73,47 @@ func main() {
 		cfg.GoogleCalendarTimezone,
 	)
 
-	handler := api.NewHandler(
-		st,
-		verifier,
-		mailer,
-		discordClient,
-		cfg.FirebaseWebAPIKey,
-		cfg.AppBaseURL,
-		cfg.MailTo,
-		cfg.AppMode,
-		cfg.GitHubToken,
-		cfg.GitHubOwner,
-		cfg.GitHubRepo,
-		cfg.GitHubBranch,
-		calendarClient,
-	)
-	router := api.NewRouter(cfg, handler)
+	productRepository := postgres.NewProductRepository(st)
+	productUsecase := productusecase.New(productRepository)
+	technologyRepository := postgres.NewTechnologyRepository(st)
+	technologyUsecase := technologyusecase.New(technologyRepository)
+
+	handler := httpapi.NewHandler(httpapi.HandlerConfig{
+		Store:             st,
+		Products:          productUsecase,
+		Technologies:      technologyUsecase,
+		Verifier:          verifier,
+		Mailer:            mailer,
+		Discord:           discordClient,
+		FirebaseWebAPIKey: cfg.FirebaseWebAPIKey,
+		AppBaseURL:        cfg.AppBaseURL,
+		MailTo:            cfg.MailTo,
+		AppMode:           cfg.AppMode,
+		GitHubToken:       cfg.GitHubToken,
+		GitHubOwner:       cfg.GitHubOwner,
+		GitHubRepo:        cfg.GitHubRepo,
+		GitHubBranch:      cfg.GitHubBranch,
+		Calendar:          calendarClient,
+	})
+	router := httpapi.NewRouter(cfg, handler)
+
+	// Start background maintenance tasks
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				if err := st.CleanupOldAdminLogs(cleanupCtx); err != nil {
+					log.Printf("background maintenance error: %v", err)
+				}
+				cancel()
+			}
+		}
+	}()
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

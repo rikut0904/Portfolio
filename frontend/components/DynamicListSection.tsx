@@ -18,7 +18,7 @@ interface SectionsResponse {
   sections?: Array<{
     id: string;
     meta?: { displayName?: string };
-    data?: { lists?: ListItem[] };
+    data?: { items?: ListItem[] };
   }>;
 }
 
@@ -36,9 +36,10 @@ export default function DynamicListSection({
         const response = await fetch("/api/sections");
         const data: SectionsResponse = await response.json();
         const section = data.sections?.find((s) => s.id === sectionId);
-        if (section?.data?.lists) {
-          setListData(section.data.lists);
-          if (section.meta?.displayName) {
+        const fetchedItems = section?.data?.items;
+        if (fetchedItems) {
+          setListData(fetchedItems);
+          if (section?.meta?.displayName) {
             setTitle(section.meta.displayName);
           }
         }

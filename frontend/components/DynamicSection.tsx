@@ -96,8 +96,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     const nested =
       data?.data && typeof data.data === "object" ? data.data : null;
     const singleData: ProfileData = nested || data || {};
-    const profileImageSrc =
-      singleData.profileImage || singleData.imageUrl || "";
+    const profileImageSrc = singleData.profileImage || "";
+    const affiliation = singleData.affiliation || "";
+
     return (
       <FadeInSection>
         <section id={section.id}>
@@ -114,13 +115,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
             )}
             <div>
               {singleData.name && <h3>名前：{singleData.name}</h3>}
-              {(singleData.hometown || singleData.from) && (
-                <p>出身：{singleData.hometown || singleData.from}</p>
-              )}
+              {singleData.hometown && <p>出身：{singleData.hometown}</p>}
               {singleData.hobbies && <p>趣味：{singleData.hobbies}</p>}
-              {(singleData.university || singleData.affiliation) && (
-                <p>{singleData.university || singleData.affiliation}</p>
-              )}
+              {affiliation && <p>{affiliation}</p>}
             </div>
           </div>
         </section>
@@ -195,17 +192,17 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
   // 新しい管理画面形式（list, history）に対応
   const renderList = () => {
-    const lists = data?.lists || [];
+    const lists = data?.items || data?.lists || [];
     return (
       <FadeInSection>
         <section id={section.id}>
           <h2>{meta.displayName}</h2>
           <div className="grid-card">
-            {lists.map((list, index: number) => (
+            {lists.map((list: any, index: number) => (
               <div key={index} className="card">
                 <h3>{list.title}</h3>
                 <ol>
-                  {list.items?.map((item, itemIndex: number) => (
+                  {list.items?.map((item: any, itemIndex: number) => (
                     <li key={itemIndex}>
                       {typeof item === "string" ? item : item?.text || ""}
                     </li>

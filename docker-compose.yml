@@ -8,6 +8,12 @@ services:
       - ./backend/.env
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/app-mode"]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 10s
 
   frontend:
     build:
@@ -17,6 +23,7 @@ services:
     env_file:
       - ./frontend/.env
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "3001:3001"
