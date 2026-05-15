@@ -166,6 +166,9 @@ func New(ctx context.Context, databaseURL string, skipMigration bool) (*Store, e
 			}
 
 			if m.HasTable("activities") {
+				// Clean up invalid image paths
+				tx.Exec(`UPDATE activities SET image = '' WHERE image = '/img/activity/' OR image IS NULL`)
+
 				tx.Exec(`UPDATE activities SET 
 					description = COALESCE(description, ''),
 					link = COALESCE(link, ''),
@@ -283,7 +286,6 @@ func New(ctx context.Context, databaseURL string, skipMigration bool) (*Store, e
 	} else {
 		log.Println("Database migration skipped by configuration.")
 	}
-
 
 	return &Store{DB: db}, nil
 }

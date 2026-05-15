@@ -18,12 +18,15 @@ export default function ProfileSectionForm({
   const rawProfileData = formData.data || formData;
   const getString = (value: unknown) =>
     typeof value === "string" ? value : undefined;
-  
+
   const profileData: Record<string, string | undefined> = {
     name: getString(rawProfileData?.name) || "",
     hometown: getString(rawProfileData?.hometown) || "",
     hobbies: getString(rawProfileData?.hobbies) || "",
-    affiliation: getString(rawProfileData?.affiliation) || getString(rawProfileData?.university) || "",
+    affiliation:
+      getString(rawProfileData?.affiliation) ||
+      getString(rawProfileData?.university) ||
+      "",
     profileImage: getString(rawProfileData?.profileImage) || "",
   };
 

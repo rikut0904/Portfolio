@@ -127,10 +127,10 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 		}
 
 		dataModel := postgres.SectionDataModel{
-			ID:       body.ID,
-			TypeName: body.Type,
-			Data:     json.RawMessage(`{}`),
-			Items:    json.RawMessage(`[]`),
+			ID:        body.ID,
+			TypeName:  body.Type,
+			Data:      json.RawMessage(`{}`),
+			Items:     json.RawMessage(`[]`),
 			Histories: json.RawMessage(`[]`),
 		}
 
@@ -138,7 +138,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 		if len(body.Data) > 0 {
 			var m map[string]any
 			_ = json.Unmarshal(body.Data, &m)
-			
+
 			if items, ok := m["items"]; ok {
 				b, _ := json.Marshal(items)
 				dataModel.Items = json.RawMessage(b)

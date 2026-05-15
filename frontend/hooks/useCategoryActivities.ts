@@ -78,17 +78,24 @@ export function useCategoryActivities(categoryId: string) {
       const token = await user.getIdToken();
       const maxOrder = Math.max(...activities.map((a) => a.order), 0);
 
+      const dataToSave = {
+        ...formData,
+        image: formData.image
+          ? formData.image.startsWith("/img/activity/")
+            ? formData.image
+            : `/img/activity/${formData.image}`
+          : "",
+        category: category.name,
+        order: maxOrder + 1,
+      };
+
       const response = await fetch("/api/activities", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...formData,
-          category: category.name,
-          order: maxOrder + 1,
-        }),
+        body: JSON.stringify(dataToSave),
       });
 
       if (response.ok) {
@@ -116,13 +123,23 @@ export function useCategoryActivities(categoryId: string) {
 
     try {
       const token = await user.getIdToken();
+
+      const dataToSave = {
+        ...formData,
+        image: formData.image
+          ? formData.image.startsWith("/img/activity/")
+            ? formData.image
+            : `/img/activity/${formData.image}`
+          : "",
+      };
+
       const response = await fetch(`/api/activities/${activityId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(dataToSave),
       });
 
       if (response.ok) {

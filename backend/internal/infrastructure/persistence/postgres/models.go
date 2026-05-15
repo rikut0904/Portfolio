@@ -89,10 +89,10 @@ type InquiryReplyModel struct {
 	Inquiry     InquiryModel `gorm:"foreignKey:InquiryID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 	ThreadID    string       `gorm:"column:thread_id;not null;index"`
 	SenderType  string       `gorm:"column:sender_type;not null"`
-	SenderName  string    `gorm:"column:sender_name;not null;default:''"`
-	SenderEmail string    `gorm:"column:sender_email;not null;default:''"`
-	Message     string    `gorm:"column:message;not null"`
-	CreatedAt   time.Time `gorm:"column:createdAt;autoCreateTime"`
+	SenderName  string       `gorm:"column:sender_name;not null;default:''"`
+	SenderEmail string       `gorm:"column:sender_email;not null;default:''"`
+	Message     string       `gorm:"column:message;not null"`
+	CreatedAt   time.Time    `gorm:"column:createdAt;autoCreateTime"`
 }
 
 func (InquiryReplyModel) TableName() string {
@@ -135,7 +135,6 @@ type SectionDataModel struct {
 	Items     json.RawMessage `gorm:"column:items;type:jsonb;not null;default:'[]'"`
 	Histories json.RawMessage `gorm:"column:histories;type:jsonb;not null;default:'[]'"`
 }
-
 
 func (SectionDataModel) TableName() string {
 	return "sections"

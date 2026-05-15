@@ -115,13 +115,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
             )}
             <div>
               {singleData.name && <h3>名前：{singleData.name}</h3>}
-              {singleData.hometown && (
-                <p>出身：{singleData.hometown}</p>
-              )}
+              {singleData.hometown && <p>出身：{singleData.hometown}</p>}
               {singleData.hobbies && <p>趣味：{singleData.hobbies}</p>}
-              {affiliation && (
-                <p>{affiliation}</p>
-              )}
+              {affiliation && <p>{affiliation}</p>}
             </div>
           </div>
         </section>

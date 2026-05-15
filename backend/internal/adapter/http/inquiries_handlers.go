@@ -326,13 +326,13 @@ func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Reque
 		}
 
 		reply := postgres.InquiryReplyModel{
-			ID:           replyID,
-			InquiryID:    inquiry.ID,
-			ThreadID:     threadID,
-			SenderType:   "user",
-			SenderName:   inquiry.ContactName,
-			SenderEmail:  inquiry.ContactEmail,
-			Message:      message,
+			ID:          replyID,
+			InquiryID:   inquiry.ID,
+			ThreadID:    threadID,
+			SenderType:  "user",
+			SenderName:  inquiry.ContactName,
+			SenderEmail: inquiry.ContactEmail,
+			Message:     message,
 		}
 		if err := tx.Create(&reply).Error; err != nil {
 			return err
@@ -423,13 +423,13 @@ func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, us
 		}
 
 		reply := postgres.InquiryReplyModel{
-			ID:           replyID,
-			InquiryID:    inquiry.ID,
-			ThreadID:     inquiry.ThreadID,
-			SenderType:   "admin",
-			SenderName:   senderName,
-			SenderEmail:  user.Email,
-			Message:      message,
+			ID:          replyID,
+			InquiryID:   inquiry.ID,
+			ThreadID:    inquiry.ThreadID,
+			SenderType:  "admin",
+			SenderName:  senderName,
+			SenderEmail: user.Email,
+			Message:     message,
 		}
 		if err := tx.Create(&reply).Error; err != nil {
 			return err
