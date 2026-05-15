@@ -121,6 +121,20 @@ func New(ctx context.Context, databaseURL string, skipMigration bool) (*Store, e
 	return &Store{DB: db}, nil
 }
 
+func (s *Store) CleanupOldAdminLogs(ctx context.Context) error {
+	if s == nil || s.DB == nil {
+		return nil
+	}
+	result := s.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&AdminLogModel{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected > 0 {
+		log.Printf("Cleaned up %d old admin logs", result.RowsAffected)
+	}
+	return nil
+}
+
 func (s *Store) Close() {
 	if s != nil && s.DB != nil {
 		sqlDB, err := s.DB.DB()

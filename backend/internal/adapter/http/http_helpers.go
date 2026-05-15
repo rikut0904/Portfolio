@@ -152,7 +152,6 @@ func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, le
 	}
 
 	_ = h.store.DB.WithContext(ctx).Create(&logEntry)
-	_ = h.store.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&postgres.AdminLogModel{})
 }
 
 func ptr(v string) *string {

@@ -97,6 +97,24 @@ func main() {
 	})
 	router := httpapi.NewRouter(cfg, handler)
 
+	// Start background maintenance tasks
+	go func() {
+		ticker := time.NewTicker(24 * time.Hour)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				if err := st.CleanupOldAdminLogs(cleanupCtx); err != nil {
+					log.Printf("background maintenance error: %v", err)
+				}
+				cancel()
+			}
+		}
+	}()
+
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
 		Handler:      router,
