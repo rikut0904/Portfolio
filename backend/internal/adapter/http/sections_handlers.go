@@ -96,6 +96,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 		body.Data = json.RawMessage(`{}`)
 	}
 
+	var finalOrderNo int
 	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
 		var count int64
 		if err := tx.Model(&postgres.SectionMetaModel{}).Where("id = ?", body.ID).Count(&count).Error; err != nil {
@@ -105,13 +106,12 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			return errors.New("conflict")
 		}
 
-		orderNo := 0
 		if body.Order != nil {
-			orderNo = *body.Order
+			finalOrderNo = *body.Order
 		} else {
 			var maxOrder int
 			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
-			orderNo = maxOrder + 1
+			finalOrderNo = maxOrder + 1
 		}
 
 		meta := postgres.SectionMetaModel{
@@ -119,7 +119,7 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 			SectionID:   body.ID,
 			DisplayName: body.DisplayName,
 			TypeName:    body.Type,
-			Order:       orderNo,
+			Order:       finalOrderNo,
 			Editable:    true,
 		}
 		if err := tx.Create(&meta).Error; err != nil {
@@ -168,8 +168,8 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 		return NewAppError(http.StatusInternalServerError, "Failed to create section", err)
 	}
 
-	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID})
-	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": body.ID, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
+	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": finalOrderNo})
+	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": finalOrderNo, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
 	return nil
 }
 
