@@ -83,9 +83,11 @@ func NewHandler(cfg HandlerConfig) *Handler {
 	h.Activities = &ActivityHandler{BaseHandler: base}
 	h.Products = &ProductHandler{BaseHandler: base, usecase: cfg.Products}
 	h.Technologies = &TechnologyHandler{BaseHandler: base, usecase: cfg.Technologies}
-	h.Inquiries = &InquiryHandler{BaseHandler: base, calendar: cfg.Calendar, calendarCache: newCalendarAPICache()}
+
+	sharedCalendarCache := newCalendarAPICache()
+	h.Inquiries = &InquiryHandler{BaseHandler: base, calendar: cfg.Calendar, calendarCache: sharedCalendarCache}
 	h.Sections = &SectionHandler{BaseHandler: base}
-	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: newCalendarAPICache()}
+	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: sharedCalendarCache}
 	h.AdminLogs = &AdminLogHandler{BaseHandler: base}
 
 	return h

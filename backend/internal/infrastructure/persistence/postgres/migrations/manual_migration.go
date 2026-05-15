@@ -1,9 +1,9 @@
 package migrations
 
 import (
-	"log"
-	"gorm.io/gorm"
 	"fmt"
+	"gorm.io/gorm"
+	"log"
 )
 
 // RunOneTimeRefactoring migrations should only be called once or as part of a dedicated migration process.
@@ -35,15 +35,15 @@ func RunOneTimeRefactoring(db *gorm.DB) error {
 		// 2. Rename Columns BACK to PascalCase if they exist
 		columnRenames := map[string]map[string]string{
 			"products": {
-				"github_url": "githubUrl",
+				"github_url":    "githubUrl",
 				"deploy_status": "deployStatus",
-				"created_year": "createdYear",
+				"created_year":  "createdYear",
 				"created_month": "createdMonth",
-				"created_at": "createdAt",
-				"updated_at": "updatedAt",
+				"created_at":    "createdAt",
+				"updated_at":    "updatedAt",
 			},
 			"activities": {
-				"order_no": "order",
+				"order_no":   "order",
 				"created_at": "createdAt",
 				"updated_at": "updatedAt",
 			},
