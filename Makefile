@@ -86,6 +86,9 @@ fmt-frontend:
 fmt-backend:
 	cd $(BACKEND_DIR) && gofmt -w ./cmd ./internal
 
+migrate:
+	$(COMPOSE) run --rm $(BACKEND_SERVICE) /app/migrate
+
 check: fmt lint test
 
 clean:
