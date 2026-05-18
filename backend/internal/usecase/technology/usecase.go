@@ -22,19 +22,26 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type Usecase struct {
+type Usecase interface {
+	List(ctx context.Context) ([]domain.Technology, error)
+	Create(ctx context.Context, input domain.Payload) (domain.Technology, error)
+	Update(ctx context.Context, id string, input domain.Payload) error
+	Delete(ctx context.Context, id string) error
+}
+
+type interactor struct {
 	repo Repository
 }
 
-func New(repo Repository) *Usecase {
-	return &Usecase{repo: repo}
+func New(repo Repository) Usecase {
+	return &interactor{repo: repo}
 }
 
-func (u *Usecase) List(ctx context.Context) ([]domain.Technology, error) {
+func (u *interactor) List(ctx context.Context) ([]domain.Technology, error) {
 	return u.repo.List(ctx)
 }
 
-func (u *Usecase) Create(ctx context.Context, input domain.Payload) (domain.Technology, error) {
+func (u *interactor) Create(ctx context.Context, input domain.Payload) (domain.Technology, error) {
 	normalized, err := normalizePayload(input)
 	if err != nil {
 		return domain.Technology{}, err
@@ -42,7 +49,7 @@ func (u *Usecase) Create(ctx context.Context, input domain.Payload) (domain.Tech
 	return u.repo.Create(ctx, normalized, time.Now().UTC())
 }
 
-func (u *Usecase) Update(ctx context.Context, id string, input domain.Payload) error {
+func (u *interactor) Update(ctx context.Context, id string, input domain.Payload) error {
 	if strings.TrimSpace(id) == "" {
 		return ErrInvalidTechnology
 	}
@@ -53,7 +60,7 @@ func (u *Usecase) Update(ctx context.Context, id string, input domain.Payload) e
 	return u.repo.Update(ctx, id, normalized)
 }
 
-func (u *Usecase) Delete(ctx context.Context, id string) error {
+func (u *interactor) Delete(ctx context.Context, id string) error {
 	if strings.TrimSpace(id) == "" {
 		return ErrInvalidTechnology
 	}

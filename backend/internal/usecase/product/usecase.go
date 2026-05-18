@@ -22,12 +22,19 @@ type Repository interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type Usecase struct {
+type Usecase interface {
+	List(ctx context.Context, input ListInput) (ListOutput, error)
+	Create(ctx context.Context, input domain.Payload) (domain.Product, error)
+	Update(ctx context.Context, id string, input domain.Payload) error
+	Delete(ctx context.Context, id string) error
+}
+
+type interactor struct {
 	repo Repository
 }
 
-func New(repo Repository) *Usecase {
-	return &Usecase{repo: repo}
+func New(repo Repository) Usecase {
+	return &interactor{repo: repo}
 }
 
 type ListInput struct {
@@ -55,7 +62,7 @@ type Pagination struct {
 	HasMore    bool `json:"hasMore"`
 }
 
-func (u *Usecase) List(ctx context.Context, input ListInput) (ListOutput, error) {
+func (u *interactor) List(ctx context.Context, input ListInput) (ListOutput, error) {
 	input.Category = strings.TrimSpace(input.Category)
 	input.Status = strings.TrimSpace(input.Status)
 	input.DeployStatus = strings.TrimSpace(input.DeployStatus)
@@ -151,7 +158,7 @@ func (u *Usecase) List(ctx context.Context, input ListInput) (ListOutput, error)
 	}, nil
 }
 
-func (u *Usecase) Create(ctx context.Context, input domain.Payload) (domain.Product, error) {
+func (u *interactor) Create(ctx context.Context, input domain.Payload) (domain.Product, error) {
 	now := time.Now().UTC()
 	normalized, err := normalizePayload(input, now)
 	if err != nil {
@@ -160,7 +167,7 @@ func (u *Usecase) Create(ctx context.Context, input domain.Payload) (domain.Prod
 	return u.repo.Create(ctx, normalized, now)
 }
 
-func (u *Usecase) Update(ctx context.Context, id string, input domain.Payload) error {
+func (u *interactor) Update(ctx context.Context, id string, input domain.Payload) error {
 	if strings.TrimSpace(id) == "" {
 		return ErrInvalidProduct
 	}
@@ -172,7 +179,7 @@ func (u *Usecase) Update(ctx context.Context, id string, input domain.Payload) e
 	return u.repo.Update(ctx, id, normalized, now)
 }
 
-func (u *Usecase) Delete(ctx context.Context, id string) error {
+func (u *interactor) Delete(ctx context.Context, id string) error {
 	if strings.TrimSpace(id) == "" {
 		return ErrInvalidProduct
 	}

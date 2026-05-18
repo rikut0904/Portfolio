@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	v2 "portfolio-backend/internal/adapter/handler/v2"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/discord"
 	"portfolio-backend/internal/infrastructure/gcalendar"
@@ -40,12 +41,13 @@ type Handler struct {
 	Sections     *SectionHandler
 	Calendar     *CalendarHandler
 	AdminLogs    *AdminLogHandler
+	V2           *v2.Handler
 }
 
 type HandlerConfig struct {
 	Store             *postgres.Store
-	Products          *productusecase.Usecase
-	Technologies      *technologyusecase.Usecase
+	Products          productusecase.Usecase
+	Technologies      technologyusecase.Usecase
 	Verifier          *auth.Verifier
 	Mailer            *mail.Client
 	Discord           *discord.Client
@@ -90,6 +92,14 @@ func NewHandler(cfg HandlerConfig) *Handler {
 	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: sharedCalendarCache}
 	h.AdminLogs = &AdminLogHandler{BaseHandler: base}
 
+	h.V2 = v2.NewHandler(v2.HandlerConfig{
+		Store:        cfg.Store,
+		Verifier:     cfg.Verifier,
+		Products:     cfg.Products,
+		Technologies: cfg.Technologies,
+		AppMode:      cfg.AppMode,
+	})
+
 	return h
 }
 
@@ -101,13 +111,13 @@ type ActivityHandler struct {
 // ProductHandler handles product-related requests.
 type ProductHandler struct {
 	*BaseHandler
-	usecase *productusecase.Usecase
+	usecase productusecase.Usecase
 }
 
 // TechnologyHandler handles technology-related requests.
 type TechnologyHandler struct {
 	*BaseHandler
-	usecase *technologyusecase.Usecase
+	usecase technologyusecase.Usecase
 }
 
 // InquiryHandler handles inquiry and contact requests.
