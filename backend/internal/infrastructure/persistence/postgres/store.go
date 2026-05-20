@@ -16,7 +16,7 @@ type Store struct {
 	DB *gorm.DB
 }
 
-func New(ctx context.Context, databaseURL string, skipMigration bool) (*Store, error) {
+func New(ctx context.Context, databaseURL string, skipMigration bool, runInquiryThreadMigration bool) (*Store, error) {
 	// Silence slow query logs by increasing threshold to 2s and setting level to Warn
 	newLogger := logger.New(
 		log.Default(),
@@ -109,7 +109,22 @@ func New(ctx context.Context, databaseURL string, skipMigration bool) (*Store, e
 		}
 
 		// Run AutoMigration (Safe: only adds columns/tables)
-		if err := db.AutoMigrate(GetModels()...); err != nil {
+		models := GetModels()
+		if !runInquiryThreadMigration {
+			filtered := make([]any, 0, len(models))
+			for _, m := range models {
+				switch m.(type) {
+				case *InquiryModel, *InquiryReplyModel:
+					// Skip inquiry related models
+					continue
+				default:
+					filtered = append(filtered, m)
+				}
+			}
+			models = filtered
+		}
+
+		if err := db.AutoMigrate(models...); err != nil {
 			return nil, fmt.Errorf("auto migrate: %w", err)
 		}
 

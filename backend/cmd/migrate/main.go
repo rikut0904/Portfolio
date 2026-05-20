@@ -21,7 +21,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	store, err := postgres.New(ctx, cfg.DatabaseURL, false)
+	store, err := postgres.New(ctx, cfg.DatabaseURL, false, cfg.RunInquiryThreadMigration)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

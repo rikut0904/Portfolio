@@ -28,7 +28,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	st, err := postgres.New(ctx, cfg.DatabaseURL, cfg.SkipDBMigration)
+	st, err := postgres.New(ctx, cfg.DatabaseURL, cfg.SkipDBMigration, cfg.RunInquiryThreadMigration)
 	if err != nil {
 		log.Fatalf("db error: %v", err)
 	}

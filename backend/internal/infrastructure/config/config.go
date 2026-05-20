@@ -22,6 +22,7 @@ type Config struct {
 	FirebaseCredentials       string
 	AppBaseURL                string
 	SkipDBMigration           bool
+	RunInquiryThreadMigration bool
 	MailFrom                  string
 	MailTo                    []string
 	DiscordWebhookURLs        []string
@@ -56,6 +57,7 @@ func Load() (Config, error) {
 		FirebaseCredentials:       strings.TrimSpace(os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY")),
 		AppBaseURL:                strings.TrimRight(strings.TrimSpace(os.Getenv("APP_BASE_URL")), "/"),
 		SkipDBMigration:           getEnvBool("SKIP_DB_MIGRATION", false),
+		RunInquiryThreadMigration: getEnvBool("RUN_INQUIRY_THREAD_MIGRATION", false),
 		MailFrom:                  strings.TrimSpace(os.Getenv("MAIL_FROM")),
 		MailTo:                    splitCSV(strings.TrimSpace(os.Getenv("MAIL_TO"))),
 		DiscordWebhookURLs:        loadDiscordWebhookURLs(),
