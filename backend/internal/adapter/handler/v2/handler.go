@@ -7,8 +7,10 @@ import (
 	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
-// Handler serves as the entry point for all v2 HTTP adapters.
+// Handler contains all the v2 handlers and common dependencies.
 type Handler struct {
+	store        *postgres.Store
+	verifier     *auth.Verifier
 	AppMode      *AppModeHandler
 	Products     *ProductHandler
 	Technologies *TechnologyHandler
@@ -25,9 +27,14 @@ type HandlerConfig struct {
 
 // NewHandler initializes the v2 handler with its dependencies.
 func NewHandler(cfg HandlerConfig) *Handler {
-	return &Handler{
-		AppMode:      &AppModeHandler{appMode: cfg.AppMode},
-		Products:     &ProductHandler{usecase: cfg.Products},
-		Technologies: &TechnologyHandler{usecase: cfg.Technologies},
+	h := &Handler{
+		store:    cfg.Store,
+		verifier: cfg.Verifier,
 	}
+
+	h.AppMode = &AppModeHandler{appMode: cfg.AppMode}
+	h.Products = &ProductHandler{usecase: cfg.Products}
+	h.Technologies = &TechnologyHandler{usecase: cfg.Technologies}
+
+	return h
 }
