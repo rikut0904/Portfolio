@@ -56,7 +56,12 @@ func LogMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context))
 		start := time.Now()
 		next(ctx)
 		
-		// Note: We use log.Printf for simplicity, but in production, a structured logger is better.
-		log.Printf("v2-api: %s %s took %s", ctx.Method(), ctx.Path(), time.Since(start))
+		// In Huma v2, Path might be accessible via ctx.Operation().Path or similar
+		path := ""
+		if op := ctx.Operation(); op != nil {
+			path = op.Path
+		}
+		
+		log.Printf("v2-api: %s %s took %s", ctx.Method(), path, time.Since(start))
 	}
 }

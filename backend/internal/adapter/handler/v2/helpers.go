@@ -6,7 +6,6 @@ import (
 	"log"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
-	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"

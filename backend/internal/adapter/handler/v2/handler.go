@@ -14,6 +14,7 @@ type Handler struct {
 	AppMode      *AppModeHandler
 	Products     *ProductHandler
 	Technologies *TechnologyHandler
+	Sections     *SectionHandler
 }
 
 // HandlerConfig defines dependencies for v2 handlers.
@@ -35,6 +36,7 @@ func NewHandler(cfg HandlerConfig) *Handler {
 	h.AppMode = &AppModeHandler{appMode: cfg.AppMode}
 	h.Products = &ProductHandler{usecase: cfg.Products}
 	h.Technologies = &TechnologyHandler{usecase: cfg.Technologies}
+	h.Sections = &SectionHandler{store: cfg.Store}
 
 	return h
 }

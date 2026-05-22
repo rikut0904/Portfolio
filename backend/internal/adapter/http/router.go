@@ -17,6 +17,13 @@ func NewRouter(cfg config.Config, h *Handler) http.Handler {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+
+	// Clean Architecture / Efficiency: Register Global Validator
+	e.Validator = NewCustomValidator()
+
+	// Clean Architecture / Efficiency: Unified Error Handler
+	e.HTTPErrorHandler = HTTPErrorHandler
+
 	e.Use(middleware.RequestID())
 	e.Use(middleware.Recover())
 	e.Use(middleware.ContextTimeout(20 * time.Second))
