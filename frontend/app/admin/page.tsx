@@ -19,7 +19,7 @@ function DashboardContent() {
     publicProductsCount: 0,
   });
   const [loading, setLoading] = useState(true);
-  const { version, setVersion, refresh } = useAPIVersion();
+  const { version, setVersion, refresh, apiPath } = useAPIVersion();
   const { user } = useAuth();
   const [toggling, setToggling] = useState(false);
 
@@ -48,7 +48,7 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [apiPath]);
 
   useEffect(() => {
     void fetchStats();

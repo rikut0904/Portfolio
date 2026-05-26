@@ -109,7 +109,6 @@ function ProductsContent() {
 
   // フィルター変更時にページを1に戻す
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentPage(1);
   }, [
     filterCategory,
