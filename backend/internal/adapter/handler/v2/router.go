@@ -1,6 +1,7 @@
 package v2
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -8,6 +9,7 @@ import (
 
 // Register registers all v2 API routes with the provided Huma API.
 func Register(api huma.API, h *Handler) {
+	log.Println("Registering v2 API routes...")
 	// Register middlewares
 	api.UseMiddleware(LogMiddleware(api))
 	api.UseMiddleware(h.AuthMiddleware(api))

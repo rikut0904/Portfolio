@@ -19,7 +19,7 @@ func NewSectionRepository(base *Repository) *SectionRepository {
 
 func (r *SectionRepository) List(ctx context.Context) ([]section.Section, error) {
 	var metas []postgres.SectionMetaModel
-	if err := r.store.DB.WithContext(ctx).Order("order ASC").Find(&metas).Error; err != nil {
+	if err := r.store.DB.WithContext(ctx).Order("\"order\" ASC").Find(&metas).Error; err != nil {
 		return nil, err
 	}
 

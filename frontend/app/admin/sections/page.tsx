@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 import SectionForm from "../../../components/admin/SectionForm";
 import NewSectionForm from "../../../components/admin/NewSectionForm";
 import DeleteConfirmModal from "../../../components/admin/DeleteConfirmModal";
+import { useAPIVersion } from "../../../components/APIVersionProvider";
 
 interface Section {
   id: string;
@@ -29,19 +30,16 @@ interface SectionPayload {
 
 function SectionsContent() {
   const { user } = useAuth();
+  const { apiPath } = useAPIVersion();
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSection, setEditingSection] = useState<Section | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingSection, setDeletingSection] = useState<Section | null>(null);
 
-  useEffect(() => {
-    fetchSections();
-  }, []);
-
-  const fetchSections = async () => {
+  const fetchSections = useCallback(async () => {
     try {
-      const response = await fetch("/api/sections");
+      const response = await fetch(apiPath("/sections"));
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         console.error("Failed to fetch sections:", data);
@@ -55,7 +53,11 @@ function SectionsContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiPath]);
+
+  useEffect(() => {
+    void fetchSections();
+  }, [fetchSections]);
 
   const handleEdit = (section: Section) => {
     setEditingSection(section);
@@ -66,7 +68,7 @@ function SectionsContent() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/sections/${editingSection.id}`, {
+      const response = await fetch(apiPath(`/sections/${editingSection.id}`), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -97,7 +99,7 @@ function SectionsContent() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch("/api/sections", {
+      const response = await fetch(apiPath("/sections"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,14 +129,17 @@ function SectionsContent() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(`/api/sections/${editingSection.id}/meta`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        apiPath(`/sections/${editingSection.id}/meta`),
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(meta),
         },
-        body: JSON.stringify(meta),
-      });
+      );
 
       if (response.ok) {
         await fetchSections();
@@ -160,7 +165,7 @@ function SectionsContent() {
     try {
       const token = await user.getIdToken();
       const response = await fetch(
-        `/api/sections/${deletingSection.id}/delete`,
+        apiPath(`/sections/${deletingSection.id}/delete`),
         {
           method: "DELETE",
           headers: {
@@ -222,7 +227,7 @@ function SectionsContent() {
 
       // バックグラウンドで2つのセクションの順番を入れ替え
       await Promise.all([
-        fetch(`/api/sections/${section.id}/meta`, {
+        fetch(apiPath(`/sections/${section.id}/meta`), {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -230,7 +235,7 @@ function SectionsContent() {
           },
           body: JSON.stringify({ order: targetSection.meta.order }),
         }),
-        fetch(`/api/sections/${targetSection.id}/meta`, {
+        fetch(apiPath(`/sections/${targetSection.id}/meta`), {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -283,7 +288,7 @@ function SectionsContent() {
 
       // バックグラウンドで2つのセクションの順番を入れ替え
       await Promise.all([
-        fetch(`/api/sections/${section.id}/meta`, {
+        fetch(apiPath(`/sections/${section.id}/meta`), {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -291,7 +296,7 @@ function SectionsContent() {
           },
           body: JSON.stringify({ order: targetSection.meta.order }),
         }),
-        fetch(`/api/sections/${targetSection.id}/meta`, {
+        fetch(apiPath(`/sections/${targetSection.id}/meta`), {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",

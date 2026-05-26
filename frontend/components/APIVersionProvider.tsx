@@ -14,6 +14,7 @@ type APIVersionContextType = {
   version: APIVersion;
   setVersion: (v: APIVersion) => void;
   refresh: () => Promise<void>;
+  apiPath: (path: string) => string;
 };
 
 const APIVersionContext = createContext<APIVersionContextType | undefined>(
@@ -27,62 +28,40 @@ export function APIVersionProvider({
 }) {
   const [version, setVersionState] = useState<APIVersion>("v1");
 
-  const updateGlobalVersion = (v: APIVersion) => {
-    if (typeof window !== "undefined") {
-      (window as any).__API_VERSION = v;
-    }
-  };
-
   const refresh = useCallback(async () => {
     try {
-      // 常に明示的に v1 (legacy) のエンドポイントを確認する
       const res = await fetch("/api/app-mode", { cache: "no-store" });
       const data = await res.json();
       const nextVersion = data.apiVersion === "v2" ? "v2" : "v1";
       setVersionState(nextVersion);
-      updateGlobalVersion(nextVersion);
     } catch (err) {
       console.error("Failed to fetch API version:", err);
     }
   }, []);
 
-  const setVersion = useCallback((v: APIVersion) => {
-    setVersionState(v);
-    updateGlobalVersion(v);
-  }, []);
+  const apiPath = useCallback(
+    (path: string) => {
+      const cleanPath = path.startsWith("/") ? path : `/${path}`;
+      if (version === "v2") {
+        return `/api/v2${cleanPath}`;
+      }
+      return `/api${cleanPath}`;
+    },
+    [version],
+  );
 
   useEffect(() => {
-    // 初回読み込み
     void refresh();
-
-    // fetch をラップして v2 へ自動リダイレクトする仕組み
-    const originalFetch = window.fetch;
-    window.fetch = async (url, init) => {
-      let finalUrl = url;
-      const urlStr = typeof url === "string" ? url : url instanceof URL ? url.toString() : "";
-
-      if (
-        urlStr.startsWith("/api/") &&
-        !urlStr.startsWith("/api/v2/") &&
-        !urlStr.includes("app-mode") &&
-        !urlStr.includes("auth")
-      ) {
-        const currentVersion = (window as any).__API_VERSION || "v1";
-        if (currentVersion === "v2") {
-          finalUrl = urlStr.replace("/api/", "/api/v2/");
-          console.log(`[API Proxy] Redirecting ${urlStr} -> ${finalUrl}`);
-        }
-      }
-      return originalFetch(finalUrl, init);
-    };
-
-    return () => {
-      window.fetch = originalFetch;
-    };
   }, [refresh]);
 
+  const setVersion = useCallback((v: APIVersion) => {
+    setVersionState(v);
+  }, []);
+
   return (
-    <APIVersionContext.Provider value={{ version, setVersion, refresh }}>
+    <APIVersionContext.Provider
+      value={{ version, setVersion, refresh, apiPath }}
+    >
       {children}
     </APIVersionContext.Provider>
   );

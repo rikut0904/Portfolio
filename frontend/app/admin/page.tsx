@@ -26,12 +26,12 @@ function DashboardContent() {
   const fetchStats = useCallback(async () => {
     try {
       // 作品数を取得
-      const productsRes = await fetch("/api/products");
+      const productsRes = await fetch(apiPath("/products"));
       const productsData = await productsRes.json();
       const products = productsData.products || [];
 
       // セクション数を取得
-      const sectionsRes = await fetch("/api/sections");
+      const sectionsRes = await fetch(apiPath("/sections"));
       const sectionsData = await sectionsRes.json();
       const sections = sectionsData.sections || [];
 
