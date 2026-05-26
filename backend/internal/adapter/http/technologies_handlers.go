@@ -21,7 +21,7 @@ func (h *TechnologyHandler) getTechnologies(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *TechnologyHandler) createTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	var body domain.Payload
+	var body domain.TechnologyPayload
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
@@ -42,7 +42,7 @@ func (h *TechnologyHandler) createTechnology(w http.ResponseWriter, r *http.Requ
 
 func (h *TechnologyHandler) updateTechnology(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
-	var body domain.Payload
+	var body domain.TechnologyPayload
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}

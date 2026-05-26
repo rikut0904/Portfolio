@@ -3,10 +3,8 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"portfolio-backend/internal/domain/product"
 	"time"
-
-	domain "portfolio-backend/internal/domain/product"
-	productusecase "portfolio-backend/internal/usecase/product"
 
 	"github.com/google/uuid"
 )
@@ -19,20 +17,20 @@ func NewProductRepository(store *Store) *ProductRepository {
 	return &ProductRepository{store: store}
 }
 
-func (r *ProductRepository) List(ctx context.Context) ([]domain.Product, error) {
+func (r *ProductRepository) List(ctx context.Context) ([]product.Product, error) {
 	var models []ProductModel
 	if err := r.store.DB.WithContext(ctx).Find(&models).Error; err != nil {
 		return nil, err
 	}
 
-	products := make([]domain.Product, 0, len(models))
+	products := make([]product.Product, 0, len(models))
 	for _, m := range models {
-		products = append(products, m.toDomain())
+		products = append(products, r.toDomain(m))
 	}
 	return products, nil
 }
 
-func (r *ProductRepository) Create(ctx context.Context, input domain.Payload, now time.Time) (domain.Product, error) {
+func (r *ProductRepository) Create(ctx context.Context, input product.ProductPayload, now time.Time) (product.Product, error) {
 	id := uuid.New().String()
 	createdAt := now.UTC().Format(time.RFC3339)
 	techs, _ := json.Marshal(input.Techs)
@@ -55,13 +53,13 @@ func (r *ProductRepository) Create(ctx context.Context, input domain.Payload, no
 	}
 
 	if err := r.store.DB.WithContext(ctx).Create(&model).Error; err != nil {
-		return domain.Product{}, err
+		return product.Product{}, err
 	}
 
-	return model.toDomain(), nil
+	return r.toDomain(model), nil
 }
 
-func (r *ProductRepository) Update(ctx context.Context, id string, input domain.Payload, _ time.Time) error {
+func (r *ProductRepository) Update(ctx context.Context, id string, input product.ProductPayload, _ time.Time) error {
 	techs, _ := json.Marshal(input.Techs)
 	updates := map[string]any{
 		"title":        input.Title,
@@ -82,9 +80,6 @@ func (r *ProductRepository) Update(ctx context.Context, id string, input domain.
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
-		return productusecase.ErrNotFound
-	}
 	return nil
 }
 
@@ -93,13 +88,10 @@ func (r *ProductRepository) Delete(ctx context.Context, id string) error {
 	if result.Error != nil {
 		return result.Error
 	}
-	if result.RowsAffected == 0 {
-		return productusecase.ErrNotFound
-	}
 	return nil
 }
 
-func (m *ProductModel) toDomain() domain.Product {
+func (r *ProductRepository) toDomain(m ProductModel) product.Product {
 	var techs []string
 	if len(m.Technologies) > 0 {
 		_ = json.Unmarshal(m.Technologies, &techs)
@@ -108,7 +100,7 @@ func (m *ProductModel) toDomain() domain.Product {
 		techs = []string{}
 	}
 
-	return domain.Product{
+	return product.Product{
 		ID:          m.ID,
 		Title:       m.Title,
 		Description: m.Description,

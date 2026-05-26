@@ -5,6 +5,7 @@ import (
 )
 
 type AppModeHandler struct {
+	*Common
 	appMode bool
 }
 

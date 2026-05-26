@@ -6,6 +6,7 @@ import (
 	"time"
 
 	v2 "portfolio-backend/internal/adapter/handler/v2"
+	"portfolio-backend/internal/adapter/http/v2/registry"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/discord"
 	"portfolio-backend/internal/infrastructure/gcalendar"
@@ -92,13 +93,9 @@ func NewHandler(cfg HandlerConfig) *Handler {
 	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: sharedCalendarCache}
 	h.AdminLogs = &AdminLogHandler{BaseHandler: base}
 
-	h.V2 = v2.NewHandler(v2.HandlerConfig{
-		Store:        cfg.Store,
-		Verifier:     cfg.Verifier,
-		Products:     cfg.Products,
-		Technologies: cfg.Technologies,
-		AppMode:      cfg.AppMode,
-	})
+	// Create registry and initialize v2 handler
+	reg := registry.NewRegistry(cfg.Store, cfg.AppMode)
+	h.V2 = reg.NewV2Handler(cfg.Verifier)
 
 	return h
 }

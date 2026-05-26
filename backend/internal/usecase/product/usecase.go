@@ -17,15 +17,15 @@ var (
 
 type Repository interface {
 	List(ctx context.Context) ([]domain.Product, error)
-	Create(ctx context.Context, input domain.Payload, now time.Time) (domain.Product, error)
-	Update(ctx context.Context, id string, input domain.Payload, now time.Time) error
+	Create(ctx context.Context, input domain.ProductPayload, now time.Time) (domain.Product, error)
+	Update(ctx context.Context, id string, input domain.ProductPayload, now time.Time) error
 	Delete(ctx context.Context, id string) error
 }
 
 type Usecase interface {
 	List(ctx context.Context, input ListInput) (ListOutput, error)
-	Create(ctx context.Context, input domain.Payload) (domain.Product, error)
-	Update(ctx context.Context, id string, input domain.Payload) error
+	Create(ctx context.Context, input domain.ProductPayload) (domain.Product, error)
+	Update(ctx context.Context, id string, input domain.ProductPayload) error
 	Delete(ctx context.Context, id string) error
 }
 
@@ -158,7 +158,7 @@ func (u *interactor) List(ctx context.Context, input ListInput) (ListOutput, err
 	}, nil
 }
 
-func (u *interactor) Create(ctx context.Context, input domain.Payload) (domain.Product, error) {
+func (u *interactor) Create(ctx context.Context, input domain.ProductPayload) (domain.Product, error) {
 	now := time.Now().UTC()
 	normalized, err := normalizePayload(input, now)
 	if err != nil {
@@ -167,7 +167,7 @@ func (u *interactor) Create(ctx context.Context, input domain.Payload) (domain.P
 	return u.repo.Create(ctx, normalized, now)
 }
 
-func (u *interactor) Update(ctx context.Context, id string, input domain.Payload) error {
+func (u *interactor) Update(ctx context.Context, id string, input domain.ProductPayload) error {
 	if strings.TrimSpace(id) == "" {
 		return ErrInvalidProduct
 	}
@@ -186,9 +186,9 @@ func (u *interactor) Delete(ctx context.Context, id string) error {
 	return u.repo.Delete(ctx, id)
 }
 
-func normalizePayload(input domain.Payload, now time.Time) (domain.Payload, error) {
+func normalizePayload(input domain.ProductPayload, now time.Time) (domain.ProductPayload, error) {
 	if strings.TrimSpace(input.Title) == "" || strings.TrimSpace(input.Description) == "" {
-		return domain.Payload{}, ErrInvalidProduct
+		return domain.ProductPayload{}, ErrInvalidProduct
 	}
 	if input.CreatedYear == 0 {
 		input.CreatedYear = now.Year()

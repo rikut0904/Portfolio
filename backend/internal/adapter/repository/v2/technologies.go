@@ -1,23 +1,25 @@
-package postgres
+package v2
 
 import (
 	"context"
 	"portfolio-backend/internal/domain/technology"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	technologyusecase "portfolio-backend/internal/usecase/technology"
 	"time"
 
 	"github.com/google/uuid"
 )
 
 type TechnologyRepository struct {
-	store *Store
+	*Repository
 }
 
-func NewTechnologyRepository(store *Store) *TechnologyRepository {
-	return &TechnologyRepository{store: store}
+func NewTechnologyRepository(base *Repository) *TechnologyRepository {
+	return &TechnologyRepository{base}
 }
 
 func (r *TechnologyRepository) List(ctx context.Context) ([]technology.Technology, error) {
-	var models []TechnologyModel
+	var models []postgres.TechnologyModel
 	if err := r.store.DB.WithContext(ctx).Order("name ASC").Find(&models).Error; err != nil {
 		return nil, err
 	}
@@ -35,7 +37,7 @@ func (r *TechnologyRepository) List(ctx context.Context) ([]technology.Technolog
 }
 
 func (r *TechnologyRepository) Create(ctx context.Context, input technology.TechnologyPayload, now time.Time) (technology.Technology, error) {
-	model := TechnologyModel{
+	model := postgres.TechnologyModel{
 		ID:        uuid.New().String(),
 		Name:      input.Name,
 		Category:  input.Category,
@@ -56,7 +58,7 @@ func (r *TechnologyRepository) Create(ctx context.Context, input technology.Tech
 }
 
 func (r *TechnologyRepository) Update(ctx context.Context, id string, input technology.TechnologyPayload) error {
-	result := r.store.DB.WithContext(ctx).Model(&TechnologyModel{}).Where("id = ?", id).Updates(map[string]any{
+	result := r.store.DB.WithContext(ctx).Model(&postgres.TechnologyModel{}).Where("id = ?", id).Updates(map[string]any{
 		"name":      input.Name,
 		"category":  input.Category,
 		"updatedAt": time.Now(),
@@ -64,13 +66,19 @@ func (r *TechnologyRepository) Update(ctx context.Context, id string, input tech
 	if result.Error != nil {
 		return result.Error
 	}
+	if result.RowsAffected == 0 {
+		return technologyusecase.ErrNotFound
+	}
 	return nil
 }
 
 func (r *TechnologyRepository) Delete(ctx context.Context, id string) error {
-	result := r.store.DB.WithContext(ctx).Delete(&TechnologyModel{}, "id = ?", id)
+	result := r.store.DB.WithContext(ctx).Delete(&postgres.TechnologyModel{}, "id = ?", id)
 	if result.Error != nil {
 		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return technologyusecase.ErrNotFound
 	}
 	return nil
 }

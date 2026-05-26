@@ -14,7 +14,7 @@ type Technology struct {
 	CreatedAt string `json:"createdAt"`
 }
 
-type Payload struct {
+type TechnologyPayload struct {
 	Name     string `json:"name"`
 	Category string `json:"category"`
 }

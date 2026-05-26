@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net/http"
 	"portfolio-backend/internal/domain"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
@@ -28,7 +27,7 @@ func GetClaims(ctx context.Context) *auth.Claims {
 }
 
 // LogAdminActivity records an administrative action in the database.
-func (h *Handler) LogAdminActivity(ctx context.Context, action, entity, entityID, level string, user *auth.Claims, details any) {
+func (c *Common) LogAdminActivity(ctx context.Context, action, entity, entityID, level string, user *auth.Claims, details any) {
 	if user == nil {
 		log.Printf("Warning: LogAdminActivity called without user context for action=%s entity=%s", action, entity)
 		return
@@ -54,7 +53,7 @@ func (h *Handler) LogAdminActivity(ctx context.Context, action, entity, entityID
 		Details:   b,
 	}
 
-	_ = h.store.DB.WithContext(ctx).Create(&logEntry)
+	_ = c.store.DB.WithContext(ctx).Create(&logEntry)
 }
 
 // ToISO formats a time to RFC3339 string.
@@ -63,13 +62,11 @@ func ToISO(t time.Time) string {
 }
 
 // MapError converts a domain error to a Huma error.
-// This allows usecases to be independent of HTTP status codes.
 func MapError(err error) error {
 	if err == nil {
 		return nil
 	}
 
-	// Check for wrapped DomainError
 	var domainErr *domain.DomainError
 	code := err
 	message := err.Error()
@@ -109,15 +106,15 @@ func ptr(v string) *string {
 	return &v
 }
 
-// Common output types for v2 handlers
+// Common output types
 type SuccessStatusOutput struct {
 	Body struct {
-		Success bool `json:"success" doc:"Whether the operation was successful"`
+		Success bool `json:"success"`
 	}
 }
 
 type MessageOutput struct {
 	Body struct {
-		Message string `json:"message" doc:"Status message"`
+		Message string `json:"message"`
 	}
 }

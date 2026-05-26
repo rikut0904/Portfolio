@@ -17,7 +17,7 @@ type Product struct {
 	UpdatedAt   string   `json:"updatedAt"`
 }
 
-type Payload struct {
+type ProductPayload struct {
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Image       string   `json:"image"`

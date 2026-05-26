@@ -18,7 +18,7 @@ func nullToString(v sql.NullString) string {
 	return ""
 }
 
-type productPayload = domain.Payload
+type productPayload = domain.ProductPayload
 
 func (h *ProductHandler) getProducts(w http.ResponseWriter, r *http.Request) error {
 	q := r.URL.Query()
@@ -45,7 +45,8 @@ func (h *ProductHandler) getProducts(w http.ResponseWriter, r *http.Request) err
 }
 
 func (h *ProductHandler) createProduct(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	var body productPayload
+	var body domain.ProductPayload
+
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
