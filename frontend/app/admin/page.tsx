@@ -60,7 +60,7 @@ function DashboardContent() {
     const nextVersion = version === "v1" ? "v2" : "v1";
     try {
       const token = await user.getIdToken();
-      const res = await fetch("/api/app-mode/api-version", {
+      const res = await fetch("/api/v2/app-mode/api-version", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
