@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "../lib/auth/AuthContext";
+import { APIVersionProvider } from "../components/APIVersionProvider";
 
 export const metadata: Metadata = {
   title: "平田 陸翔 | ポートフォリオ",
@@ -43,7 +44,9 @@ export default function RootLayout({
         </Script>
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <APIVersionProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </APIVersionProvider>
       </body>
     </html>
   );

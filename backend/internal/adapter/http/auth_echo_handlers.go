@@ -9,12 +9,23 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
+	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"github.com/labstack/echo/v4"
 )
 
 func (h *BaseHandler) getAppModeEcho(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]any{"appMode": h.appMode})
+	var setting postgres.SystemSettingModel
+	apiVersion := "v1"
+	err := h.store.DB.WithContext(c.Request().Context()).Where("key = ?", "apiVersion").First(&setting).Error
+	if err == nil {
+		apiVersion = setting.Value
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"appMode":    h.appMode,
+		"apiVersion": apiVersion,
+	})
 }
 
 func (h *BaseHandler) loginEcho(c echo.Context) error {

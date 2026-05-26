@@ -4,6 +4,8 @@ FRONTEND_DIR := frontend
 BACKEND_DIR := backend
 BACKEND_SERVICE := backend
 FRONTEND_SERVICE := frontend
+GO := /usr/local/go/bin/go
+GOFMT := /usr/local/go/bin/gofmt
 
 .PHONY: help init-env install install-frontend install-backend \
 	up down restart logs ps build rebuild clean clean-all \
@@ -45,7 +47,7 @@ install-frontend:
 	cd $(FRONTEND_DIR) && npm ci
 
 install-backend:
-	cd $(BACKEND_DIR) && go mod tidy && go mod download
+	cd $(BACKEND_DIR) && $(GO) mod tidy && $(GO) mod download
 
 up:
 	$(COMPOSE) up --build
@@ -71,12 +73,12 @@ lint-frontend:
 	cd $(FRONTEND_DIR) && npm run lint
 
 lint-backend:
-	cd $(BACKEND_DIR) && go vet ./...
+	cd $(BACKEND_DIR) && $(GO) vet ./...
 
 test: test-backend
 
 test-backend:
-	cd $(BACKEND_DIR) && go test ./...
+	cd $(BACKEND_DIR) && $(GO) test ./...
 
 fmt: fmt-frontend fmt-backend
 
@@ -84,7 +86,7 @@ fmt-frontend:
 	cd $(FRONTEND_DIR) && npm run format
 
 fmt-backend:
-	cd $(BACKEND_DIR) && gofmt -w ./cmd ./internal
+	cd $(BACKEND_DIR) && $(GOFMT) -w ./cmd ./internal
 
 migrate:
 	$(COMPOSE) run --rm $(BACKEND_SERVICE) /app/migrate
@@ -94,7 +96,7 @@ check: fmt lint test
 clean:
 	rm -rf $(FRONTEND_DIR)/.next
 	rm -rf $(FRONTEND_DIR)/node_modules/.cache
-	cd $(BACKEND_DIR) && go clean
+	cd $(BACKEND_DIR) && $(GO) clean
 
 clean-all: clean
 	rm -rf $(FRONTEND_DIR)/node_modules

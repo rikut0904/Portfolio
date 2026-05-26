@@ -23,6 +23,15 @@ func Register(api huma.API, h *Handler) {
 		Tags:        []string{"v2 System"},
 	}, h.AppMode.GetAppMode)
 
+	huma.Register(api, huma.Operation{
+		OperationID: "admin-set-api-version-v2",
+		Method:      http.MethodPost,
+		Path:        "/api/v2/app-mode/api-version",
+		Summary:     "Set active API version (v2)",
+		Tags:        []string{"v2 Admin System"},
+		Security:    adminSecurity,
+	}, h.AppMode.SetAPIVersion)
+
 	// --- Technologies ---
 	huma.Register(api, huma.Operation{
 		OperationID: "get-technologies-v2",

@@ -41,6 +41,7 @@ type Config struct {
 	GoogleCalendarCredentials string
 	AdminEmails               map[string]struct{}
 	AdminUIDs                 map[string]struct{}
+	DefaultAPIVersion         string
 }
 
 func Load() (Config, error) {
@@ -76,6 +77,7 @@ func Load() (Config, error) {
 		GoogleCalendarCredentials: loadGoogleCalendarCredentials(),
 		AdminEmails:               toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_EMAILS")))),
 		AdminUIDs:                 toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_UIDS")))),
+		DefaultAPIVersion:         getEnv("DEFAULT_API_VERSION", "v1"),
 	}
 
 	if cfg.DatabaseURL == "" {

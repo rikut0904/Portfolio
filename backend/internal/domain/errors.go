@@ -7,13 +7,13 @@ import (
 
 // Common domain errors that are independent of any transport layer (HTTP, etc.)
 var (
-	ErrNotFound          = errors.New("resource not found")
-	ErrAlreadyExists     = errors.New("resource already exists")
-	ErrInvalidInput      = errors.New("invalid input provided")
-	ErrUnauthorized      = errors.New("unauthorized access")
-	ErrForbidden         = errors.New("action forbidden")
-	ErrInternal          = errors.New("internal server error")
-	ErrNotImplemented    = errors.New("feature not implemented")
+	ErrNotFound           = errors.New("resource not found")
+	ErrAlreadyExists      = errors.New("resource already exists")
+	ErrInvalidInput       = errors.New("invalid input provided")
+	ErrUnauthorized       = errors.New("unauthorized access")
+	ErrForbidden          = errors.New("action forbidden")
+	ErrInternal           = errors.New("internal server error")
+	ErrNotImplemented     = errors.New("feature not implemented")
 	ErrServiceUnavailable = errors.New("service temporarily unavailable")
 )
 

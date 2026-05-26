@@ -165,6 +165,16 @@ func (CalendarEventPublicationModel) TableName() string {
 	return "calendar_event_publications"
 }
 
+type SystemSettingModel struct {
+	Key       string    `gorm:"primaryKey;column:key"`
+	Value     string    `gorm:"column:value;not null"`
+	UpdatedAt time.Time `gorm:"column:updatedAt;autoUpdateTime"`
+}
+
+func (SystemSettingModel) TableName() string {
+	return "systemSettings"
+}
+
 // GetModels returns a slice of all GORM models for AutoMigrate.
 func GetModels() []any {
 	return []any{
@@ -179,5 +189,6 @@ func GetModels() []any {
 		&SectionDataModel{},
 		&CalendarPreferenceModel{},
 		&CalendarEventPublicationModel{},
+		&SystemSettingModel{},
 	}
 }

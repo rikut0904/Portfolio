@@ -55,13 +55,13 @@ func LogMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context))
 	return func(ctx huma.Context, next func(huma.Context)) {
 		start := time.Now()
 		next(ctx)
-		
+
 		// In Huma v2, Path might be accessible via ctx.Operation().Path or similar
 		path := ""
 		if op := ctx.Operation(); op != nil {
 			path = op.Path
 		}
-		
+
 		log.Printf("v2-api: %s %s took %s", ctx.Method(), path, time.Since(start))
 	}
 }
