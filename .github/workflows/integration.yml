@@ -20,6 +20,7 @@ jobs:
         run: |
           cp frontend/.env.example frontend/.env
           cp backend/.env.example backend/.env
+          sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgresql://portfolio:portfolio@postgres:5432/portfolio?sslmode=disable|' backend/.env
 
       - name: Start disposable PostgreSQL
         run: docker compose --profile ci up -d --wait postgres
