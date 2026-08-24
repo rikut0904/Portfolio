@@ -34,11 +34,11 @@ function ImagesContent() {
       formData.append("file", selectedFile);
       formData.append("path", uploadPath);
 
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch("/api/images/upload", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: formData,
       });

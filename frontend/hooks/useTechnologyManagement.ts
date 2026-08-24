@@ -36,12 +36,12 @@ export function useTechnologyManagement() {
     setIsAddingTech(true);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch("/api/technologies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({ name: techName }),
       });

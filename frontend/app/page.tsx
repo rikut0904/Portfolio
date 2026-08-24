@@ -83,7 +83,7 @@ export default function Home() {
 
   return (
     <SiteLayout>
-      {/* 全セクションをFirebaseから動的に表示 */}
+      {/* 全セクションをデータベースから動的に表示 */}
       {sections.map((section, index) => {
         // 最も長い連続する履歴系セクショングループの最初の前に「略歴」を表示
         const isFirstOfMainHistoryGroup = index === historyGroupStartIndex;

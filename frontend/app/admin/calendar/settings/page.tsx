@@ -27,9 +27,9 @@ function CalendarSettingsContent() {
       setLoading(true);
       setError("");
       try {
-        const token = user ? await user.getIdToken() : "";
+        const token = user ? await user.getAuthHeader() : "";
         const res = await fetch("/api/admin/calendar/preferences", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: token ? { Authorization: token } : {},
         });
         const body = (await res.json().catch(() => ({}))) as
           | CalendarPreferencesResponse
@@ -75,7 +75,7 @@ function CalendarSettingsContent() {
     setMessage("");
     setError("");
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const payloadColors: CalendarColorMap = {};
       const payloadLabels: CalendarLabelMap = {};
       for (const calendarId of data.calendarIds) {
@@ -85,7 +85,7 @@ function CalendarSettingsContent() {
       const res = await fetch("/api/admin/calendar/preferences", {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ colors: payloadColors, labels: payloadLabels }),

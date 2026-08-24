@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/auth/AuthContext";
 
 export default function AdminSignInForm() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,11 +23,11 @@ export default function AdminSignInForm() {
     setError("");
     setLoading(true);
     try {
-      await signIn(email, password);
+      await signIn(username, password);
       router.push("/admin");
     } catch (err) {
       setError(
-        "ログインに失敗しました。メールアドレスとパスワードを確認してください。",
+        "ログインに失敗しました。ユーザー名とパスワードを確認してください。",
       );
       console.error(err);
     } finally {
@@ -50,20 +50,20 @@ export default function AdminSignInForm() {
           <div className="space-y-4">
             <div>
               <label
-                htmlFor="email"
+                htmlFor="username"
                 className="block text-sm font-medium text-gray-700"
               >
-                メールアドレス
+                ユーザー名
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="username"
+                name="username"
+                type="text"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="admin@example.com"
+                placeholder="admin"
               />
             </div>
             <div>

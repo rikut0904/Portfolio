@@ -63,12 +63,12 @@ function TechnologiesContent() {
     setIsAdding(true);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch("/api/technologies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({
           name: techName,
@@ -121,12 +121,12 @@ function TechnologiesContent() {
 
     // バックグラウンドでAPIを呼び出す
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/technologies/${editingTech.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({
           name: editFormData.name.trim(),
@@ -158,11 +158,11 @@ function TechnologiesContent() {
 
     // バックグラウンドでAPIを呼び出す
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/technologies/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
       });
 

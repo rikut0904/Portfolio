@@ -55,10 +55,10 @@ function InquiriesContent() {
     const fetchData = async () => {
       if (!user) return;
       try {
-        const token = await user.getIdToken();
+        const token = await user.getAuthHeader();
         const response = await fetch("/api/contact", {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
         });
         if (!response.ok) {

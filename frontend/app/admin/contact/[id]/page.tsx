@@ -70,10 +70,10 @@ function InquiryDetailContent() {
     if (!user || !inquiryId) return;
     try {
       setError(null);
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/contact/${inquiryId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
       });
       if (!response.ok) {
@@ -97,11 +97,11 @@ function InquiryDetailContent() {
     if (!user || !detail) return;
     try {
       setStatusLoading(true);
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/contact/${detail.id}`, {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status }),
@@ -128,11 +128,11 @@ function InquiryDetailContent() {
 
     try {
       setReplyLoading(true);
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/contact/${detail.id}/reply`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ message: replyMessage.trim() }),

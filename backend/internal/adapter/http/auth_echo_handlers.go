@@ -2,9 +2,7 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -19,98 +17,27 @@ func (h *BaseHandler) getAppModeEcho(c echo.Context) error {
 
 func (h *BaseHandler) loginEcho(c echo.Context) error {
 	var body struct {
-		Email    string `json:"email"`
+		Username string `json:"username"`
+		Email    string `json:"email"` // compatibility with the previous login form
 		Password string `json:"password"`
 	}
 	if err := c.Bind(&body); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
 	}
-	email := strings.TrimSpace(body.Email)
+	username := strings.TrimSpace(body.Username)
+	if username == "" {
+		username = strings.TrimSpace(body.Email)
+	}
 	password := strings.TrimSpace(body.Password)
-	if email == "" || password == "" {
-		return c.JSON(http.StatusBadRequest, map[string]any{"error": "email and password are required"})
+	if username == "" || password == "" {
+		return c.JSON(http.StatusBadRequest, map[string]any{"error": "username and password are required"})
 	}
-	if h.firebaseWebAPIKey == "" {
-		return c.JSON(http.StatusInternalServerError, map[string]any{"error": "FIREBASE_WEB_API_KEY is not configured"})
-	}
-
-	respBody, status, err := postJSON(
-		c.Request().Context(),
-		fmt.Sprintf("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=%s", url.QueryEscape(h.firebaseWebAPIKey)),
-		map[string]any{"email": email, "password": password, "returnSecureToken": true},
-	)
+	claims, err := h.verifier.VerifyCredentials(username, password)
 	if err != nil {
-		return c.JSON(http.StatusBadGateway, map[string]any{"error": "Failed to login"})
-	}
-	if status >= 400 {
-		return c.JSON(http.StatusUnauthorized, map[string]any{"error": "Invalid email or password"})
-	}
-
-	idToken, _ := respBody["idToken"].(string)
-	refreshToken, _ := respBody["refreshToken"].(string)
-	expiresIn, _ := respBody["expiresIn"].(string)
-	if idToken == "" {
-		return c.JSON(http.StatusUnauthorized, map[string]any{"error": "Invalid email or password"})
-	}
-	claims, err := h.verifier.VerifyToken(c.Request().Context(), idToken)
-	if err != nil {
-		return c.JSON(http.StatusForbidden, map[string]any{"error": "Unauthorized"})
+		return c.JSON(http.StatusUnauthorized, map[string]any{"error": "Invalid username or password"})
 	}
 
 	return c.JSON(http.StatusOK, map[string]any{
-		"idToken":      idToken,
-		"refreshToken": refreshToken,
-		"expiresIn":    expiresIn,
-		"user": map[string]any{
-			"uid":   claims.UID,
-			"email": claims.Email,
-		},
-	})
-}
-
-func (h *BaseHandler) refreshTokenEcho(c echo.Context) error {
-	var body struct {
-		RefreshToken string `json:"refreshToken"`
-	}
-	if err := c.Bind(&body); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]any{"error": "Invalid request body"})
-	}
-	token := strings.TrimSpace(body.RefreshToken)
-	if token == "" {
-		return c.JSON(http.StatusBadRequest, map[string]any{"error": "refreshToken is required"})
-	}
-	if h.firebaseWebAPIKey == "" {
-		return c.JSON(http.StatusInternalServerError, map[string]any{"error": "FIREBASE_WEB_API_KEY is not configured"})
-	}
-
-	form := url.Values{}
-	form.Set("grant_type", "refresh_token")
-	form.Set("refresh_token", token)
-	respBody, status, err := postForm(
-		c.Request().Context(),
-		fmt.Sprintf("https://securetoken.googleapis.com/v1/token?key=%s", url.QueryEscape(h.firebaseWebAPIKey)),
-		form.Encode(),
-	)
-	if err != nil {
-		return c.JSON(http.StatusBadGateway, map[string]any{"error": "Failed to refresh token"})
-	}
-	if status >= 400 {
-		return c.JSON(http.StatusUnauthorized, map[string]any{"error": "Failed to refresh token"})
-	}
-	idToken, _ := respBody["id_token"].(string)
-	refreshToken, _ := respBody["refresh_token"].(string)
-	expiresIn, _ := respBody["expires_in"].(string)
-	if idToken == "" {
-		return c.JSON(http.StatusUnauthorized, map[string]any{"error": "Failed to refresh token"})
-	}
-	claims, err := h.verifier.VerifyToken(c.Request().Context(), idToken)
-	if err != nil {
-		return c.JSON(http.StatusForbidden, map[string]any{"error": "Unauthorized"})
-	}
-	return c.JSON(http.StatusOK, map[string]any{
-		"idToken":      idToken,
-		"refreshToken": refreshToken,
-		"expiresIn":    expiresIn,
 		"user": map[string]any{
 			"uid":   claims.UID,
 			"email": claims.Email,

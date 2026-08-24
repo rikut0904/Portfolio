@@ -75,7 +75,7 @@ export function useProductManagement() {
     if (!user) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const dataToSave = {
         ...formData,
         image: formData.image
@@ -92,7 +92,7 @@ export function useProductManagement() {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: token,
             },
             body: JSON.stringify(dataToSave),
           },
@@ -107,7 +107,7 @@ export function useProductManagement() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify(dataToSave),
         });
@@ -148,11 +148,11 @@ export function useProductManagement() {
     setProducts((prevProducts) => prevProducts.filter((p) => p.id !== id));
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/products/${id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
       });
 
@@ -196,12 +196,12 @@ export function useProductManagement() {
     );
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({
           ...product,
@@ -237,12 +237,12 @@ export function useProductManagement() {
     );
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({
           ...product,

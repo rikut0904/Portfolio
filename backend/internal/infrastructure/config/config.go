@@ -17,9 +17,9 @@ type Config struct {
 	WriteTimeout              time.Duration
 	AllowedOrigins            []string
 	AllowCredentials          bool
-	FirebaseProjectID         string
-	FirebaseWebAPIKey         string
-	FirebaseCredentials       string
+	BasicAuthUsername         string
+	BasicAuthPassword         string
+	BasicAuthEmail            string
 	AppBaseURL                string
 	MailFrom                  string
 	MailTo                    []string
@@ -37,8 +37,6 @@ type Config struct {
 	GoogleCalendarIDs         []string
 	GoogleCalendarTimezone    string
 	GoogleCalendarCredentials string
-	AdminEmails               map[string]struct{}
-	AdminUIDs                 map[string]struct{}
 }
 
 func Load() (Config, error) {
@@ -50,9 +48,9 @@ func Load() (Config, error) {
 		WriteTimeout:              time.Duration(getEnvInt("WRITE_TIMEOUT_SEC", 15)) * time.Second,
 		AllowedOrigins:            splitCSV(getEnv("CORS_ALLOWED_ORIGINS", "*")),
 		AllowCredentials:          getEnvBool("CORS_ALLOW_CREDENTIALS", false),
-		FirebaseProjectID:         strings.TrimSpace(os.Getenv("FIREBASE_PROJECT_ID")),
-		FirebaseWebAPIKey:         strings.TrimSpace(os.Getenv("FIREBASE_WEB_API_KEY")),
-		FirebaseCredentials:       strings.TrimSpace(os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY")),
+		BasicAuthUsername:         strings.TrimSpace(os.Getenv("BASIC_AUTH_USERNAME")),
+		BasicAuthPassword:         strings.TrimSpace(os.Getenv("BASIC_AUTH_PASSWORD")),
+		BasicAuthEmail:            strings.TrimSpace(os.Getenv("BASIC_AUTH_EMAIL")),
 		AppBaseURL:                strings.TrimRight(strings.TrimSpace(os.Getenv("APP_BASE_URL")), "/"),
 		MailFrom:                  strings.TrimSpace(os.Getenv("MAIL_FROM")),
 		MailTo:                    splitCSV(strings.TrimSpace(os.Getenv("MAIL_TO"))),
@@ -70,8 +68,6 @@ func Load() (Config, error) {
 		GoogleCalendarIDs:         loadGoogleCalendarIDs(),
 		GoogleCalendarTimezone:    getEnv("GOOGLE_CALENDAR_TIMEZONE", "Asia/Tokyo"),
 		GoogleCalendarCredentials: loadGoogleCalendarCredentials(),
-		AdminEmails:               toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_EMAILS")))),
-		AdminUIDs:                 toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_UIDS")))),
 	}
 
 	if cfg.DatabaseURL == "" {
@@ -129,14 +125,6 @@ func splitCSV(v string) []string {
 		return nil
 	}
 	return out
-}
-
-func toSet(values []string) map[string]struct{} {
-	set := map[string]struct{}{}
-	for _, v := range values {
-		set[strings.ToLower(strings.TrimSpace(v))] = struct{}{}
-	}
-	return set
 }
 
 func loadDiscordWebhookURLs() []string {

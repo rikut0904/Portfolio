@@ -20,19 +20,18 @@ import (
 
 // BaseHandler contains common dependencies for all domain handlers.
 type BaseHandler struct {
-	healthChecker     HealthChecker
-	verifier          *auth.Verifier
-	mailer            *mail.Client
-	discord           *discord.Client
-	firebaseWebAPIKey string
-	appBaseURL        string
-	mailTo            []string
-	appMode           bool
-	adminLogs         adminlogusecase.Usecase
-	githubToken       string
-	githubOwner       string
-	githubRepo        string
-	githubBranch      string
+	healthChecker HealthChecker
+	verifier      *auth.Verifier
+	mailer        *mail.Client
+	discord       *discord.Client
+	appBaseURL    string
+	mailTo        []string
+	appMode       bool
+	adminLogs     adminlogusecase.Usecase
+	githubToken   string
+	githubOwner   string
+	githubRepo    string
+	githubBranch  string
 }
 
 // Handler is the root container for all domain-specific handlers.
@@ -48,42 +47,40 @@ type Handler struct {
 }
 
 type HandlerConfig struct {
-	HealthChecker     HealthChecker
-	Products          productusecase.Usecase
-	Activities        activityusecase.Usecase
-	Inquiries         inquiryusecase.Usecase
-	AdminLogs         adminlogusecase.Usecase
-	Sections          sectionusecase.Usecase
-	Technologies      technologyusecase.Usecase
-	Verifier          *auth.Verifier
-	Mailer            *mail.Client
-	Discord           *discord.Client
-	FirebaseWebAPIKey string
-	AppBaseURL        string
-	MailTo            []string
-	AppMode           bool
-	GitHubToken       string
-	GitHubOwner       string
-	GitHubRepo        string
-	GitHubBranch      string
-	Calendar          *gcalendar.Service
-	CalendarRepo      calendarusecase.Repository
+	HealthChecker HealthChecker
+	Products      productusecase.Usecase
+	Activities    activityusecase.Usecase
+	Inquiries     inquiryusecase.Usecase
+	AdminLogs     adminlogusecase.Usecase
+	Sections      sectionusecase.Usecase
+	Technologies  technologyusecase.Usecase
+	Verifier      *auth.Verifier
+	Mailer        *mail.Client
+	Discord       *discord.Client
+	AppBaseURL    string
+	MailTo        []string
+	AppMode       bool
+	GitHubToken   string
+	GitHubOwner   string
+	GitHubRepo    string
+	GitHubBranch  string
+	Calendar      *gcalendar.Service
+	CalendarRepo  calendarusecase.Repository
 }
 
 func NewHandler(cfg HandlerConfig) *Handler {
 	base := &BaseHandler{
-		healthChecker:     cfg.HealthChecker,
-		verifier:          cfg.Verifier,
-		mailer:            cfg.Mailer,
-		discord:           cfg.Discord,
-		firebaseWebAPIKey: strings.TrimSpace(cfg.FirebaseWebAPIKey),
-		appBaseURL:        strings.TrimRight(strings.TrimSpace(cfg.AppBaseURL), "/"),
-		mailTo:            cfg.MailTo,
-		appMode:           cfg.AppMode,
-		githubToken:       strings.TrimSpace(cfg.GitHubToken),
-		githubOwner:       strings.TrimSpace(cfg.GitHubOwner),
-		githubRepo:        strings.TrimSpace(cfg.GitHubRepo),
-		githubBranch:      strings.TrimSpace(cfg.GitHubBranch),
+		healthChecker: cfg.HealthChecker,
+		verifier:      cfg.Verifier,
+		mailer:        cfg.Mailer,
+		discord:       cfg.Discord,
+		appBaseURL:    strings.TrimRight(strings.TrimSpace(cfg.AppBaseURL), "/"),
+		mailTo:        cfg.MailTo,
+		appMode:       cfg.AppMode,
+		githubToken:   strings.TrimSpace(cfg.GitHubToken),
+		githubOwner:   strings.TrimSpace(cfg.GitHubOwner),
+		githubRepo:    strings.TrimSpace(cfg.GitHubRepo),
+		githubBranch:  strings.TrimSpace(cfg.GitHubBranch),
 	}
 
 	h := &Handler{
