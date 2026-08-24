@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"portfolio-backend/internal/domain/inquiry"
 )
 
@@ -57,7 +58,7 @@ func (r *InquiryRepository) AddReply(ctx context.Context, inquiryID, senderType,
 	var reply inquiry.Reply
 	err := r.store.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var row InquiryModel
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&row, "id = ?", inquiryID).Error; err != nil {
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).First(&row, "id = ?", inquiryID).Error; err != nil {
 			return err
 		}
 		model := InquiryReplyModel{ID: newUUID(), InquiryID: row.ID, ThreadID: row.ThreadID, SenderType: senderType, SenderName: senderName, SenderEmail: senderEmail, Message: message}
