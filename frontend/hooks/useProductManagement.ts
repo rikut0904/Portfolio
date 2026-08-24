@@ -86,17 +86,14 @@ export function useProductManagement() {
       };
 
       if (editingProduct) {
-        const response = await fetch(
-          `/api/products/${editingProduct.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: token,
-            },
-            body: JSON.stringify(dataToSave),
+        const response = await fetch(`/api/products/${editingProduct.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token,
           },
-        );
+          body: JSON.stringify(dataToSave),
+        });
 
         if (response.ok) {
           await fetchProducts();
