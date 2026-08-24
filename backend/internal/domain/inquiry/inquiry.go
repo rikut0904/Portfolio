@@ -1,5 +1,9 @@
 package inquiry
 
+import "errors"
+
+var ErrNotFound = errors.New("inquiry not found")
+
 type Inquiry struct {
 	ID           string `json:"id"`
 	ThreadID     string `json:"threadId"`

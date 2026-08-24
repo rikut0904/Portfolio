@@ -27,6 +27,9 @@ func (r *InquiryRepository) List(ctx context.Context) ([]inquiry.Inquiry, error)
 func (r *InquiryRepository) GetByID(ctx context.Context, id string) (inquiry.Inquiry, []inquiry.Reply, error) {
 	var row InquiryModel
 	if err := r.store.DB.WithContext(ctx).First(&row, "id = ?", id).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return inquiry.Inquiry{}, nil, inquiry.ErrNotFound
+		}
 		return inquiry.Inquiry{}, nil, err
 	}
 	replies, err := r.replies(ctx, row.ID)
@@ -35,6 +38,9 @@ func (r *InquiryRepository) GetByID(ctx context.Context, id string) (inquiry.Inq
 func (r *InquiryRepository) GetByThreadID(ctx context.Context, threadID string) (inquiry.Inquiry, []inquiry.Reply, error) {
 	var row InquiryModel
 	if err := r.store.DB.WithContext(ctx).First(&row, "thread_id = ?", threadID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return inquiry.Inquiry{}, nil, inquiry.ErrNotFound
+		}
 		return inquiry.Inquiry{}, nil, err
 	}
 	replies, err := r.replies(ctx, row.ID)
@@ -79,7 +85,7 @@ func (r *InquiryRepository) UpdateStatus(ctx context.Context, id, status string)
 		return result.Error
 	}
 	if result.RowsAffected == 0 {
-		return errors.New("not found")
+		return inquiry.ErrNotFound
 	}
 	return nil
 }

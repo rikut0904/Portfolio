@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -104,7 +105,10 @@ func (h *InquiryHandler) getInquiries(w http.ResponseWriter, r *http.Request, us
 func (h *InquiryHandler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	item, replies, err := h.usecase.GetByID(r.Context(), routeParam(r, "id"))
 	if err != nil {
-		return NewAppError(http.StatusNotFound, "Not found", err)
+		if errors.Is(err, inquiry.ErrNotFound) {
+			return NewAppError(http.StatusNotFound, "Not found", err)
+		}
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
 	h.logAdmin(r.Context(), "read", "inquiry", item.ID, "info", user, nil)
 	detail := inquiryMap(item, replies, h.buildContactLink(item.ThreadID))
@@ -118,7 +122,10 @@ func (h *InquiryHandler) getInquiryThread(w http.ResponseWriter, r *http.Request
 	}
 	item, replies, err := h.usecase.GetByThreadID(r.Context(), threadID)
 	if err != nil {
-		return NewAppError(http.StatusNotFound, "Not found", err)
+		if errors.Is(err, inquiry.ErrNotFound) {
+			return NewAppError(http.StatusNotFound, "Not found", err)
+		}
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry thread", err)
 	}
 	detail := inquiryMap(item, replies, h.buildContactLink(item.ThreadID))
 	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
