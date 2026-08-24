@@ -90,7 +90,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       </a>
     );
 
-  // 既存のFirebaseデータ構造（single, categorized, timeline）に対応
+  // 既存のデータ構造（single, categorized, timeline）に対応
   // single: プロフィール
   const renderSingle = () => {
     const nested =

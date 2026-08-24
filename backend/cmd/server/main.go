@@ -38,7 +38,7 @@ func main() {
 	}
 	defer st.Close()
 
-	verifier, err := auth.NewVerifier(ctx, cfg.FirebaseCredentials, cfg.FirebaseProjectID, cfg.AdminEmails, cfg.AdminUIDs)
+	verifier, err := auth.NewVerifier(cfg.BasicAuthUsername, cfg.BasicAuthPassword, cfg.BasicAuthEmail)
 	if err != nil {
 		log.Fatalf("auth error: %v", err)
 	}
@@ -88,26 +88,25 @@ func main() {
 	calendarRepository := postgres.NewCalendarRepository(st)
 
 	handler := httpapi.NewHandler(httpapi.HandlerConfig{
-		HealthChecker:     st,
-		Products:          productUsecase,
-		AdminLogs:         adminLogUsecase,
-		Activities:        activityUsecase,
-		Inquiries:         inquiryUsecase,
-		CalendarRepo:      calendarRepository,
-		Sections:          sectionUsecase,
-		Technologies:      technologyUsecase,
-		Verifier:          verifier,
-		Mailer:            mailer,
-		Discord:           discordClient,
-		FirebaseWebAPIKey: cfg.FirebaseWebAPIKey,
-		AppBaseURL:        cfg.AppBaseURL,
-		MailTo:            cfg.MailTo,
-		AppMode:           cfg.AppMode,
-		GitHubToken:       cfg.GitHubToken,
-		GitHubOwner:       cfg.GitHubOwner,
-		GitHubRepo:        cfg.GitHubRepo,
-		GitHubBranch:      cfg.GitHubBranch,
-		Calendar:          calendarClient,
+		HealthChecker: st,
+		Products:      productUsecase,
+		AdminLogs:     adminLogUsecase,
+		Activities:    activityUsecase,
+		Inquiries:     inquiryUsecase,
+		CalendarRepo:  calendarRepository,
+		Sections:      sectionUsecase,
+		Technologies:  technologyUsecase,
+		Verifier:      verifier,
+		Mailer:        mailer,
+		Discord:       discordClient,
+		AppBaseURL:    cfg.AppBaseURL,
+		MailTo:        cfg.MailTo,
+		AppMode:       cfg.AppMode,
+		GitHubToken:   cfg.GitHubToken,
+		GitHubOwner:   cfg.GitHubOwner,
+		GitHubRepo:    cfg.GitHubRepo,
+		GitHubBranch:  cfg.GitHubBranch,
+		Calendar:      calendarClient,
 	})
 	router := httpapi.NewRouter(cfg, handler)
 

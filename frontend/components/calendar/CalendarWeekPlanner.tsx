@@ -1355,9 +1355,9 @@ function CalendarWeekPlannerContent({
     }
     const fetchPreferences = async () => {
       try {
-        const token = user ? await user.getIdToken() : "";
+        const token = user ? await user.getAuthHeader() : "";
         const res = await fetch("/api/admin/calendar/preferences", {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: token ? { Authorization: token } : {},
         });
         const body = (await res.json().catch(() => ({}))) as
           | CalendarPreferencesResponse
@@ -1402,7 +1402,7 @@ function CalendarWeekPlannerContent({
             ? "/api/admin/calendar/events"
             : "/api/calendar/events";
         const res = await fetch(`${eventsPath}?${query.toString()}`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          headers: token ? { Authorization: token } : {},
         });
         const raw = await res.text();
         const trimmed = raw.replace(/^\uFEFF/, "").trim();
@@ -1467,7 +1467,7 @@ function CalendarWeekPlannerContent({
       }
       try {
         const token =
-          variant === "admin" && user ? await user.getIdToken() : "";
+          variant === "admin" && user ? await user.getAuthHeader() : "";
         const currentWeek = await fetchWeekEvents(anchor, token);
         if (active) {
           setData(currentWeek);
@@ -1593,12 +1593,12 @@ function CalendarWeekPlannerContent({
     const eventKey = calendarEventKey(detailEvent);
     setPublicationSavingKey(eventKey);
     try {
-      const token = user ? await user.getIdToken() : "";
+      const token = user ? await user.getAuthHeader() : "";
       const res = await fetch("/api/admin/calendar/events/publication", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(token ? { Authorization: token } : {}),
         },
         body: JSON.stringify({
           calendarId: detailEvent.calendarId,

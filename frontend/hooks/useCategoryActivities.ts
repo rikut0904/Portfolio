@@ -75,7 +75,7 @@ export function useCategoryActivities(categoryId: string) {
     if (!user || !category) return false;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const maxOrder = Math.max(...activities.map((a) => a.order), 0);
 
       const dataToSave = {
@@ -93,7 +93,7 @@ export function useCategoryActivities(categoryId: string) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify(dataToSave),
       });
@@ -122,7 +122,7 @@ export function useCategoryActivities(categoryId: string) {
     if (!user) return false;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       const dataToSave = {
         ...formData,
@@ -137,7 +137,7 @@ export function useCategoryActivities(categoryId: string) {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify(dataToSave),
       });
@@ -162,11 +162,11 @@ export function useCategoryActivities(categoryId: string) {
     );
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/activities/${activityId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
       });
 
@@ -213,13 +213,13 @@ export function useCategoryActivities(categoryId: string) {
     setActivities(newActivities);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       await Promise.all([
         fetch(`/api/activities/${currentActivity.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: targetOrder }),
         }),
@@ -227,7 +227,7 @@ export function useCategoryActivities(categoryId: string) {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: currentOrder }),
         }),
@@ -244,12 +244,12 @@ export function useCategoryActivities(categoryId: string) {
     if (!user || !category || !newName.trim()) return false;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/activity-categories/${category.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify({ name: newName.trim() }),
       });

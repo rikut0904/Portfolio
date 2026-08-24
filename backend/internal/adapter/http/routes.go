@@ -38,7 +38,6 @@ func (h *Handler) registerSystemRoutes(api *echo.Group) {
 
 func (h *Handler) registerAuthRoutes(api *echo.Group) {
 	api.POST("/auth/login", h.loginEcho)
-	api.POST("/auth/refresh", h.refreshTokenEcho)
 }
 
 func (h *Handler) registerCatalogRoutes(api *echo.Group) {

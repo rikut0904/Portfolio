@@ -29,14 +29,14 @@ function LogsContent() {
     async (cursor: string | null) => {
       try {
         if (!user) return;
-        const token = await user.getIdToken();
+        const token = await user.getAuthHeader();
         const params = new URLSearchParams({ limit: String(itemsPerPage) });
         if (cursor) {
           params.set("cursor", cursor);
         }
         const response = await fetch(`/api/admin-logs?${params.toString()}`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
         });
         if (!response.ok) {

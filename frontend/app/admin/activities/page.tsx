@@ -53,7 +53,7 @@ function ActivitiesContent() {
     if (!user || !newCategoryName.trim()) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       if (isAddingNew) {
         // 新規追加
@@ -61,7 +61,7 @@ function ActivitiesContent() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ name: newCategoryName.trim() }),
         });
@@ -82,7 +82,7 @@ function ActivitiesContent() {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
+              Authorization: token,
             },
             body: JSON.stringify({ name: newCategoryName.trim() }),
           },
@@ -123,11 +123,11 @@ function ActivitiesContent() {
       return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/activity-categories/${categoryId}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
       });
 
@@ -170,14 +170,14 @@ function ActivitiesContent() {
     setCategories(newCategories);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       await Promise.all([
         fetch(`/api/activity-categories/${category.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: targetCategory.order }),
         }),
@@ -185,7 +185,7 @@ function ActivitiesContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: category.order }),
         }),
@@ -224,14 +224,14 @@ function ActivitiesContent() {
     setCategories(newCategories);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       await Promise.all([
         fetch(`/api/activity-categories/${category.id}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: targetCategory.order }),
         }),
@@ -239,7 +239,7 @@ function ActivitiesContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: category.order }),
         }),

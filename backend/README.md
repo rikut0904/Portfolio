@@ -3,7 +3,7 @@
 ## Run locally
 1. `cd backend`
 2. `cp .env.example .env`
-3. Fill env vars (`DATABASE_URL`, Firebase related values)
+3. Fill env vars (`DATABASE_URL`, Basic authentication values)
 4. `go mod tidy`
 5. `go run ./cmd/server`
 
@@ -13,20 +13,17 @@ Server starts at `http://localhost:8080`.
 All endpoints are provided under `/api/*` with compatibility to existing Next.js frontend API shape.
 
 ## Admin auth
-- Protected endpoints require `Authorization: Bearer <Firebase ID token>`.
-- Optional allow-list:
-  - `ADMIN_EMAILS` (comma-separated)
-  - `ADMIN_UIDS` (comma-separated)
-- If neither is set, any valid Firebase token is accepted.
+- Protected endpoints require `Authorization: Basic <base64(username:password)>`.
+- Configure the single administrator account with `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD`, and optionally `BASIC_AUTH_EMAIL`.
+- Basic authentication must be used over HTTPS in production.
 - Frontend login should call backend auth APIs:
   - `POST /api/auth/login`
-  - `POST /api/auth/refresh`
   - `GET /api/auth/me`
 - App mode check API:
   - `GET /api/app-mode`
   - If `APP_MODE=true`, frontend can redirect `/admin/login` -> `/admin/signin`.
 - Admin image upload API:
-  - `POST /api/images/upload` (Bearer token required)
+  - `POST /api/images/upload` (Basic authentication required)
   - multipart form fields:
     - `file` (image file)
     - `path` (`product` | `profile` | `other`)
@@ -37,8 +34,10 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
 - Set `DATABASE_URL` to Railway Postgres URL
 - Set `APP_BASE_URL` to the frontend public URL (used for inquiry thread links in emails)
 - Run `make migrate` after deployment or schema changes. The API server never migrates the database at startup.
-- Set Firebase env vars
-  - `FIREBASE_WEB_API_KEY` (for email/password login API)
+- Set Basic authentication env vars
+  - `BASIC_AUTH_USERNAME`
+  - `BASIC_AUTH_PASSWORD`
+  - `BASIC_AUTH_EMAIL` (optional, for administrator logs and display)
 - Set SES env vars (for inquiry mail send/receive flow)
   - `MAIL_FROM` (optional. unsetならメール送信はスキップ)
   - `MAIL_TO` (optional. comma-separated recipients for inquiry notifications)
@@ -64,7 +63,7 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
   - `GOOGLE_CALENDAR_TIMEZONE` (default: `Asia/Tokyo`)
 - Set CORS env vars:
   - `CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com`
-  - `CORS_ALLOW_CREDENTIALS=false` (recommended for bearer-token auth)
+  - `CORS_ALLOW_CREDENTIALS=false` (recommended for Basic authentication)
 
 ## Table assumptions
 This backend is currently aligned to your migrated Railway schema:

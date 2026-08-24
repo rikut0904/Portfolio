@@ -65,12 +65,12 @@ function SectionsContent() {
     if (!user || !editingSection) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(`/api/sections/${editingSection.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify(data),
       });
@@ -96,12 +96,12 @@ function SectionsContent() {
     if (!user) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch("/api/sections", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: token,
         },
         body: JSON.stringify(sectionData),
       });
@@ -126,14 +126,14 @@ function SectionsContent() {
     if (!user || !editingSection) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(
         `/api/sections/${editingSection.id}/meta`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify(meta),
         },
@@ -161,13 +161,13 @@ function SectionsContent() {
     if (!user || !deletingSection) return;
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
       const response = await fetch(
         `/api/sections/${deletingSection.id}/delete`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
         },
       );
@@ -221,7 +221,7 @@ function SectionsContent() {
     setSections(newSections);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       // バックグラウンドで2つのセクションの順番を入れ替え
       await Promise.all([
@@ -229,7 +229,7 @@ function SectionsContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: targetSection.meta.order }),
         }),
@@ -237,7 +237,7 @@ function SectionsContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: section.meta.order }),
         }),
@@ -282,7 +282,7 @@ function SectionsContent() {
     setSections(newSections);
 
     try {
-      const token = await user.getIdToken();
+      const token = await user.getAuthHeader();
 
       // バックグラウンドで2つのセクションの順番を入れ替え
       await Promise.all([
@@ -290,7 +290,7 @@ function SectionsContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: targetSection.meta.order }),
         }),
@@ -298,7 +298,7 @@ function SectionsContent() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            Authorization: token,
           },
           body: JSON.stringify({ order: section.meta.order }),
         }),
