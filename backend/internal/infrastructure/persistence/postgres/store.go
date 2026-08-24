@@ -66,8 +66,16 @@ func (s *Store) Migrate(ctx context.Context) error {
 		return fmt.Errorf("database store is not initialized")
 	}
 	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// The model defaults use gen_random_uuid(). PostgreSQL exposes that
+		// function through pgcrypto, so enable the prerequisite before GORM
+		// creates or alters any model.
+		if err := tx.Exec("CREATE EXTENSION IF NOT EXISTS pgcrypto").Error; err != nil {
+			return fmt.Errorf("enable pgcrypto: %w", err)
+		}
+
 		migrator := tx.Migrator()
 		tableRenames := map[string]string{
+			"section_meta":        "sectionMeta",
 			"admin_logs":          "adminLogs",
 			"activity_categories": "activityCategories",
 		}
