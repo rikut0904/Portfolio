@@ -34,7 +34,7 @@ func (r *SectionRepository) List(ctx context.Context) ([]section.Section, error)
 
 func (r *SectionRepository) Create(ctx context.Context, input section.SectionPayload) (section.Section, error) {
 	if strings.TrimSpace(input.ID) == "" || strings.TrimSpace(input.DisplayName) == "" || strings.TrimSpace(input.TypeName) == "" {
-		return section.Section{}, errors.New("invalid section")
+		return section.Section{}, section.ErrInvalid
 	}
 	var result section.Section
 	err := r.store.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {

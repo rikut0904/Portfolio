@@ -2,10 +2,12 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"portfolio-backend/internal/domain/section"
 	"portfolio-backend/internal/infrastructure/auth"
+	sectionusecase "portfolio-backend/internal/usecase/section"
 )
 
 func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
@@ -35,6 +37,9 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 	}
 	created, err := h.usecase.Create(r.Context(), section.SectionPayload{ID: body.ID, DisplayName: body.DisplayName, TypeName: body.Type, Order: body.Order, Data: body.Data})
 	if err != nil {
+		if errors.Is(err, sectionusecase.ErrInvalidSection) {
+			return NewAppError(http.StatusBadRequest, "id, displayName, and type are required", err)
+		}
 		if err.Error() == "conflict" {
 			return NewAppError(http.StatusConflict, "Section with this ID already exists", err)
 		}

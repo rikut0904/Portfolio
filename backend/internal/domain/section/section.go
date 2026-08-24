@@ -1,6 +1,11 @@
 package section
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
+
+var ErrInvalid = errors.New("invalid section")
 
 type SectionMeta struct {
 	ID          string `json:"id"`

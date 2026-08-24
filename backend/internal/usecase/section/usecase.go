@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	ErrNotFound = errors.New("section not found")
+	ErrNotFound       = errors.New("section not found")
+	ErrInvalidSection = section.ErrInvalid
 )
 
 type Repository interface {
