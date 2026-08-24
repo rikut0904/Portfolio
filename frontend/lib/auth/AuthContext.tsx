@@ -6,24 +6,8 @@ type AuthUser = { uid: string; email: string; getAuthHeader: () => Promise<strin
 type AuthContextType = { user: AuthUser | null; loading: boolean; signIn: (username: string, password: string) => Promise<void>; signOut: () => Promise<void> };
 type Session = { credential: string; uid: string; email: string };
 
-const SESSION_KEY = "portfolio_admin_basic_session_v1";
+const LEGACY_SESSION_KEY = "portfolio_admin_basic_session_v1";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-function readSession(): Session | null {
-  if (typeof window === "undefined") return null;
-  const raw = sessionStorage.getItem(SESSION_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as Session;
-    return parsed.credential && parsed.uid && parsed.email ? parsed : null;
-  } catch { return null; }
-}
-
-function writeSession(session: Session | null) {
-  if (typeof window === "undefined") return;
-  if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-  else sessionStorage.removeItem(SESSION_KEY);
-}
 
 function basicAuthHeader(username: string, password: string): string {
   const bytes = new TextEncoder().encode(`${username}:${password}`);
@@ -57,7 +41,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const applySession = useCallback((next: Session | null) => {
     setSession(next);
-    writeSession(next);
   }, []);
 
   const authUser = useMemo<AuthUser | null>(() => session ? {
@@ -67,19 +50,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   } : null, [session]);
 
   useEffect(() => {
-    const bootstrap = async () => {
-      const existing = readSession();
-      if (!existing) { applySession(null); setLoading(false); return; }
-      try {
-        const me = await fetchJSON<{ user: { uid: string; email: string } }>("/api/auth/me", { headers: { Authorization: existing.credential } });
-        applySession({ ...existing, uid: me.user.uid, email: me.user.email });
-      } catch (error) {
-        console.error("Auth bootstrap error:", error);
-        applySession(null);
-      } finally { setLoading(false); }
-    };
-    bootstrap();
-  }, [applySession]);
+    // Remove credentials stored by the previous implementation.
+    sessionStorage.removeItem(LEGACY_SESSION_KEY);
+    setLoading(false);
+  }, []);
 
   const signIn = useCallback(async (username: string, password: string) => {
     const normalizedUsername = username.trim();
