@@ -7,6 +7,7 @@ type AuthContextType = { user: AuthUser | null; loading: boolean; signIn: (usern
 type Session = { credential: string; uid: string; email: string };
 
 const LEGACY_SESSION_KEY = "portfolio_admin_basic_session_v1";
+const LEGACY_FIREBASE_SESSION_KEY = "portfolio_admin_session_v1";
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function basicAuthHeader(username: string, password: string): string {
@@ -52,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Remove credentials stored by the previous implementation.
     sessionStorage.removeItem(LEGACY_SESSION_KEY);
+    localStorage.removeItem(LEGACY_FIREBASE_SESSION_KEY);
     setLoading(false);
   }, []);
 
