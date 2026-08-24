@@ -124,6 +124,7 @@ func (s *Store) Migrate(ctx context.Context) error {
 
 type legacySectionMetaModel struct {
 	ID          string `gorm:"column:id"`
+	SectionID   string `gorm:"column:section_id"`
 	DisplayName string `gorm:"column:displayName"`
 	TypeName    string `gorm:"column:type_name"`
 	Order       int    `gorm:"column:order"`
@@ -141,13 +142,17 @@ func syncLegacySectionMeta(tx *gorm.DB, migrator gorm.Migrator) error {
 		return err
 	}
 	for _, meta := range metas {
+		targetID := meta.ID
+		if meta.SectionID != "" {
+			targetID = meta.SectionID
+		}
 		updates := map[string]any{
 			"displayName": meta.DisplayName,
 			"typeName":    meta.TypeName,
 			"order":       meta.Order,
 			"editable":    meta.Editable,
 		}
-		if err := tx.Model(&SectionDataModel{}).Where("id = ?", meta.ID).Updates(updates).Error; err != nil {
+		if err := tx.Model(&SectionDataModel{}).Where("id = ?", targetID).Updates(updates).Error; err != nil {
 			return err
 		}
 	}
