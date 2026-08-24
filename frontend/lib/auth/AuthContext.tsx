@@ -26,7 +26,12 @@ function writeSession(session: Session | null) {
 }
 
 function basicAuthHeader(username: string, password: string): string {
-  return `Basic ${btoa(`${username}:${password}`)}`;
+  const bytes = new TextEncoder().encode(`${username}:${password}`);
+  let binary = "";
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return `Basic ${btoa(binary)}`;
 }
 
 async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
