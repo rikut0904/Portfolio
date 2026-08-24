@@ -1,0 +1,59 @@
+name: Integration
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Migration and API integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare CI environment files
+        run: |
+          cp frontend/.env.example frontend/.env
+          cp backend/.env.example backend/.env
+          sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgresql://portfolio:portfolio@postgres:5432/portfolio?sslmode=disable|' backend/.env
+
+      - name: Start disposable PostgreSQL
+        run: docker compose --profile ci up -d --wait postgres
+
+      - name: Run GORM migration
+        run: make migrate
+
+      - name: Start backend
+        run: docker compose up -d backend
+
+      - name: Wait for backend
+        run: |
+          for attempt in {1..30}; do
+            if curl --silent --fail http://localhost:8081/api/app-mode >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose logs backend
+          exit 1
+
+      - name: Check public health endpoint
+        run: curl --fail http://localhost:8081/health
+
+      - name: Reject unauthenticated admin request
+        shell: bash
+        run: |
+          status=$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:8081/api/auth/me)
+          test "$status" = "401"
+
+      - name: Accept valid Basic authentication
+        run: curl --fail --user admin:change-me http://localhost:8081/api/auth/me
+
+      - name: Stop integration services
+        if: always()
+        run: docker compose --profile ci down -v

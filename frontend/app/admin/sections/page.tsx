@@ -127,17 +127,14 @@ function SectionsContent() {
 
     try {
       const token = await user.getAuthHeader();
-      const response = await fetch(
-        `/api/sections/${editingSection.id}/meta`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: token,
-          },
-          body: JSON.stringify(meta),
+      const response = await fetch(`/api/sections/${editingSection.id}/meta`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token,
         },
-      );
+        body: JSON.stringify(meta),
+      });
 
       if (response.ok) {
         await fetchSections();

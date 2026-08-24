@@ -35,3 +35,22 @@
 
   - `frontend/.env`
   - `backend/.env`
+
+## CI
+
+GitHub Actionsの以下のワークフローを、`main`へのpushとPull Requestで実行します。
+
+- `fmt.yml`: Goの`gofmt`とフロントエンドのPrettier
+- `lint.yml`: Goの`go vet`とフロントエンドのESLint
+- `ci.yml`: Goのテスト
+- `build.yml`: Go・Next.js・DockerイメージのビルドとDocker Compose設定の検証
+- `security.yml`: Goとnpmの依存関係の脆弱性チェック
+- `race.yml`: Goのデータ競合検出
+- `integration.yml`: CI用PostgreSQLでのMigration・API・Basic認証の結合テスト
+
+Dependabotは以下の依存関係を毎週月曜日に確認し、更新Pull Requestを作成します。
+
+- BackendのGoモジュール
+- Frontendのnpmパッケージ
+- GitHub Actions
+- Dockerイメージ
