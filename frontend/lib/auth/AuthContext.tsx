@@ -77,11 +77,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [applySession]);
 
   const signIn = useCallback(async (username: string, password: string) => {
-    const credential = basicAuthHeader(username, password);
+    const normalizedUsername = username.trim();
+    const normalizedPassword = password.trim();
+    const credential = basicAuthHeader(normalizedUsername, normalizedPassword);
     const result = await fetchJSON<{ user: { uid: string; email: string } }>("/api/auth/login", {
       method: "POST",
       headers: { Authorization: credential, "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username: normalizedUsername, password: normalizedPassword }),
     });
     const next = { credential, uid: result.user.uid, email: result.user.email };
     applySession(next);
