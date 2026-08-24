@@ -43,14 +43,17 @@ func (r *CalendarRepository) PatchPreferences(ctx context.Context, ids []string,
 		if !hasColor && !hasLabel {
 			continue
 		}
-		values := map[string]any{"calendar_id": id, "color": defaults[id], "label": ""}
+		values := CalendarPreferenceModel{CalendarID: id, Color: defaults[id], Label: ""}
+		updates := []string{"updated_at"}
 		if hasColor {
-			values["color"] = color
+			values.Color = color
+			updates = append(updates, "color")
 		}
 		if hasLabel {
-			values["label"] = strings.TrimSpace(label)
+			values.Label = strings.TrimSpace(label)
+			updates = append(updates, "label")
 		}
-		if err := r.store.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "calendar_id"}}, DoUpdates: clause.AssignmentColumns([]string{"color", "label", "updated_at"})}).Create(&CalendarPreferenceModel{CalendarID: id, Color: values["color"].(string), Label: values["label"].(string)}).Error; err != nil {
+		if err := r.store.DB.WithContext(ctx).Clauses(clause.OnConflict{Columns: []clause.Column{{Name: "calendar_id"}}, DoUpdates: clause.AssignmentColumns(updates)}).Create(&values).Error; err != nil {
 			return calendar.Preferences{}, err
 		}
 	}
