@@ -16,8 +16,15 @@ type Store struct {
 	DB *gorm.DB
 }
 
-func New(ctx context.Context, databaseURL string, skipMigration bool, runInquiryThreadMigration bool) (*Store, error) {
-	// Silence slow query logs by increasing threshold to 2s and setting level to Warn
+func (s *Store) Ping(ctx context.Context) error {
+	db, err := s.DB.DB()
+	if err != nil {
+		return err
+	}
+	return db.PingContext(ctx)
+}
+
+func New(ctx context.Context, databaseURL string) (*Store, error) {
 	newLogger := logger.New(
 		log.Default(),
 		logger.Config{
@@ -49,98 +56,157 @@ func New(ctx context.Context, databaseURL string, skipMigration bool, runInquiry
 		return nil, fmt.Errorf("ping db: %w", err)
 	}
 
-	if !skipMigration {
-		log.Println("Starting database migration and cleanup...")
+	return &Store{DB: db}, nil
+}
 
-		// Basic data cleanup (idempotent and safe for every startup)
-		err := db.Transaction(func(tx *gorm.DB) error {
-			// Ensure extensions
-			tx.Exec(`CREATE EXTENSION IF NOT EXISTS pgcrypto`)
-
-			m := tx.Migrator()
-
-			// Minimal idempotent cleanup to ensure non-null constraints
-			if m.HasTable("products") {
-				tx.Exec(`UPDATE products SET 
-					link = COALESCE(link, ''), 
-					image = COALESCE(image, ''),
-					"githubUrl" = COALESCE("githubUrl", ''),
-					category = COALESCE(category, ''),
-					status = COALESCE(status, '公開'),
-					"deployStatus" = COALESCE("deployStatus", '未公開'),
-					"createdYear" = COALESCE("createdYear", 0),
-					"createdMonth" = COALESCE("createdMonth", 0)
-					WHERE link IS NULL OR image IS NULL OR "githubUrl" IS NULL OR category IS NULL`)
-			}
-
-			if m.HasTable("activities") {
-				tx.Exec(`UPDATE activities SET 
-					description = COALESCE(description, ''),
-					link = COALESCE(link, ''),
-					image = COALESCE(image, ''),
-					status = COALESCE(status, '非公開'),
-					"order" = COALESCE("order", 0)
-					WHERE description IS NULL OR link IS NULL OR image IS NULL`)
-			}
-
-			if m.HasTable("sections") {
-				tx.Exec(`UPDATE sections SET 
-					data = COALESCE(data, '{}'),
-					type_name = COALESCE(type_name, ''),
-					items = COALESCE(items, '[]'),
-					histories = COALESCE(histories, '[]')
-					WHERE data IS NULL OR type_name IS NULL OR items IS NULL OR histories IS NULL`)
-			}
-
-			if m.HasTable("technologies") {
-				tx.Exec(`UPDATE technologies SET category = '' WHERE category IS NULL`)
-			}
-
-			if m.HasTable("adminLogs") {
-				if m.HasColumn("adminLogs", "level") {
-					tx.Exec(`UPDATE "adminLogs" SET level = 'info' WHERE level IS NULL`)
+// Migrate applies the complete schema migration. It is intentionally separate
+// from New so the API server never changes the database schema at startup.
+func (s *Store) Migrate(ctx context.Context) error {
+	if s == nil || s.DB == nil {
+		return fmt.Errorf("database store is not initialized")
+	}
+	return s.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		migrator := tx.Migrator()
+		tableRenames := map[string]string{
+			"admin_logs":          "adminLogs",
+			"activity_categories": "activityCategories",
+		}
+		for oldName, newName := range tableRenames {
+			if migrator.HasTable(oldName) && !migrator.HasTable(newName) {
+				log.Printf("Renaming table %s -> %s...", oldName, newName)
+				if err := migrator.RenameTable(oldName, newName); err != nil {
+					return fmt.Errorf("rename table %s to %s: %w", oldName, newName, err)
 				}
 			}
-
-			return nil
-		})
-		if err != nil {
-			log.Printf("Warning: minimal data cleanup failed: %v", err)
 		}
 
-		// Run AutoMigration (Safe: only adds columns/tables)
-		models := GetModels()
-		if !runInquiryThreadMigration {
-			filtered := make([]any, 0, len(models))
-			for _, m := range models {
-				switch m.(type) {
-				case *InquiryModel, *InquiryReplyModel:
-					// Skip inquiry related models
-					continue
-				default:
-					filtered = append(filtered, m)
+		columnRenames := map[string]map[string]string{
+			"products":           {"github_url": "githubUrl", "deploy_status": "deployStatus", "created_year": "createdYear", "created_month": "createdMonth", "created_at": "createdAt", "updated_at": "updatedAt"},
+			"activities":         {"order_no": "order", "created_at": "createdAt", "updated_at": "updatedAt"},
+			"activityCategories": {"order_no": "order", "created_at": "createdAt"},
+			"technologies":       {"created_at": "createdAt", "updated_at": "updatedAt"},
+			"inquiries":          {"created_at": "createdAt", "updated_at": "updatedAt"},
+			"inquiry_replies":    {"created_at": "createdAt"},
+			"sections":           {"type_name": "typeName"},
+			"adminLogs":          {"entity_id": "entityId", "user_id": "userId", "user_email": "userEmail", "created_at": "createdAt"},
+		}
+		for table, renames := range columnRenames {
+			if !migrator.HasTable(table) {
+				continue
+			}
+			for oldName, newName := range renames {
+				if migrator.HasColumn(table, oldName) && !migrator.HasColumn(table, newName) {
+					if err := migrator.RenameColumn(table, oldName, newName); err != nil {
+						return fmt.Errorf("rename column %s.%s to %s: %w", table, oldName, newName, err)
+					}
 				}
 			}
-			models = filtered
 		}
 
-		if err := db.AutoMigrate(models...); err != nil {
-			return nil, fmt.Errorf("auto migrate: %w", err)
+		if err := tx.AutoMigrate(GetModels()...); err != nil {
+			return fmt.Errorf("auto migrate: %w", err)
 		}
 
-		log.Println("Database migration and cleanup completed successfully.")
-	} else {
-		log.Println("Database migration skipped by configuration.")
+		if migrator.HasTable("sections") {
+			if err := tx.Model(&SectionDataModel{}).Where(`"typeName" IS NULL OR "typeName" = ''`).Update("typeName", "list").Error; err != nil {
+				return err
+			}
+			if err := syncLegacySectionMeta(tx, migrator); err != nil {
+				return err
+			}
+			if err := initializeSectionOrder(tx); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+type legacySectionMetaModel struct {
+	ID          string `gorm:"column:id"`
+	DisplayName string `gorm:"column:displayName"`
+	TypeName    string `gorm:"column:type_name"`
+	Order       int    `gorm:"column:order"`
+	Editable    bool   `gorm:"column:editable"`
+}
+
+func (legacySectionMetaModel) TableName() string { return "sectionMeta" }
+
+func syncLegacySectionMeta(tx *gorm.DB, migrator gorm.Migrator) error {
+	if !migrator.HasTable("sectionMeta") || !migrator.HasColumn("sectionMeta", "type_name") {
+		return nil
+	}
+	var metas []legacySectionMetaModel
+	if err := tx.Find(&metas).Error; err != nil {
+		return err
+	}
+	for _, meta := range metas {
+		updates := map[string]any{
+			"displayName": meta.DisplayName,
+			"typeName":    meta.TypeName,
+			"order":       meta.Order,
+			"editable":    meta.Editable,
+		}
+		if err := tx.Model(&SectionDataModel{}).Where("id = ?", meta.ID).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func initializeSectionOrder(tx *gorm.DB) error {
+	var rows []SectionDataModel
+	if err := tx.Order("id ASC").Find(&rows).Error; err != nil {
+		return err
+	}
+	if len(rows) < 2 {
+		return nil
+	}
+	allZero := true
+	for _, row := range rows {
+		if row.Order != 0 {
+			allZero = false
+			break
+		}
+	}
+	if !allZero {
+		return nil
 	}
 
-	return &Store{DB: db}, nil
+	preferredOrder := map[string]int{
+		"profile":                0,
+		"specializations":        1,
+		"licenses":               2,
+		"schoolHistory":          3,
+		"communityHistory":       4,
+		"eventJoinHistory":       5,
+		"eventManagementHistory": 6,
+		"travel":                 7,
+	}
+	used := make(map[int]bool, len(rows))
+	next := 0
+	for _, row := range rows {
+		order, ok := preferredOrder[row.ID]
+		if !ok || used[order] {
+			for used[next] {
+				next++
+			}
+			order = next
+			next++
+		}
+		used[order] = true
+		if err := tx.Model(&SectionDataModel{}).Where("id = ?", row.ID).Update("order", order).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *Store) CleanupOldAdminLogs(ctx context.Context) error {
 	if s == nil || s.DB == nil {
 		return nil
 	}
-	result := s.DB.WithContext(ctx).Where("\"createdAt\" < ?", time.Now().AddDate(0, -2, 0)).Delete(&AdminLogModel{})
+	result := s.DB.WithContext(ctx).Where(`"createdAt" < ?`, time.Now().AddDate(0, -2, 0)).Delete(&AdminLogModel{})
 	if result.Error != nil {
 		return result.Error
 	}

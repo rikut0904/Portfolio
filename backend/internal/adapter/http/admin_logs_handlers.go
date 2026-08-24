@@ -1,15 +1,13 @@
 package httpapi
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
+	"portfolio-backend/internal/domain/adminlog"
 	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
 )
 
 func (h *AdminLogHandler) createAuthLog(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
@@ -26,31 +24,6 @@ func (h *AdminLogHandler) createAuthLog(w http.ResponseWriter, r *http.Request, 
 	return nil
 }
 
-type cursor struct {
-	CreatedAt string `json:"createdAt"`
-	ID        string `json:"id"`
-}
-
-func encodeCursor(c cursor) string {
-	b, _ := json.Marshal(c)
-	return base64.StdEncoding.EncodeToString(b)
-}
-
-func decodeCursor(v string) (cursor, bool) {
-	b, err := base64.StdEncoding.DecodeString(v)
-	if err != nil {
-		return cursor{}, false
-	}
-	var c cursor
-	if err := json.Unmarshal(b, &c); err != nil {
-		return cursor{}, false
-	}
-	if c.CreatedAt == "" || c.ID == "" {
-		return cursor{}, false
-	}
-	return c, true
-}
-
 func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _ *auth.Claims) error {
 	limit := parseIntDefault(r.URL.Query().Get("limit"), 10)
 	if limit < 1 {
@@ -59,29 +32,15 @@ func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _
 	if limit > 50 {
 		limit = 50
 	}
-	cursorParam := strings.TrimSpace(r.URL.Query().Get("cursor"))
-
-	query := h.store.DB.WithContext(r.Context())
-	if cursorParam != "" {
-		if c, ok := decodeCursor(cursorParam); ok {
-			query = query.Where(`("createdAt", id) < (?, ?)`, c.CreatedAt, c.ID)
-		}
-	}
-
-	var models []postgres.AdminLogModel
-	if err := query.Order(`"createdAt" DESC, id DESC`).Limit(limit).Find(&models).Error; err != nil {
+	result, err := h.usecase.List(r.Context(), adminlog.ListInput{Limit: limit, Cursor: strings.TrimSpace(r.URL.Query().Get("cursor"))})
+	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch admin logs", err)
 	}
 
-	logs := make([]map[string]any, 0, len(models))
-	var lastCreatedAt time.Time
-	var lastID string
-	for _, m := range models {
+	logs := make([]map[string]any, 0, len(result.Logs))
+	for _, m := range result.Logs {
 		log := map[string]any{
-			"id":        m.ID,
-			"action":    m.Action,
-			"level":     m.Level,
-			"createdAt": toISO(m.CreatedAt),
+			"id": m.ID, "action": m.Action, "level": m.Level, "createdAt": m.CreatedAt,
 		}
 		if m.Entity != nil && *m.Entity != "" {
 			log["entity"] = *m.Entity
@@ -99,14 +58,8 @@ func (h *AdminLogHandler) getAdminLogs(w http.ResponseWriter, r *http.Request, _
 			log["details"] = m.Details
 		}
 		logs = append(logs, log)
-		lastCreatedAt, lastID = m.CreatedAt, m.ID
 	}
-
-	nextCursor := any(nil)
-	if len(logs) == limit {
-		nextCursor = encodeCursor(cursor{CreatedAt: toISO(lastCreatedAt), ID: lastID})
-	}
-	writeJSON(w, http.StatusOK, map[string]any{"logs": logs, "nextCursor": nextCursor})
+	writeJSON(w, http.StatusOK, map[string]any{"logs": logs, "nextCursor": result.NextCursor})
 	return nil
 }
 

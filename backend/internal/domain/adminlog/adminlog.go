@@ -13,12 +13,10 @@ type AdminLog struct {
 	Details   json.RawMessage `json:"details"`
 	CreatedAt string          `json:"createdAt"`
 }
-
 type ListInput struct {
 	Limit  int
 	Cursor string
 }
-
 type ListOutput struct {
 	Logs       []AdminLog
 	NextCursor any

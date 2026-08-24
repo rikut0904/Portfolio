@@ -2,76 +2,17 @@ package httpapi
 
 import (
 	"encoding/json"
-	"errors"
-	"log"
 	"net/http"
-	"strings"
 
+	"portfolio-backend/internal/domain/section"
 	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
-
-	"gorm.io/gorm"
 )
 
-type sectionMeta struct {
-	DisplayName string `json:"displayName"`
-	Type        string `json:"type"`
-	Order       int    `json:"order"`
-	Editable    bool   `json:"editable"`
-	SortOrder   string `json:"sortOrder"`
-}
-
-type section struct {
-	ID   string          `json:"id"`
-	Meta sectionMeta     `json:"meta"`
-	Data json.RawMessage `json:"data"`
-}
-
 func (h *SectionHandler) getSections(w http.ResponseWriter, r *http.Request) error {
-	var metas []postgres.SectionMetaModel
-	if err := h.store.DB.WithContext(r.Context()).Order("\"order\" ASC").Find(&metas).Error; err != nil {
-		log.Printf("getSections meta query error: %v", err)
+	sections, err := h.usecase.List(r.Context())
+	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
 	}
-
-	var dataList []postgres.SectionDataModel
-	if err := h.store.DB.WithContext(r.Context()).Find(&dataList).Error; err != nil {
-		log.Printf("getSections data query error: %v", err)
-		return NewAppError(http.StatusInternalServerError, "Failed to fetch sections", err)
-	}
-
-	dataMap := make(map[string]postgres.SectionDataModel)
-	for _, d := range dataList {
-		dataMap[d.ID] = d
-	}
-
-	sections := make([]section, 0, len(metas))
-	for _, m := range metas {
-		s := section{
-			ID: m.ID,
-			Meta: sectionMeta{
-				DisplayName: m.DisplayName,
-				Type:        normalizeSectionType(m.TypeName),
-				Order:       m.Order,
-				Editable:    m.Editable,
-			},
-		}
-
-		// Handle mapping between sectionMeta and sections
-		lookupID := m.ID
-		if m.SectionID != "" {
-			lookupID = m.SectionID
-		}
-
-		if d, ok := dataMap[lookupID]; ok {
-			s.Data = buildSectionData(d.Data, d.Items, d.Histories, s.Meta.Type)
-		} else {
-			s.Data = json.RawMessage(`{}`)
-		}
-
-		sections = append(sections, s)
-	}
-
 	writeCacheHeader(w)
 	writeJSON(w, http.StatusOK, map[string]any{"sections": sections})
 	return nil
@@ -89,87 +30,18 @@ func (h *SectionHandler) createSection(w http.ResponseWriter, r *http.Request, u
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	if body.ID == "" || body.DisplayName == "" || body.Type == "" {
-		return NewAppError(http.StatusBadRequest, "id, displayName, and type are required", nil)
-	}
-	if len(body.Data) == 0 {
+	if body.Data == nil {
 		body.Data = json.RawMessage(`{}`)
 	}
-
-	var finalOrderNo int
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		var count int64
-		if err := tx.Model(&postgres.SectionMetaModel{}).Where("id = ?", body.ID).Count(&count).Error; err != nil {
-			return err
-		}
-		if count > 0 {
-			return errors.New("conflict")
-		}
-
-		if body.Order != nil {
-			finalOrderNo = *body.Order
-		} else {
-			var maxOrder int
-			_ = tx.Model(&postgres.SectionMetaModel{}).Select("MAX(\"order\")").Scan(&maxOrder)
-			finalOrderNo = maxOrder + 1
-		}
-
-		meta := postgres.SectionMetaModel{
-			ID:          body.ID,
-			SectionID:   body.ID,
-			DisplayName: body.DisplayName,
-			TypeName:    body.Type,
-			Order:       finalOrderNo,
-			Editable:    true,
-		}
-		if err := tx.Create(&meta).Error; err != nil {
-			return err
-		}
-
-		dataModel := postgres.SectionDataModel{
-			ID:        body.ID,
-			TypeName:  body.Type,
-			Data:      json.RawMessage(`{}`),
-			Items:     json.RawMessage(`[]`),
-			Histories: json.RawMessage(`[]`),
-		}
-
-		// Extract fields from body.Data if provided
-		if len(body.Data) > 0 {
-			var m map[string]any
-			_ = json.Unmarshal(body.Data, &m)
-
-			if items, ok := m["items"]; ok {
-				b, _ := json.Marshal(items)
-				dataModel.Items = json.RawMessage(b)
-				delete(m, "items")
-			}
-			if histories, ok := m["histories"]; ok {
-				b, _ := json.Marshal(histories)
-				dataModel.Histories = json.RawMessage(b)
-				delete(m, "histories")
-			}
-			if len(m) > 0 {
-				b, _ := json.Marshal(m)
-				dataModel.Data = json.RawMessage(b)
-			}
-		}
-
-		if err := tx.Create(&dataModel).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
+	created, err := h.usecase.Create(r.Context(), section.SectionPayload{ID: body.ID, DisplayName: body.DisplayName, TypeName: body.Type, Order: body.Order, Data: body.Data})
 	if err != nil {
 		if err.Error() == "conflict" {
 			return NewAppError(http.StatusConflict, "Section with this ID already exists", err)
 		}
 		return NewAppError(http.StatusInternalServerError, "Failed to create section", err)
 	}
-
-	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": finalOrderNo})
-	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": body.ID, "meta": map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": finalOrderNo, "editable": true, "sortOrder": body.SortOrder}, "data": json.RawMessage(body.Data)}})
+	h.logAdmin(r.Context(), "create", "section", body.ID, "info", user, map[string]any{"displayName": body.DisplayName, "type": body.Type, "order": created.Meta.Order})
+	writeJSON(w, http.StatusCreated, map[string]any{"message": "Section created successfully", "section": map[string]any{"id": created.ID, "meta": map[string]any{"displayName": created.Meta.DisplayName, "type": created.Meta.TypeName, "order": created.Meta.Order, "editable": created.Meta.Editable, "sortOrder": body.SortOrder}, "data": created.Data}})
 	return nil
 }
 
@@ -179,59 +51,12 @@ func (h *SectionHandler) updateSection(w http.ResponseWriter, r *http.Request, u
 	if err := decodeBody(r, &patch); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		var d postgres.SectionDataModel
-		if err := tx.First(&d, "id = ?", id).Error; err != nil {
-			return err
-		}
-
-		updates := make(map[string]any)
-
-		// Handle 'items' field
-		if items, ok := patch["items"]; ok {
-			b, _ := json.Marshal(items)
-			updates["items"] = json.RawMessage(b)
-			delete(patch, "items")
-		}
-
-		// Handle 'histories' field
-		if histories, ok := patch["histories"]; ok {
-			b, _ := json.Marshal(histories)
-			updates["histories"] = json.RawMessage(b)
-			delete(patch, "histories")
-		}
-
-		// Handle remaining fields in 'data' column
-		if len(patch) > 0 {
-			var currentData map[string]any
-			if len(d.Data) > 0 {
-				_ = json.Unmarshal(d.Data, &currentData)
-			}
-			if currentData == nil {
-				currentData = make(map[string]any)
-			}
-			for k, v := range patch {
-				currentData[k] = v
-			}
-			newData, _ := json.Marshal(currentData)
-			updates["data"] = json.RawMessage(newData)
-		}
-
-		if len(updates) == 0 {
-			return nil
-		}
-
-		return tx.Model(&d).Updates(updates).Error
-	})
-
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	if err := h.usecase.Update(r.Context(), id, patch); err != nil {
+		if err.Error() == "record not found" || err.Error() == "not found" {
 			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
 		return NewAppError(http.StatusInternalServerError, "Failed to update section", err)
 	}
-
 	h.logAdmin(r.Context(), "update", "section", id, "info", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"success": true})
 	return nil
@@ -243,51 +68,37 @@ func (h *SectionHandler) patchSectionMeta(w http.ResponseWriter, r *http.Request
 	if err := decodeBody(r, &patch); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	updates := make(map[string]any)
-	for k, v := range patch {
-		switch k {
+	updates := map[string]any{}
+	for key, value := range patch {
+		switch key {
 		case "displayName":
-			updates["displayName"] = v
+			updates["displayName"] = value
 		case "type":
-			updates["type_name"] = v
+			updates["typeName"] = value
 		case "order":
-			updates["order"] = v
+			switch order := value.(type) {
+			case float64:
+				updates["order"] = int(order)
+			case int:
+				updates["order"] = order
+			}
 		case "editable":
-			updates["editable"] = v
+			updates["editable"] = value
 		}
 	}
-	if len(updates) == 0 {
-		writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
-		return nil
+	if len(updates) > 0 {
+		if err := h.usecase.UpdateMeta(r.Context(), id, updates); err != nil {
+			return NewAppError(http.StatusInternalServerError, "Failed to update section meta", err)
+		}
 	}
-	result := h.store.DB.WithContext(r.Context()).Model(&postgres.SectionMetaModel{}).Where("id = ?", id).Updates(updates)
-	if result.Error != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to update section meta", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return NewAppError(http.StatusNotFound, "Not found", nil)
-	}
-	h.logAdmin(r.Context(), "update", "sectionMeta", id, "info", user, map[string]any{"updates": patch})
+	h.logAdmin(r.Context(), "update", "section", id, "info", user, map[string]any{"updates": patch})
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Meta updated successfully"})
 	return nil
 }
 
 func (h *SectionHandler) deleteSection(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("id = ?", id).Delete(&postgres.SectionDataModel{}).Error; err != nil {
-			return err
-		}
-		result := tx.Where("id = ?", id).Delete(&postgres.SectionMetaModel{})
-		if result.Error != nil {
-			return result.Error
-		}
-		if result.RowsAffected == 0 {
-			return errors.New("not found")
-		}
-		return nil
-	})
-	if err != nil {
+	if err := h.usecase.Delete(r.Context(), id); err != nil {
 		if err.Error() == "not found" {
 			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
@@ -296,45 +107,4 @@ func (h *SectionHandler) deleteSection(w http.ResponseWriter, r *http.Request, u
 	h.logAdmin(r.Context(), "delete", "section", id, "warn", user, nil)
 	writeJSON(w, http.StatusOK, map[string]any{"message": "Section deleted successfully"})
 	return nil
-}
-
-func normalizeSectionType(v string) string {
-	v = strings.ToLower(strings.TrimSpace(v))
-	if v == "" {
-		return "list"
-	}
-	return v
-}
-
-func buildSectionData(raw, items, histories []byte, sectionType string) json.RawMessage {
-	data := make(map[string]any)
-	if len(raw) > 0 {
-		_ = json.Unmarshal(raw, &data)
-	}
-	if data == nil {
-		data = make(map[string]any)
-	}
-
-	switch sectionType {
-	case "profile":
-		// Data is already in 'raw' (merged into 'data' map)
-	case "list", "categorized":
-		var itms []any
-		if len(items) > 0 {
-			_ = json.Unmarshal(items, &itms)
-		}
-		if itms != nil {
-			data["items"] = itms
-		}
-	case "history":
-		var hists []any
-		if len(histories) > 0 {
-			_ = json.Unmarshal(histories, &hists)
-		}
-		if hists != nil {
-			data["histories"] = hists
-		}
-	}
-	b, _ := json.Marshal(data)
-	return json.RawMessage(b)
 }

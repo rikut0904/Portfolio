@@ -5,20 +5,22 @@ import (
 	"sync"
 	"time"
 
-	v2 "portfolio-backend/internal/adapter/handler/v2"
-	"portfolio-backend/internal/adapter/http/v2/registry"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/discord"
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	activityusecase "portfolio-backend/internal/usecase/activity"
+	adminlogusecase "portfolio-backend/internal/usecase/adminlog"
+	calendarusecase "portfolio-backend/internal/usecase/calendar"
+	inquiryusecase "portfolio-backend/internal/usecase/inquiry"
 	productusecase "portfolio-backend/internal/usecase/product"
+	sectionusecase "portfolio-backend/internal/usecase/section"
 	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
 // BaseHandler contains common dependencies for all domain handlers.
 type BaseHandler struct {
-	store             *postgres.Store
+	healthChecker     HealthChecker
 	verifier          *auth.Verifier
 	mailer            *mail.Client
 	discord           *discord.Client
@@ -26,6 +28,7 @@ type BaseHandler struct {
 	appBaseURL        string
 	mailTo            []string
 	appMode           bool
+	adminLogs         adminlogusecase.Usecase
 	githubToken       string
 	githubOwner       string
 	githubRepo        string
@@ -42,12 +45,15 @@ type Handler struct {
 	Sections     *SectionHandler
 	Calendar     *CalendarHandler
 	AdminLogs    *AdminLogHandler
-	V2           *v2.Handler
 }
 
 type HandlerConfig struct {
-	Store             *postgres.Store
+	HealthChecker     HealthChecker
 	Products          productusecase.Usecase
+	Activities        activityusecase.Usecase
+	Inquiries         inquiryusecase.Usecase
+	AdminLogs         adminlogusecase.Usecase
+	Sections          sectionusecase.Usecase
 	Technologies      technologyusecase.Usecase
 	Verifier          *auth.Verifier
 	Mailer            *mail.Client
@@ -61,11 +67,12 @@ type HandlerConfig struct {
 	GitHubRepo        string
 	GitHubBranch      string
 	Calendar          *gcalendar.Service
+	CalendarRepo      calendarusecase.Repository
 }
 
 func NewHandler(cfg HandlerConfig) *Handler {
 	base := &BaseHandler{
-		store:             cfg.Store,
+		healthChecker:     cfg.HealthChecker,
 		verifier:          cfg.Verifier,
 		mailer:            cfg.Mailer,
 		discord:           cfg.Discord,
@@ -83,19 +90,16 @@ func NewHandler(cfg HandlerConfig) *Handler {
 		BaseHandler: base,
 	}
 
-	h.Activities = &ActivityHandler{BaseHandler: base}
+	h.Activities = &ActivityHandler{BaseHandler: base, usecase: cfg.Activities}
 	h.Products = &ProductHandler{BaseHandler: base, usecase: cfg.Products}
 	h.Technologies = &TechnologyHandler{BaseHandler: base, usecase: cfg.Technologies}
 
 	sharedCalendarCache := newCalendarAPICache()
-	h.Inquiries = &InquiryHandler{BaseHandler: base, calendar: cfg.Calendar, calendarCache: sharedCalendarCache}
-	h.Sections = &SectionHandler{BaseHandler: base}
-	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: sharedCalendarCache}
-	h.AdminLogs = &AdminLogHandler{BaseHandler: base}
-
-	// Create registry and initialize v2 handler
-	reg := registry.NewRegistry(cfg.Store, cfg.AppMode)
-	h.V2 = reg.NewV2Handler(cfg.Verifier)
+	h.Inquiries = &InquiryHandler{BaseHandler: base, calendar: cfg.Calendar, calendarCache: sharedCalendarCache, usecase: cfg.Inquiries}
+	h.Sections = &SectionHandler{BaseHandler: base, usecase: cfg.Sections}
+	h.Calendar = &CalendarHandler{BaseHandler: base, service: cfg.Calendar, cache: sharedCalendarCache, repository: cfg.CalendarRepo}
+	base.adminLogs = cfg.AdminLogs
+	h.AdminLogs = &AdminLogHandler{BaseHandler: base, usecase: cfg.AdminLogs}
 
 	return h
 }
@@ -103,6 +107,7 @@ func NewHandler(cfg HandlerConfig) *Handler {
 // ActivityHandler handles activity-related requests.
 type ActivityHandler struct {
 	*BaseHandler
+	usecase activityusecase.Usecase
 }
 
 // ProductHandler handles product-related requests.
@@ -122,23 +127,27 @@ type InquiryHandler struct {
 	*BaseHandler
 	calendar      *gcalendar.Service
 	calendarCache *calendarAPICache
+	usecase       inquiryusecase.Usecase
 }
 
 // SectionHandler handles dynamic section requests.
 type SectionHandler struct {
 	*BaseHandler
+	usecase sectionusecase.Usecase
 }
 
 // CalendarHandler handles calendar-related requests.
 type CalendarHandler struct {
 	*BaseHandler
-	service *gcalendar.Service
-	cache   *calendarAPICache
+	service    *gcalendar.Service
+	cache      *calendarAPICache
+	repository calendarusecase.Repository
 }
 
 // AdminLogHandler handles admin log requests.
 type AdminLogHandler struct {
 	*BaseHandler
+	usecase adminlogusecase.Usecase
 }
 
 type cachedCalendarEventsResponse struct {

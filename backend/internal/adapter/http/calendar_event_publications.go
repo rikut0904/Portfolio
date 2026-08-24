@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"strings"
 
+	"portfolio-backend/internal/domain/calendar"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/gcalendar"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
-
-	"gorm.io/gorm/clause"
+	calendarusecase "portfolio-backend/internal/usecase/calendar"
 )
 
 type calendarEventPublication struct {
@@ -49,16 +48,17 @@ func (h *CalendarHandler) resolveCalendarEventPublications(ctx context.Context, 
 		return publications, nil
 	}
 
-	var models []postgres.CalendarEventPublicationModel
-	err := h.store.DB.WithContext(ctx).
-		Where("calendar_id IN ? AND event_id IN ?", calendarIDs, eventIDs).
-		Find(&models).Error
+	domainEvents := make([]calendar.Event, 0, len(events))
+	for _, event := range events {
+		domainEvents = append(domainEvents, calendar.Event{ID: event.ID, CalendarID: event.CalendarID})
+	}
+	models, err := h.repository.GetPublications(ctx, domainEvents)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, m := range models {
-		publications[calendarEventPublicationKey(m.CalendarID, m.EventID)] = calendarEventPublication{
+	for key, m := range models {
+		publications[key] = calendarEventPublication{
 			IsPublic:          m.IsPublic,
 			PublicDescription: strings.TrimSpace(m.PublicDescription),
 		}
@@ -114,17 +114,7 @@ func (h *CalendarHandler) patchCalendarEventPublication(w http.ResponseWriter, r
 
 	publicDescription := strings.TrimSpace(body.PublicDescription)
 
-	model := postgres.CalendarEventPublicationModel{
-		CalendarID:        calendarID,
-		EventID:           eventID,
-		IsPublic:          body.IsPublished,
-		PublicDescription: publicDescription,
-	}
-
-	if err := h.store.DB.WithContext(r.Context()).Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "calendar_id"}, {Name: "event_id"}},
-		DoUpdates: clause.AssignmentColumns([]string{"is_public", "public_description", "updated_at"}),
-	}).Create(&model).Error; err != nil {
+	if err := h.repository.PatchPublication(r.Context(), calendarusecase.EventPublication{CalendarID: calendarID, EventID: eventID, IsPublic: body.IsPublished, PublicDescription: publicDescription}); err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to update calendar event publication", err)
 	}
 

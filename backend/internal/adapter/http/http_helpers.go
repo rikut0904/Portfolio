@@ -12,9 +12,6 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
-
-	"github.com/google/uuid"
 )
 
 type AppError struct {
@@ -137,23 +134,10 @@ func (h *BaseHandler) logAdmin(ctx context.Context, action, entity, entityID, le
 		level = "info"
 	}
 
-	b, _ := json.Marshal(details)
-	if len(b) == 0 || string(b) == "null" {
-		b = []byte("{}")
+	if h.adminLogs == nil || user == nil {
+		return
 	}
-
-	logEntry := postgres.AdminLogModel{
-		ID:        uuid.New().String(),
-		Action:    action,
-		Entity:    ptr(entity),
-		EntityID:  ptr(entityID),
-		UserID:    ptr(user.UID),
-		UserEmail: ptr(user.Email),
-		Level:     level,
-		Details:   b,
-	}
-
-	_ = h.store.DB.WithContext(ctx).Create(&logEntry)
+	_ = h.adminLogs.CreateLog(ctx, action, entity, entityID, level, user.UID, user.Email, details)
 }
 
 func ptr(v string) *string {

@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// HTTPErrorHandler unifies Echo errors with the Huma/v2 error format.
+// HTTPErrorHandler returns a consistent JSON error response for Echo.
 func HTTPErrorHandler(err error, c echo.Context) {
 	if c.Response().Committed {
 		return
@@ -24,12 +24,10 @@ func HTTPErrorHandler(err error, c echo.Context) {
 		}
 	}
 
-	// Output format matching Huma's default error structure for consistency
 	resp := map[string]any{
-		"$schema": "https://huma.rocks/openapi/3.1/error.json",
-		"title":   http.StatusText(code),
-		"status":  code,
-		"detail":  message,
+		"title":  http.StatusText(code),
+		"status": code,
+		"detail": message,
 	}
 
 	if err := c.JSON(code, resp); err != nil {

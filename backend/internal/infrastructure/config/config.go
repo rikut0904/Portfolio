@@ -21,8 +21,6 @@ type Config struct {
 	FirebaseWebAPIKey         string
 	FirebaseCredentials       string
 	AppBaseURL                string
-	SkipDBMigration           bool
-	RunInquiryThreadMigration bool
 	MailFrom                  string
 	MailTo                    []string
 	DiscordWebhookURLs        []string
@@ -41,7 +39,6 @@ type Config struct {
 	GoogleCalendarCredentials string
 	AdminEmails               map[string]struct{}
 	AdminUIDs                 map[string]struct{}
-	DefaultAPIVersion         string
 }
 
 func Load() (Config, error) {
@@ -57,8 +54,6 @@ func Load() (Config, error) {
 		FirebaseWebAPIKey:         strings.TrimSpace(os.Getenv("FIREBASE_WEB_API_KEY")),
 		FirebaseCredentials:       strings.TrimSpace(os.Getenv("FIREBASE_SERVICE_ACCOUNT_KEY")),
 		AppBaseURL:                strings.TrimRight(strings.TrimSpace(os.Getenv("APP_BASE_URL")), "/"),
-		SkipDBMigration:           getEnvBool("SKIP_DB_MIGRATION", false),
-		RunInquiryThreadMigration: getEnvBool("RUN_INQUIRY_THREAD_MIGRATION", false),
 		MailFrom:                  strings.TrimSpace(os.Getenv("MAIL_FROM")),
 		MailTo:                    splitCSV(strings.TrimSpace(os.Getenv("MAIL_TO"))),
 		DiscordWebhookURLs:        loadDiscordWebhookURLs(),
@@ -77,7 +72,6 @@ func Load() (Config, error) {
 		GoogleCalendarCredentials: loadGoogleCalendarCredentials(),
 		AdminEmails:               toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_EMAILS")))),
 		AdminUIDs:                 toSet(splitCSV(strings.TrimSpace(os.Getenv("ADMIN_UIDS")))),
-		DefaultAPIVersion:         getEnv("DEFAULT_API_VERSION", "v1"),
 	}
 
 	if cfg.DatabaseURL == "" {

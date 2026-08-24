@@ -36,7 +36,7 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
 - Set `APP_MODE` (`true` to enable `/admin/login` -> `/admin/signin` flow)
 - Set `DATABASE_URL` to Railway Postgres URL
 - Set `APP_BASE_URL` to the frontend public URL (used for inquiry thread links in emails)
-- Set `RUN_INQUIRY_THREAD_MIGRATION=true` only when you want the server to apply `002_inquiry_threads.sql` on startup
+- Run `make migrate` after deployment or schema changes. The API server never migrates the database at startup.
 - Set Firebase env vars
   - `FIREBASE_WEB_API_KEY` (for email/password login API)
 - Set SES env vars (for inquiry mail send/receive flow)
@@ -71,13 +71,12 @@ This backend is currently aligned to your migrated Railway schema:
 - `products`
 - `activities`
 - `activityCategories`
-- `sectionMeta`
 - `sections`
 - `technologies`
 - `adminLogs`
 
 If `public.inquiries` does not exist, inquiry APIs return `501 Not Implemented` with a clear message.
-If the inquiry thread schema (`thread_id`, `inquiry_replies`) is missing, apply the latest inquiry migration.
+If the inquiry thread schema (`thread_id`, `inquiry_replies`) is missing, run `make migrate`.
 
 ## Create inquiries table
 Run this on Railway Postgres if `public.inquiries` is missing:
@@ -89,9 +88,7 @@ Run this on Railway Postgres if `public.inquiries` is missing:
 If you are inside a remote `psql` session where local file include is unavailable, copy and run the SQL directly from:
 `backend/docs/migrations/001_create_inquiries.sql`
 
-If `public.inquiries` already exists from the older schema, either run:
-`backend/docs/migrations/002_inquiry_threads.sql`
-or start the server once with `RUN_INQUIRY_THREAD_MIGRATION=true`.
+If `public.inquiries` already exists from the older schema, run `make migrate`.
 
 ## Inquiry mail behavior
 - `POST /api/inquiries`

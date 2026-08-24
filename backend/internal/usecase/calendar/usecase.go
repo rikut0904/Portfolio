@@ -6,6 +6,20 @@ import (
 	"time"
 )
 
+type EventPublication struct {
+	CalendarID        string
+	EventID           string
+	IsPublic          bool
+	PublicDescription string
+}
+
+type Repository interface {
+	GetPreferences(ctx context.Context, calendarIDs []string, defaults map[string]string) (calendar.Preferences, error)
+	PatchPreferences(ctx context.Context, calendarIDs []string, defaults map[string]string, input calendar.CalendarPreferencesPayload) (calendar.Preferences, error)
+	GetPublications(ctx context.Context, events []calendar.Event) (map[string]EventPublication, error)
+	PatchPublication(ctx context.Context, input EventPublication) error
+}
+
 type Usecase interface {
 	GetPublicEvents(ctx context.Context, from time.Time, to time.Time, calendarIDs []string) (calendar.EventsOutput, error)
 	GetAllEvents(ctx context.Context, from time.Time, to time.Time, calendarIDs []string) (calendar.EventsOutput, error)

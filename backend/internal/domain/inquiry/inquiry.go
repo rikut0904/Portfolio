@@ -12,7 +12,6 @@ type Inquiry struct {
 	CreatedAt    string `json:"createdAt"`
 	UpdatedAt    string `json:"updatedAt"`
 }
-
 type Reply struct {
 	ID          string `json:"id"`
 	InquiryID   string `json:"inquiryId"`
@@ -23,7 +22,6 @@ type Reply struct {
 	Message     string `json:"message"`
 	CreatedAt   string `json:"createdAt"`
 }
-
 type InquiryPayload struct {
 	Category       string `json:"category"`
 	Subject        string `json:"subject"`
@@ -33,7 +31,6 @@ type InquiryPayload struct {
 	RequestedStart string `json:"requestedStart"`
 	RequestedEnd   string `json:"requestedEnd"`
 }
-
 type InquiryReplyPayload struct {
 	Message string `json:"message"`
 }

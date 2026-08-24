@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAPIVersion } from "../components/APIVersionProvider";
 
 export interface Product {
   id: string;
@@ -38,7 +37,6 @@ export interface PaginationInfo {
 }
 
 export function useProducts(filters: ProductFilters = {}) {
-  const { apiPath } = useAPIVersion();
   const [products, setProducts] = useState<Product[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,7 +63,7 @@ export function useProducts(filters: ProductFilters = {}) {
       if (filters.page) params.append("page", filters.page.toString());
       if (filters.limit) params.append("limit", filters.limit.toString());
 
-      const response = await fetch(apiPath(`/products?${params.toString()}`));
+      const response = await fetch(`/api/products?${params.toString()}`);
       const data = await response.json();
 
       setProducts(data.products || []);
@@ -78,7 +76,6 @@ export function useProducts(filters: ProductFilters = {}) {
       setLoading(false);
     }
   }, [
-    apiPath,
     filters.category,
     technologiesKey,
     filters.status,

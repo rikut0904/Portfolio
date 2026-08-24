@@ -12,7 +12,7 @@ GOFMT := /usr/local/go/bin/gofmt
 	dev dev-frontend dev-backend \
 	lint lint-frontend lint-backend \
 	test test-backend \
-	check fmt fmt-frontend fmt-backend
+	check fmt fmt-frontend fmt-backend migrate
 
 help:
 	@echo "Available targets:"
@@ -34,6 +34,7 @@ help:
 	@echo "  dev-backend        Run Go API locally"
 	@echo "  lint               Run frontend and backend lint checks"
 	@echo "  test               Run backend tests"
+	@echo "  migrate            Run GORM database migration (the only migration entry point)"
 	@echo "  check              lint + test"
 	@echo "  fmt                Run frontend/backend formatters"
 
@@ -89,6 +90,7 @@ fmt-backend:
 	cd $(BACKEND_DIR) && $(GOFMT) -w ./cmd ./internal
 
 migrate:
+	$(COMPOSE) build backend
 	$(COMPOSE) run --rm $(BACKEND_SERVICE) /app/migrate
 
 check: fmt lint test
