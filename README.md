@@ -1,28 +1,37 @@
 # Portfolio
 
-## Structure
-- `frontend/`: Next.js frontend
-- `backend/`: Go API server
-- `docker-compose.yml`: local runtime (frontend + backend)
+## 構成
 
-## Run with Docker + Make
-0. Prepare env files:
+- `frontend/`: Next.jsフロントエンド
+- `backend/`: Go APIサーバー
+- `docker-compose.yml`: ローカル実行環境（フロントエンド + バックエンド）
+
+## Makeで起動
+
+0. 環境ファイルを準備する
+
    - `make init-env`
-1. Start:
+1. 起動する
+
    - `make up`
-   - `make help` (all available targets)
-2. Check:
-   - Frontend: `http://localhost:3001`
-   - Backend health: `http://localhost:8081/health`
-3. Logs:
+   - `make help`（利用可能なターゲットを表示）
+2. 動作を確認する
+
+   - フロントエンド: `http://localhost:3001`
+   - バックエンドヘルスチェック: `http://localhost:8081/health`
+3. ログを確認する
+
    - `make logs`
-4. Stop:
+4. 停止する
+
    - `make down`
 
-## Notes
-- Frontend does not require Firebase env vars for login.
-- Auth is handled by backend endpoints (`/api/auth/login`, `/api/auth/refresh`, `/api/auth/me`).
-- `APP_MODE=true` in `backend/.env` enables redirect from `/admin/login` to `/admin/signin`.
-- Docker Compose reads env files from:
+## 注意事項
+
+- ログインにFirebaseの環境変数は必要ありません。
+- 認証はバックエンドのAPI（`/api/auth/login`、`/api/auth/me`）によるBasic認証で行います。
+- `backend/.env`で`APP_MODE=true`を設定すると、`/admin/login`から`/admin/signin`へリダイレクトします。
+- Docker Composeは以下の環境ファイルを読み込みます。
+
   - `frontend/.env`
   - `backend/.env`
