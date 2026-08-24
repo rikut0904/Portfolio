@@ -27,6 +27,9 @@ func NewVerifier(username, password, email string) (*Verifier, error) {
 	if username == "" || password == "" {
 		return nil, errors.New("BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD are required")
 	}
+	if strings.Contains(username, ":") {
+		return nil, errors.New("BASIC_AUTH_USERNAME must not contain ':'")
+	}
 	if email = strings.TrimSpace(email); email == "" {
 		email = username
 	}
