@@ -4,7 +4,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
-import { useAPIVersion } from "../../../components/APIVersionProvider";
 
 interface Technology {
   id: string;
@@ -26,7 +25,6 @@ const TECH_CATEGORIES = [
 
 function TechnologiesContent() {
   const { user } = useAuth();
-  const { apiPath } = useAPIVersion();
   const [technologies, setTechnologies] = useState<Technology[]>([]);
   const [loading, setLoading] = useState(true);
   const [newTechName, setNewTechName] = useState("");
@@ -38,7 +36,7 @@ function TechnologiesContent() {
 
   const fetchTechnologies = useCallback(async () => {
     try {
-      const response = await fetch(apiPath("/technologies"));
+      const response = await fetch("/api/technologies");
       const data = await response.json();
       setTechnologies(data.technologies || []);
     } catch (error) {
@@ -46,7 +44,7 @@ function TechnologiesContent() {
     } finally {
       setLoading(false);
     }
-  }, [apiPath]);
+  }, []);
 
   useEffect(() => {
     void fetchTechnologies();
@@ -66,7 +64,7 @@ function TechnologiesContent() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath("/technologies"), {
+      const response = await fetch("/api/technologies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,7 +122,7 @@ function TechnologiesContent() {
     // バックグラウンドでAPIを呼び出す
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath(`/technologies/${editingTech.id}`), {
+      const response = await fetch(`/api/technologies/${editingTech.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -161,7 +159,7 @@ function TechnologiesContent() {
     // バックグラウンドでAPIを呼び出す
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath(`/technologies/${id}`), {
+      const response = await fetch(`/api/technologies/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

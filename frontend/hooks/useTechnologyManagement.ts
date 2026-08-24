@@ -1,17 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth/AuthContext";
-import { useAPIVersion } from "../components/APIVersionProvider";
 
 export function useTechnologyManagement() {
   const { user } = useAuth();
-  const { apiPath } = useAPIVersion();
   const [technologies, setTechnologies] = useState<string[]>([]);
   const [newTechName, setNewTechName] = useState("");
   const [isAddingTech, setIsAddingTech] = useState(false);
 
   const fetchTechnologies = useCallback(async () => {
     try {
-      const response = await fetch(apiPath("/technologies"));
+      const response = await fetch("/api/technologies");
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         console.error("Failed to fetch technologies:", data);
@@ -24,7 +22,7 @@ export function useTechnologyManagement() {
       console.error("Failed to fetch technologies:", error);
       setTechnologies([]);
     }
-  }, [apiPath]);
+  }, []);
 
   useEffect(() => {
     void fetchTechnologies();
@@ -39,7 +37,7 @@ export function useTechnologyManagement() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath("/technologies"), {
+      const response = await fetch("/api/technologies", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

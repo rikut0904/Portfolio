@@ -8,10 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"portfolio-backend/internal/domain/calendar"
 	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
-
-	"gorm.io/gorm"
 )
 
 var hexColorPattern = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
@@ -66,12 +64,6 @@ func (h *CalendarHandler) patchCalendarPreferences(w http.ResponseWriter, r *htt
 		allowed[calendarID] = struct{}{}
 	}
 
-	tx := h.store.DB.WithContext(r.Context()).Begin()
-	if tx.Error != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", tx.Error)
-	}
-	defer tx.Rollback()
-
 	updatedColors := make(map[string]string)
 	updatedLabels := make(map[string]string)
 	for _, calendarID := range h.service.CalendarIDs() {
@@ -103,54 +95,13 @@ func (h *CalendarHandler) patchCalendarPreferences(w http.ResponseWriter, r *htt
 			updatedLabels[id] = normalizedLabel
 		}
 
-		var pref postgres.CalendarPreferenceModel
-		err := tx.Where("calendar_id = ?", id).First(&pref).Error
-		if err != nil && err != gorm.ErrRecordNotFound {
-			return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
-		}
-
-		if err == gorm.ErrRecordNotFound {
-			pref = postgres.CalendarPreferenceModel{
-				CalendarID: id,
-			}
-			if hasColor {
-				pref.Color = normalizedColor
-			} else {
-				pref.Color = h.service.DefaultCalendarColors()[id]
-			}
-			if hasLabel {
-				pref.Label = normalizedLabel
-			} else {
-				pref.Label = ""
-			}
-			if err := tx.Create(&pref).Error; err != nil {
-				return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
-			}
-		} else {
-			updates := map[string]interface{}{}
-			if hasColor {
-				updates["color"] = normalizedColor
-			}
-			if hasLabel {
-				updates["label"] = normalizedLabel
-			}
-			if len(updates) > 0 {
-				if err := tx.Model(&pref).Updates(updates).Error; err != nil {
-					return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
-				}
-			}
-		}
 	}
 
 	if len(updatedColors) == 0 && len(updatedLabels) == 0 {
 		return NewAppError(http.StatusBadRequest, "No valid preferences to update", nil)
 	}
 
-	if err := tx.Commit().Error; err != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to update calendar preferences", err)
-	}
-
-	preferences, err := h.resolveCalendarPreferences(r.Context())
+	preferences, err := h.repository.PatchPreferences(r.Context(), h.service.CalendarIDs(), h.service.DefaultCalendarColors(), calendar.CalendarPreferencesPayload{Colors: updatedColors, Labels: updatedLabels})
 	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to load calendar preferences", err)
 	}
@@ -171,38 +122,15 @@ func (h *CalendarHandler) resolveCalendarPreferences(ctx context.Context) (calen
 		defaultColors = h.service.DefaultCalendarColors()
 	}
 	allIDs := h.service.CalendarIDs()
-	response := calendarPreferencesResponse{
-		CalendarIds:         allIDs,
-		CalendarColors:      make(map[string]string, len(defaultColors)),
-		CalendarLabels:      make(map[string]string, len(allIDs)),
-		CalendarDisplayName: make(map[string]string, len(allIDs)),
+	if h.repository == nil {
+		return calendarPreferencesResponse{CalendarIds: allIDs, CalendarColors: defaultColors, CalendarLabels: map[string]string{}, CalendarDisplayName: map[string]string{}}, nil
 	}
-	for _, calendarID := range allIDs {
-		response.CalendarColors[calendarID] = defaultColors[calendarID]
-		response.CalendarLabels[calendarID] = ""
-		response.CalendarDisplayName[calendarID] = calendarID
-	}
-	if len(allIDs) == 0 {
-		return response, nil
-	}
-
-	var prefs []postgres.CalendarPreferenceModel
-	if err := h.store.DB.WithContext(ctx).Where("calendar_id IN ?", allIDs).Find(&prefs).Error; err != nil {
+	preferences, err := h.repository.GetPreferences(ctx, allIDs, defaultColors)
+	if err != nil {
 		log.Printf("calendar_preferences: query failed (using defaults): %v", err)
-		return response, nil
+		return calendarPreferencesResponse{CalendarIds: allIDs, CalendarColors: defaultColors, CalendarLabels: map[string]string{}, CalendarDisplayName: map[string]string{}}, nil
 	}
-
-	for _, p := range prefs {
-		calendarID := p.CalendarID
-		if normalized := normalizeCalendarColor(p.Color); normalized != "" {
-			response.CalendarColors[calendarID] = normalized
-		}
-		response.CalendarLabels[calendarID] = strings.TrimSpace(p.Label)
-		if response.CalendarLabels[calendarID] != "" {
-			response.CalendarDisplayName[calendarID] = response.CalendarLabels[calendarID]
-		}
-	}
-	return response, nil
+	return calendarPreferencesResponse{CalendarIds: preferences.CalendarIds, CalendarColors: preferences.CalendarColors, CalendarLabels: preferences.CalendarLabels, CalendarDisplayName: preferences.CalendarDisplayName}, nil
 }
 
 func normalizeCalendarColor(value string) string {

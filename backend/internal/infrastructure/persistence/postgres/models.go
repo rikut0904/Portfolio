@@ -16,10 +16,10 @@ type ProductModel struct {
 	Technologies json.RawMessage `gorm:"column:technologies;type:jsonb;not null;default:'[]'"`
 	Status       string          `gorm:"column:status;not null;default:'公開'"`
 	DeployStatus string          `gorm:"column:deployStatus;not null;default:'未公開'"`
-	CreatedYear  int             `gorm:"column:createdYear;not null"`
-	CreatedMonth int             `gorm:"column:createdMonth;not null"`
-	CreatedAt    string          `gorm:"column:createdAt;not null"`
-	UpdatedAt    time.Time       `gorm:"column:updatedAt;not null"`
+	CreatedYear  int             `gorm:"column:createdYear;not null;default:0"`
+	CreatedMonth int             `gorm:"column:createdMonth;not null;default:0"`
+	CreatedAt    string          `gorm:"column:createdAt"`
+	UpdatedAt    time.Time       `gorm:"column:updatedAt"`
 }
 
 func (ProductModel) TableName() string {
@@ -72,7 +72,7 @@ type InquiryModel struct {
 	Subject      string    `gorm:"column:subject;not null"`
 	Message      string    `gorm:"column:message;not null"`
 	ContactName  string    `gorm:"column:contact_name;not null;default:''"`
-	ContactEmail string    `gorm:"column:contact_email;not null"`
+	ContactEmail string    `gorm:"column:contact_email;not null;default:''"`
 	ThreadID     string    `gorm:"column:thread_id;uniqueIndex;not null;default:gen_random_uuid()"`
 	Status       string    `gorm:"column:status;not null;default:'pending'"`
 	CreatedAt    time.Time `gorm:"column:createdAt;autoCreateTime"`
@@ -115,25 +115,15 @@ func (AdminLogModel) TableName() string {
 	return "adminLogs"
 }
 
-type SectionMetaModel struct {
-	ID          string `gorm:"primaryKey;column:id"`
-	SectionID   string `gorm:"column:section_id"`
-	DisplayName string `gorm:"column:displayName;not null"`
-	TypeName    string `gorm:"column:type_name;not null"`
-	Order       int    `gorm:"column:order;not null;default:0"`
-	Editable    bool   `gorm:"column:editable;not null;default:true"`
-}
-
-func (SectionMetaModel) TableName() string {
-	return "sectionMeta"
-}
-
 type SectionDataModel struct {
-	ID        string          `gorm:"primaryKey;column:id"`
-	TypeName  string          `gorm:"column:type_name;not null"`
-	Data      json.RawMessage `gorm:"column:data;type:jsonb;not null;default:'{}'"`
-	Items     json.RawMessage `gorm:"column:items;type:jsonb;not null;default:'[]'"`
-	Histories json.RawMessage `gorm:"column:histories;type:jsonb;not null;default:'[]'"`
+	ID          string          `gorm:"primaryKey;column:id"`
+	DisplayName string          `gorm:"column:displayName;not null;default:''"`
+	TypeName    string          `gorm:"column:typeName;not null;default:'list'"`
+	Order       int             `gorm:"column:order;not null;default:0"`
+	Editable    bool            `gorm:"column:editable;not null;default:true"`
+	Data        json.RawMessage `gorm:"column:data;type:jsonb;not null;default:'{}'"`
+	Items       json.RawMessage `gorm:"column:items;type:jsonb;not null;default:'[]'"`
+	Histories   json.RawMessage `gorm:"column:histories;type:jsonb;not null;default:'[]'"`
 }
 
 func (SectionDataModel) TableName() string {
@@ -165,16 +155,6 @@ func (CalendarEventPublicationModel) TableName() string {
 	return "calendar_event_publications"
 }
 
-type SystemSettingModel struct {
-	Key       string    `gorm:"primaryKey;column:key"`
-	Value     string    `gorm:"column:value;not null"`
-	UpdatedAt time.Time `gorm:"column:updatedAt;autoUpdateTime"`
-}
-
-func (SystemSettingModel) TableName() string {
-	return "systemSettings"
-}
-
 // GetModels returns a slice of all GORM models for AutoMigrate.
 func GetModels() []any {
 	return []any{
@@ -185,10 +165,8 @@ func GetModels() []any {
 		&InquiryModel{},
 		&InquiryReplyModel{},
 		&AdminLogModel{},
-		&SectionMetaModel{},
 		&SectionDataModel{},
 		&CalendarPreferenceModel{},
 		&CalendarEventPublicationModel{},
-		&SystemSettingModel{},
 	}
 }

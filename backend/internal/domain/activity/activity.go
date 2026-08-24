@@ -14,14 +14,12 @@ type Activity struct {
 	CreatedYear int    `json:"createdYear"`
 	CreatedMon  int    `json:"createdMonth"`
 }
-
 type Category struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	Order     int    `json:"order"`
 	CreatedAt string `json:"createdAt"`
 }
-
 type ActivityPayload struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
@@ -31,7 +29,6 @@ type ActivityPayload struct {
 	Status      string `json:"status"`
 	Order       int    `json:"order"`
 }
-
 type ActivityCategoryPayload struct {
 	Name  string `json:"name"`
 	Order *int   `json:"order"`

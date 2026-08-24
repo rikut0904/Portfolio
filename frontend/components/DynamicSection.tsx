@@ -259,6 +259,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
   // セクションタイプに応じてレンダリング
   switch (meta.type) {
     case "single":
+    case "profile":
       return renderSingle();
     case "categorized":
       return renderCategorized();

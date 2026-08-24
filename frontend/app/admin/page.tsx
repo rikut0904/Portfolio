@@ -3,8 +3,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
 import Link from "next/link";
-import { useAPIVersion } from "../../components/APIVersionProvider";
-import { useAuth } from "../../lib/auth/AuthContext";
 
 interface Stats {
   productsCount: number;
@@ -19,19 +17,15 @@ function DashboardContent() {
     publicProductsCount: 0,
   });
   const [loading, setLoading] = useState(true);
-  const { version, setVersion, refresh, apiPath } = useAPIVersion();
-  const { user } = useAuth();
-  const [toggling, setToggling] = useState(false);
-
   const fetchStats = useCallback(async () => {
     try {
       // 作品数を取得
-      const productsRes = await fetch(apiPath("/products"));
+      const productsRes = await fetch("/api/products");
       const productsData = await productsRes.json();
       const products = productsData.products || [];
 
       // セクション数を取得
-      const sectionsRes = await fetch(apiPath("/sections"));
+      const sectionsRes = await fetch("/api/sections");
       const sectionsData = await sectionsRes.json();
       const sections = sectionsData.sections || [];
 
@@ -48,70 +42,16 @@ function DashboardContent() {
     } finally {
       setLoading(false);
     }
-  }, [apiPath]);
+  }, []);
 
   useEffect(() => {
     void fetchStats();
   }, [fetchStats]);
 
-  const handleToggleAPI = async () => {
-    if (!user) return;
-    setToggling(true);
-    const nextVersion = version === "v1" ? "v2" : "v1";
-    try {
-      const token = await user.getIdToken();
-      const res = await fetch("/api/v2/app-mode/api-version", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ version: nextVersion }),
-      });
-
-      if (!res.ok) throw new Error("Failed to update API version");
-
-      setVersion(nextVersion);
-      // Stats might need to be re-fetched if the API structure changed significantly
-      await fetchStats();
-    } catch (err) {
-      console.error(err);
-      alert("APIバージョンの切り替えに失敗しました");
-    } finally {
-      setToggling(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        {/* API Version Toggle */}
-        <div className="mb-4 sm:mb-8 bg-white p-3 sm:p-4 rounded-lg shadow flex items-center justify-between">
-          <div>
-            <h2 className="text-sm sm:text-base font-semibold text-gray-900">
-              API バージョン設定
-            </h2>
-            <p className="text-xs text-gray-600">
-              現在は <span className="font-bold text-blue-600">{version}</span>{" "}
-              を使用中
-            </p>
-          </div>
-          <button
-            onClick={handleToggleAPI}
-            disabled={toggling}
-            className={`px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${
-              version === "v1"
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-orange-500 text-white hover:bg-orange-600"
-            } disabled:opacity-50`}
-          >
-            {toggling
-              ? "切替中..."
-              : `${version === "v1" ? "v2" : "v1"} へ切り替え`}
-          </button>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {/* セクション管理 */}
           <Link

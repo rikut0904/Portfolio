@@ -9,23 +9,12 @@ import (
 	"time"
 
 	"portfolio-backend/internal/infrastructure/auth"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
 
 	"github.com/labstack/echo/v4"
 )
 
 func (h *BaseHandler) getAppModeEcho(c echo.Context) error {
-	var setting postgres.SystemSettingModel
-	apiVersion := "v1"
-	err := h.store.DB.WithContext(c.Request().Context()).Where("key = ?", "apiVersion").First(&setting).Error
-	if err == nil {
-		apiVersion = setting.Value
-	}
-
-	return c.JSON(http.StatusOK, map[string]any{
-		"appMode":    h.appMode,
-		"apiVersion": apiVersion,
-	})
+	return c.JSON(http.StatusOK, map[string]any{"appMode": h.appMode})
 }
 
 func (h *BaseHandler) loginEcho(c echo.Context) error {
@@ -163,8 +152,7 @@ func (h *BaseHandler) withAdminEcho(next func(echo.Context, *auth.Claims) error)
 func (h *BaseHandler) handleHealthEcho(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(c.Request().Context(), 2*time.Second)
 	defer cancel()
-	sqlDB, err := h.store.DB.DB()
-	if err != nil || sqlDB.PingContext(ctx) != nil {
+	if h.healthChecker == nil || h.healthChecker.Ping(ctx) != nil {
 		return c.JSON(http.StatusServiceUnavailable, map[string]any{"ok": false})
 	}
 	return c.JSON(http.StatusOK, map[string]any{"ok": true})

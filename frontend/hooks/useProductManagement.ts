@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../lib/auth/AuthContext";
-import { useAPIVersion } from "../components/APIVersionProvider";
 
 export interface Product {
   id: string;
@@ -49,7 +48,6 @@ const getEmptyFormData = (): ProductFormData => ({
 
 export function useProductManagement() {
   const { user } = useAuth();
-  const { apiPath } = useAPIVersion();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -58,7 +56,7 @@ export function useProductManagement() {
 
   const fetchProducts = useCallback(async () => {
     try {
-      const response = await fetch(apiPath("/products"));
+      const response = await fetch("/api/products");
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {
@@ -66,7 +64,7 @@ export function useProductManagement() {
     } finally {
       setLoading(false);
     }
-  }, [apiPath]);
+  }, []);
 
   useEffect(() => {
     void fetchProducts();
@@ -89,7 +87,7 @@ export function useProductManagement() {
 
       if (editingProduct) {
         const response = await fetch(
-          apiPath(`/products/${editingProduct.id}`),
+          `/api/products/${editingProduct.id}`,
           {
             method: "PUT",
             headers: {
@@ -105,7 +103,7 @@ export function useProductManagement() {
           handleCancel();
         }
       } else {
-        const response = await fetch(apiPath("/products"), {
+        const response = await fetch("/api/products", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -151,7 +149,7 @@ export function useProductManagement() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath(`/products/${id}`), {
+      const response = await fetch(`/api/products/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -199,7 +197,7 @@ export function useProductManagement() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath(`/products/${productId}`), {
+      const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -240,7 +238,7 @@ export function useProductManagement() {
 
     try {
       const token = await user.getIdToken();
-      const response = await fetch(apiPath(`/products/${productId}`), {
+      const response = await fetch(`/api/products/${productId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

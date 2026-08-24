@@ -15,7 +15,11 @@ import (
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
+	activityusecase "portfolio-backend/internal/usecase/activity"
+	adminlogusecase "portfolio-backend/internal/usecase/adminlog"
+	inquiryusecase "portfolio-backend/internal/usecase/inquiry"
 	productusecase "portfolio-backend/internal/usecase/product"
+	sectionusecase "portfolio-backend/internal/usecase/section"
 	technologyusecase "portfolio-backend/internal/usecase/technology"
 )
 
@@ -28,7 +32,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	st, err := postgres.New(ctx, cfg.DatabaseURL, cfg.SkipDBMigration, cfg.RunInquiryThreadMigration)
+	st, err := postgres.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("db error: %v", err)
 	}
@@ -77,10 +81,20 @@ func main() {
 	productUsecase := productusecase.New(productRepository)
 	technologyRepository := postgres.NewTechnologyRepository(st)
 	technologyUsecase := technologyusecase.New(technologyRepository)
+	adminLogUsecase := adminlogusecase.New(postgres.NewAdminLogRepository(st))
+	sectionUsecase := sectionusecase.New(postgres.NewSectionRepository(st))
+	activityUsecase := activityusecase.New(postgres.NewActivityRepository(st))
+	inquiryUsecase := inquiryusecase.New(postgres.NewInquiryRepository(st))
+	calendarRepository := postgres.NewCalendarRepository(st)
 
 	handler := httpapi.NewHandler(httpapi.HandlerConfig{
-		Store:             st,
+		HealthChecker:     st,
 		Products:          productUsecase,
+		AdminLogs:         adminLogUsecase,
+		Activities:        activityUsecase,
+		Inquiries:         inquiryUsecase,
+		CalendarRepo:      calendarRepository,
+		Sections:          sectionUsecase,
 		Technologies:      technologyUsecase,
 		Verifier:          verifier,
 		Mailer:            mailer,

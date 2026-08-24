@@ -7,29 +7,30 @@ import (
 
 	"portfolio-backend/internal/infrastructure/config"
 	"portfolio-backend/internal/infrastructure/persistence/postgres"
-	"portfolio-backend/internal/infrastructure/persistence/postgres/migrations"
 )
 
 func main() {
-	log.Println("Starting manual database migration...")
+	log.Println("Starting GORM database migration...")
 
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// AutoMigrate may wait for PostgreSQL locks on an existing production schema.
+	// Keep this timeout separate from the API server's request timeouts.
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	store, err := postgres.New(ctx, cfg.DatabaseURL, false, cfg.RunInquiryThreadMigration)
+	store, err := postgres.New(ctx, cfg.DatabaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer store.Close()
 
-	if err := migrations.RunOneTimeRefactoring(store.DB); err != nil {
+	if err := store.Migrate(ctx); err != nil {
 		log.Fatalf("Migration failed: %v", err)
 	}
 
-	log.Println("Manual migration completed successfully.")
+	log.Println("GORM database migration completed successfully.")
 }

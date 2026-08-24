@@ -9,39 +9,19 @@ import (
 	"strings"
 	"time"
 
+	"portfolio-backend/internal/domain/inquiry"
 	"portfolio-backend/internal/infrastructure/auth"
 	"portfolio-backend/internal/infrastructure/gcalendar"
 	"portfolio-backend/internal/infrastructure/mail"
-	"portfolio-backend/internal/infrastructure/persistence/postgres"
-
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-func normalize(v any) string {
-	s, _ := v.(string)
-	return strings.TrimSpace(s)
-}
-
-type inquiryReplyItem struct {
-	ID          string `json:"id"`
-	InquiryID   string `json:"inquiryId"`
-	ThreadID    string `json:"threadId"`
-	SenderType  string `json:"senderType"`
-	SenderName  string `json:"senderName"`
-	SenderEmail string `json:"senderEmail,omitempty"`
-	Message     string `json:"message"`
-	CreatedAt   string `json:"createdAt"`
-}
-
+func normalize(v any) string { s, _ := v.(string); return strings.TrimSpace(s) }
 func (h *InquiryHandler) buildContactLink(threadID string) string {
-	threadID = strings.TrimSpace(threadID)
-	if threadID == "" || h.appBaseURL == "" {
+	if strings.TrimSpace(threadID) == "" || h.appBaseURL == "" {
 		return ""
 	}
-	return h.appBaseURL + "/contact/" + threadID
+	return h.appBaseURL + "/contact/" + strings.TrimSpace(threadID)
 }
-
 func buildGoogleCalendarTemplateURL(summary, description string, start, end time.Time) string {
 	if start.IsZero() || end.IsZero() || !end.After(start) {
 		return ""
@@ -50,273 +30,112 @@ func buildGoogleCalendarTemplateURL(summary, description string, start, end time
 	values.Set("action", "TEMPLATE")
 	values.Set("text", strings.TrimSpace(summary))
 	values.Set("details", strings.TrimSpace(description))
-	values.Set(
-		"dates",
-		start.UTC().Format("20060102T150405Z")+"/"+end.UTC().Format("20060102T150405Z"),
-	)
+	values.Set("dates", start.UTC().Format("20060102T150405Z")+"/"+end.UTC().Format("20060102T150405Z"))
 	return "https://calendar.google.com/calendar/render?" + values.Encode()
 }
 
-func (h *InquiryHandler) fetchInquiryReplies(ctx context.Context, inquiryID string) ([]inquiryReplyItem, error) {
-	var models []postgres.InquiryReplyModel
-	err := h.store.DB.WithContext(ctx).
-		Where("inquiry_id = ?", inquiryID).
-		Order("created_at ASC, id ASC").
-		Find(&models).Error
-	if err != nil {
-		return nil, err
-	}
-
-	replies := make([]inquiryReplyItem, len(models))
-	for i, m := range models {
-		replies[i] = inquiryReplyItem{
-			ID:          m.ID,
-			InquiryID:   m.InquiryID,
-			ThreadID:    m.ThreadID,
-			SenderType:  m.SenderType,
-			SenderName:  m.SenderName,
-			SenderEmail: m.SenderEmail,
-			Message:     m.Message,
-			CreatedAt:   toISO(m.CreatedAt),
-		}
-	}
-
-	return replies, nil
-}
-
 func (h *InquiryHandler) createInquiry(w http.ResponseWriter, r *http.Request) error {
-	var body struct {
-		Category       string `json:"category"`
-		Subject        string `json:"subject"`
-		Message        string `json:"message"`
-		ContactName    string `json:"contactName"`
-		ContactEmail   string `json:"contactEmail"`
-		RequestedStart string `json:"requestedStart"`
-		RequestedEnd   string `json:"requestedEnd"`
-	}
+	var body inquiry.InquiryPayload
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
 	}
-	category := strings.TrimSpace(body.Category)
-	subject := strings.TrimSpace(body.Subject)
-	message := strings.TrimSpace(body.Message)
-	contactName := strings.TrimSpace(body.ContactName)
-	contactEmail := strings.TrimSpace(body.ContactEmail)
-	if subject == "" || message == "" || contactEmail == "" {
+	body.Category, body.Subject, body.Message, body.ContactName, body.ContactEmail = normalize(body.Category), normalize(body.Subject), normalize(body.Message), normalize(body.ContactName), normalize(body.ContactEmail)
+	if body.Subject == "" || body.Message == "" || body.ContactEmail == "" {
 		return NewAppError(http.StatusBadRequest, "subject, message, contactEmail are required", nil)
 	}
-	var requestedStart time.Time
-	var requestedEnd time.Time
-	calendarEventURL := ""
-	if category == "mtg" {
+	var start, end time.Time
+	calendarURL := ""
+	if body.Category == "mtg" {
 		if h.calendar == nil || !h.calendar.Enabled() {
 			return NewAppError(http.StatusServiceUnavailable, "Google Calendar is not configured", nil)
 		}
 		var err error
-		requestedStart, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedStart))
+		start, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedStart))
 		if err != nil {
 			return NewAppError(http.StatusBadRequest, "requestedStart must be RFC3339", err)
 		}
-		requestedEnd, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedEnd))
+		end, err = time.Parse(time.RFC3339, strings.TrimSpace(body.RequestedEnd))
 		if err != nil {
 			return NewAppError(http.StatusBadRequest, "requestedEnd must be RFC3339", err)
 		}
-		if !requestedEnd.After(requestedStart) {
+		if !end.After(start) {
 			return NewAppError(http.StatusBadRequest, "requestedEnd must be after requestedStart", nil)
 		}
 	}
-
-	inquiry := postgres.InquiryModel{
-		Category:     category,
-		Subject:      subject,
-		Message:      message,
-		ContactName:  contactName,
-		ContactEmail: contactEmail,
-		Status:       "pending",
-	}
-
-	// 1. Database Transaction (Save inquiry only)
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&inquiry).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
+	created, err := h.usecase.Create(r.Context(), body)
 	if err != nil {
-		log.Printf("failed to create inquiry: %v", err)
-		if err.Error() == "conflict" {
-			return NewAppError(http.StatusConflict, "Section with this ID already exists", err)
-		}
 		return NewAppError(http.StatusInternalServerError, "Failed to create inquiry", err)
 	}
-
-	// 2. External API Call (Google Calendar) - OUTSIDE Transaction
-	if category == "mtg" {
-		calendarSummary := "MTG"
-		if strings.TrimSpace(contactName) != "" {
-			calendarSummary = strings.TrimSpace(contactName) + "-MTG"
+	if body.Category == "mtg" {
+		summary := "MTG"
+		if body.ContactName != "" {
+			summary = body.ContactName + "-MTG"
 		}
-		calendarDescription := strings.TrimSpace(strings.Join([]string{
-			"MTG詳細",
-			message,
-		}, "\n"))
-
-		calendarEvent, err := h.calendar.CreateEvent(r.Context(), gcalendar.CreateEventInput{
-			Summary:     calendarSummary,
-			Description: calendarDescription,
-			Start:       requestedStart,
-			End:         requestedEnd,
-		})
-		if err != nil {
-			// Log error but don't fail the whole request since DB record is already saved
-			log.Printf("Warning: failed to create calendar event: %v", err)
+		description := strings.Join([]string{"MTG詳細", body.Message}, "\n")
+		event, eventErr := h.calendar.CreateEvent(r.Context(), gcalendar.CreateEventInput{Summary: summary, Description: description, Start: start, End: end})
+		if eventErr != nil {
+			log.Printf("Warning: failed to create calendar event: %v", eventErr)
 		} else {
 			h.calendarCache.clearEvents()
-			calendarEventURL = buildGoogleCalendarTemplateURL(
-				calendarSummary,
-				calendarDescription,
-				requestedStart,
-				requestedEnd,
-			)
-			if calendarEventURL == "" {
-				calendarEventURL = calendarEvent.HTMLLink
+			calendarURL = buildGoogleCalendarTemplateURL(summary, description, start, end)
+			if calendarURL == "" {
+				calendarURL = event.HTMLLink
 			}
 		}
 	}
-
-	// 3. Post-processing (Notifications, etc.)
-	threadURL := h.buildContactLink(inquiry.ThreadID)
-	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
-		ID:                inquiry.ID,
-		ThreadID:          inquiry.ThreadID,
-		ThreadURL:         threadURL,
-		NotificationLabel: "新しいお問い合わせ",
-		Category:          category,
-		Subject:           subject,
-		Message:           message,
-		ContactName:       contactName,
-		ContactEmail:      contactEmail,
-	})
-	h.sendInquiryReceipt(r.Context(), mail.InquiryReceiptData{
-		Name:         contactName,
-		Category:     category,
-		Subject:      subject,
-		Message:      message,
-		ThreadURL:    threadURL,
-		CalendarURL:  calendarEventURL,
-		ContactEmail: contactEmail,
-	})
-
-	writeJSON(w, http.StatusCreated, map[string]any{"id": inquiry.ID, "threadId": inquiry.ThreadID, "threadUrl": threadURL})
+	threadURL := h.buildContactLink(created.ThreadID)
+	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{ID: created.ID, ThreadID: created.ThreadID, ThreadURL: threadURL, NotificationLabel: "新しいお問い合わせ", Category: created.Category, Subject: created.Subject, Message: created.Message, ContactName: created.ContactName, ContactEmail: created.ContactEmail})
+	h.sendInquiryReceipt(r.Context(), mail.InquiryReceiptData{Name: created.ContactName, Category: created.Category, Subject: created.Subject, Message: created.Message, ThreadURL: threadURL, CalendarURL: calendarURL, ContactEmail: created.ContactEmail})
+	writeJSON(w, http.StatusCreated, map[string]any{"id": created.ID, "threadId": created.ThreadID, "threadUrl": threadURL})
 	return nil
 }
 
+func inquiryMap(item inquiry.Inquiry, replies []inquiry.Reply, threadURL string) map[string]any {
+	return map[string]any{"id": item.ID, "threadId": item.ThreadID, "threadUrl": threadURL, "category": item.Category, "subject": item.Subject, "message": item.Message, "contactName": item.ContactName, "contactEmail": item.ContactEmail, "status": item.Status, "replies": replies, "createdAt": item.CreatedAt, "updatedAt": item.UpdatedAt}
+}
 func (h *InquiryHandler) getInquiries(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	var models []postgres.InquiryModel
-	err := h.store.DB.WithContext(r.Context()).Order("created_at DESC").Find(&models).Error
+	items, err := h.usecase.List(r.Context())
 	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiries", err)
 	}
-
-	inquiries := make([]map[string]any, 0, len(models))
-	for _, m := range models {
-		inquiries = append(inquiries, map[string]any{
-			"id":           m.ID,
-			"threadId":     m.ThreadID,
-			"category":     m.Category,
-			"subject":      m.Subject,
-			"message":      m.Message,
-			"contactName":  m.ContactName,
-			"contactEmail": m.ContactEmail,
-			"status":       m.Status,
-			"createdAt":    toISO(m.CreatedAt),
-			"updatedAt":    toISO(m.UpdatedAt),
-		})
-	}
 	h.logAdmin(r.Context(), "read", "inquiries", "", "info", user, nil)
-	writeJSON(w, http.StatusOK, map[string]any{"contacts": inquiries, "inquiries": inquiries})
+	writeJSON(w, http.StatusOK, map[string]any{"contacts": items, "inquiries": items})
 	return nil
 }
-
 func (h *InquiryHandler) getInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	id := routeParam(r, "id")
-	var m postgres.InquiryModel
-	err := h.store.DB.WithContext(r.Context()).First(&m, "id = ?", id).Error
+	item, replies, err := h.usecase.GetByID(r.Context(), routeParam(r, "id"))
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, inquiry.ErrNotFound) {
 			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
 		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
 	}
-
-	replies, err := h.fetchInquiryReplies(r.Context(), id)
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
-	}
-	h.logAdmin(r.Context(), "read", "inquiry", id, "info", user, nil)
-	detail := map[string]any{
-		"id":           m.ID,
-		"threadId":     m.ThreadID,
-		"threadUrl":    h.buildContactLink(m.ThreadID),
-		"category":     m.Category,
-		"subject":      m.Subject,
-		"message":      m.Message,
-		"contactName":  m.ContactName,
-		"contactEmail": m.ContactEmail,
-		"status":       m.Status,
-		"replies":      replies,
-		"createdAt":    toISO(m.CreatedAt),
-		"updatedAt":    toISO(m.UpdatedAt),
-	}
+	h.logAdmin(r.Context(), "read", "inquiry", item.ID, "info", user, nil)
+	detail := inquiryMap(item, replies, h.buildContactLink(item.ThreadID))
 	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
 	return nil
 }
-
 func (h *InquiryHandler) getInquiryThread(w http.ResponseWriter, r *http.Request) error {
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
 	}
-
-	var m postgres.InquiryModel
-	err := h.store.DB.WithContext(r.Context()).First(&m, "thread_id = ?", threadID).Error
+	item, replies, err := h.usecase.GetByThreadID(r.Context(), threadID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+		if errors.Is(err, inquiry.ErrNotFound) {
 			return NewAppError(http.StatusNotFound, "Not found", err)
 		}
-		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
+		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry thread", err)
 	}
-
-	replies, err := h.fetchInquiryReplies(r.Context(), m.ID)
-	if err != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to fetch inquiry", err)
-	}
-
-	detail := map[string]any{
-		"id":           m.ID,
-		"threadId":     m.ThreadID,
-		"threadUrl":    h.buildContactLink(m.ThreadID),
-		"category":     m.Category,
-		"subject":      m.Subject,
-		"message":      m.Message,
-		"contactName":  m.ContactName,
-		"contactEmail": m.ContactEmail,
-		"status":       m.Status,
-		"replies":      replies,
-		"createdAt":    toISO(m.CreatedAt),
-		"updatedAt":    toISO(m.UpdatedAt),
-	}
+	detail := inquiryMap(item, replies, h.buildContactLink(item.ThreadID))
 	writeJSON(w, http.StatusOK, map[string]any{"contact": detail, "inquiry": detail})
 	return nil
 }
-
 func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Request) error {
 	threadID := strings.TrimSpace(routeParam(r, "threadId"))
 	if threadID == "" {
 		return NewAppError(http.StatusBadRequest, "threadId is required", nil)
 	}
-
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
@@ -325,63 +144,19 @@ func (h *InquiryHandler) replyInquiryThread(w http.ResponseWriter, r *http.Reque
 	if message == "" {
 		return NewAppError(http.StatusBadRequest, "message is required", nil)
 	}
-
-	replyID := uuid.New().String()
-
-	var inquiry postgres.InquiryModel
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&inquiry, "thread_id = ?", threadID).Error; err != nil {
-			return err
-		}
-
-		reply := postgres.InquiryReplyModel{
-			ID:          replyID,
-			InquiryID:   inquiry.ID,
-			ThreadID:    threadID,
-			SenderType:  "user",
-			SenderName:  inquiry.ContactName,
-			SenderEmail: inquiry.ContactEmail,
-			Message:     message,
-		}
-		if err := tx.Create(&reply).Error; err != nil {
-			return err
-		}
-
-		nextStatus := inquiry.Status
-		if inquiry.Status == "resolved" {
-			nextStatus = "pending"
-		}
-		if err := tx.Model(&inquiry).Updates(map[string]any{"status": nextStatus, "updated_at": time.Now()}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
+	item, _, err := h.usecase.GetByThreadID(r.Context(), threadID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return NewAppError(http.StatusNotFound, "Not found", err)
-		}
+		return NewAppError(http.StatusNotFound, "Not found", err)
+	}
+	reply, err := h.usecase.ReplyFromUser(r.Context(), threadID, message)
+	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to create reply", err)
 	}
-
-	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{
-		ID:                inquiry.ID,
-		ThreadID:          threadID,
-		ThreadURL:         h.buildContactLink(threadID),
-		NotificationLabel: "お問い合わせスレッドへの追加返信",
-		Category:          inquiry.Category,
-		Subject:           inquiry.Subject,
-		Message:           message,
-		ContactName:       inquiry.ContactName,
-		ContactEmail:      inquiry.ContactEmail,
-	})
-
-	writeJSON(w, http.StatusOK, map[string]any{"id": replyID})
+	h.notifyInquiryCreated(r.Context(), mail.InquiryNotificationData{ID: item.ID, ThreadID: threadID, ThreadURL: h.buildContactLink(threadID), NotificationLabel: "お問い合わせスレッドへの追加返信", Category: item.Category, Subject: item.Subject, Message: message, ContactName: item.ContactName, ContactEmail: item.ContactEmail})
+	writeJSON(w, http.StatusOK, map[string]any{"id": reply.ID})
 	return nil
 }
-
 func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
-	id := routeParam(r, "id")
 	var body map[string]any
 	if err := decodeBody(r, &body); err != nil {
 		return NewAppError(http.StatusBadRequest, "Invalid request body", err)
@@ -390,19 +165,14 @@ func (h *InquiryHandler) patchInquiryStatus(w http.ResponseWriter, r *http.Reque
 	if status != "pending" && status != "in_progress" && status != "resolved" {
 		return NewAppError(http.StatusBadRequest, "Invalid status", nil)
 	}
-
-	result := h.store.DB.WithContext(r.Context()).Model(&postgres.InquiryModel{}).Where("id = ?", id).Updates(map[string]any{"status": status, "updated_at": time.Now()})
-	if result.Error != nil {
-		return NewAppError(http.StatusInternalServerError, "Failed to update inquiry", result.Error)
-	}
-	if result.RowsAffected == 0 {
-		return NewAppError(http.StatusNotFound, "Not found", nil)
+	id := routeParam(r, "id")
+	if err := h.usecase.UpdateStatus(r.Context(), id, status); err != nil {
+		return NewAppError(http.StatusNotFound, "Not found", err)
 	}
 	h.logAdmin(r.Context(), "update", "inquiry", id, "info", user, map[string]any{"status": status})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 	return nil
 }
-
 func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, user *auth.Claims) error {
 	id := routeParam(r, "id")
 	var body map[string]any
@@ -413,60 +183,17 @@ func (h *InquiryHandler) replyInquiry(w http.ResponseWriter, r *http.Request, us
 	if message == "" {
 		return NewAppError(http.StatusBadRequest, "message is required", nil)
 	}
-
-	senderName := "admin"
-	if strings.TrimSpace(user.Email) != "" {
-		senderName = user.Email
-	}
-	replyID := uuid.New().String()
-
-	var inquiry postgres.InquiryModel
-	err := h.store.DB.WithContext(r.Context()).Transaction(func(tx *gorm.DB) error {
-		if err := tx.Set("gorm:query_option", "FOR UPDATE").First(&inquiry, "id = ?", id).Error; err != nil {
-			return err
-		}
-
-		nextStatus := inquiry.Status
-		if inquiry.Status == "pending" {
-			nextStatus = "in_progress"
-		}
-
-		reply := postgres.InquiryReplyModel{
-			ID:          replyID,
-			InquiryID:   inquiry.ID,
-			ThreadID:    inquiry.ThreadID,
-			SenderType:  "admin",
-			SenderName:  senderName,
-			SenderEmail: user.Email,
-			Message:     message,
-		}
-		if err := tx.Create(&reply).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Model(&inquiry).Updates(map[string]any{"status": nextStatus, "updated_at": time.Now()}).Error; err != nil {
-			return err
-		}
-		return nil
-	})
-
+	item, _, err := h.usecase.GetByID(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return NewAppError(http.StatusNotFound, "Not found", err)
-		}
+		return NewAppError(http.StatusNotFound, "Not found", err)
+	}
+	reply, err := h.usecase.ReplyFromAdmin(r.Context(), id, message, user.Email)
+	if err != nil {
 		return NewAppError(http.StatusInternalServerError, "Failed to create reply", err)
 	}
-
-	h.sendInquiryReply(r.Context(), mail.InquiryReplyData{
-		Name:         inquiry.ContactName,
-		Subject:      inquiry.Subject,
-		Message:      message,
-		ThreadURL:    h.buildContactLink(inquiry.ThreadID),
-		ContactEmail: inquiry.ContactEmail,
-	})
-
+	h.sendInquiryReply(r.Context(), mail.InquiryReplyData{Name: item.ContactName, Subject: item.Subject, Message: message, ThreadURL: h.buildContactLink(item.ThreadID), ContactEmail: item.ContactEmail})
 	h.logAdmin(r.Context(), "reply", "inquiry", id, "info", user, map[string]any{"messageLength": len(message)})
-	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "id": reply.ID})
 	return nil
 }
 
@@ -475,53 +202,45 @@ func (h *InquiryHandler) notifyInquiryCreated(ctx context.Context, data mail.Inq
 		data.NotificationLabel = "新しいお問い合わせ"
 	}
 	if h.mailer != nil {
-		subjectAdmin, bodyAdmin, err := mail.BuildInquiryNotification(data)
+		subject, body, err := mail.BuildInquiryNotification(data)
 		if err != nil {
-			log.Printf("mail template error (inquiry->admin): %v", err)
-		} else if err := h.mailer.SendText(ctx, h.mailTo, subjectAdmin, bodyAdmin); err != nil {
-			log.Printf("SES notify error (inquiry->admin): %v", err)
+			log.Printf("mail template error: %v", err)
+		} else if err := h.mailer.SendText(ctx, h.mailTo, subject, body); err != nil {
+			log.Printf("SES notify error: %v", err)
 		}
 	}
-
 	if h.discord != nil {
 		body, err := mail.BuildInquiryDiscordNotification(data)
 		if err != nil {
-			log.Printf("discord template error (inquiry->admin): %v", err)
-		} else {
-			log.Printf("discord notify start (inquiry->admin): thread_id=%s label=%s", data.ThreadID, data.NotificationLabel)
-			if err := h.discord.Send(ctx, body); err != nil {
-				log.Printf("discord notify error (inquiry->admin): %v", err)
-			} else {
-				log.Printf("discord notify success (inquiry->admin): thread_id=%s", data.ThreadID)
-			}
+			log.Printf("discord template error: %v", err)
+		} else if err := h.discord.Send(ctx, body); err != nil {
+			log.Printf("discord notify error: %v", err)
 		}
 	}
 }
-
 func (h *InquiryHandler) sendInquiryReceipt(ctx context.Context, data mail.InquiryReceiptData) {
 	if h.mailer == nil {
 		return
 	}
 	subject, body, err := mail.BuildInquiryReceipt(data)
 	if err != nil {
-		log.Printf("mail template error (inquiry receipt): %v", err)
+		log.Printf("mail template error: %v", err)
 		return
 	}
 	if err := h.mailer.SendText(ctx, []string{data.ContactEmail}, subject, body); err != nil {
-		log.Printf("SES notify error (inquiry receipt): %v", err)
+		log.Printf("SES notify error: %v", err)
 	}
 }
-
 func (h *InquiryHandler) sendInquiryReply(ctx context.Context, data mail.InquiryReplyData) {
 	if h.mailer == nil {
 		return
 	}
 	subject, body, err := mail.BuildInquiryReply(data)
 	if err != nil {
-		log.Printf("mail template error (reply): %v", err)
+		log.Printf("mail template error: %v", err)
 		return
 	}
 	if err := h.mailer.SendText(ctx, []string{data.ContactEmail}, subject, body); err != nil {
-		log.Printf("SES notify error (reply): %v", err)
+		log.Printf("SES notify error: %v", err)
 	}
 }
