@@ -47,3 +47,10 @@ GitHub Actionsの以下のワークフローを、`main`へのpushとPull Reques
 - `security.yml`: Goとnpmの依存関係の脆弱性チェック
 - `race.yml`: Goのデータ競合検出
 - `integration.yml`: CI用PostgreSQLでのMigration・API・Basic認証の結合テスト
+
+Dependabotは以下の依存関係を毎週月曜日に確認し、更新Pull Requestを作成します。
+
+- BackendのGoモジュール
+- Frontendのnpmパッケージ
+- GitHub Actions
+- Dockerイメージ
