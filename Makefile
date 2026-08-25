@@ -19,7 +19,7 @@ GOFMT := /usr/local/go/bin/gofmt
 
 help:
 	@echo "Available targets:"
-	@echo "  init-env           Create .env.local files from .env.local.example if missing"
+	@echo "  init-env           Create backend/.env.local from its example if missing"
 	@echo "  install            Install frontend/backend dependencies"
 	@echo "  install-frontend   npm ci in frontend/"
 	@echo "  install-backend    go mod download in backend/"
@@ -55,11 +55,23 @@ install-backend:
 	cd $(BACKEND_DIR) && $(GO) mod tidy && $(GO) mod download
 
 up:
-	$(COMPOSE) up -d --wait postgres
-	$(COMPOSE) up --build
+	$(COMPOSE) --profile ci up -d --wait postgres
+	$(COMPOSE) up --build -d --wait backend frontend
 
 down:
 	$(COMPOSE) down
+
+restart: down up
+
+dev: up
+
+dev-frontend:
+	cd $(FRONTEND_DIR) && BACKEND_API_URL=http://localhost:8081 npm run dev -- --port 3001
+
+dev-backend:
+	$(COMPOSE) --profile ci up -d --wait postgres
+	$(COMPOSE) build backend
+	$(COMPOSE) run --rm --service-ports $(BACKEND_SERVICE) /app/server
 
 logs:
 	$(COMPOSE) logs -f --tail=200
