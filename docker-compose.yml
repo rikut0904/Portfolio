@@ -15,7 +15,7 @@ services:
       retries: 20
 
   postgres-ci:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     profiles: [ci]
     environment:
       POSTGRES_DB: portfolio_ci
