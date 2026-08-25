@@ -32,8 +32,7 @@ function CalendarSettingsContent() {
           headers: token ? { Authorization: token } : {},
         });
         const body = (await res.json().catch(() => ({}))) as
-          | CalendarPreferencesResponse
-          | { error?: string };
+          CalendarPreferencesResponse | { error?: string };
         if (!res.ok) {
           throw new Error(
             body && "error" in body
@@ -91,8 +90,7 @@ function CalendarSettingsContent() {
         body: JSON.stringify({ colors: payloadColors, labels: payloadLabels }),
       });
       const body = (await res.json().catch(() => ({}))) as
-        | CalendarPreferencesResponse
-        | { error?: string };
+        CalendarPreferencesResponse | { error?: string };
       if (!res.ok) {
         throw new Error(
           body && "error" in body
