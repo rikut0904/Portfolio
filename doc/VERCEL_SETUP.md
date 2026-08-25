@@ -54,22 +54,15 @@ Vercelにデプロイする際、以下の環境変数を設定する必要が�
 
 ## ローカル開発環境の設定
 
-1. `frontend/.env.example` を参考に、フロントエンドの `.env` を作成します：
+1. バックエンドの `.env.local` はComposeの固定値を使用し、Google Calendar・Discord webhook・GitHub連携を使う場合だけ設定を追加します：
 ```bash
-cp frontend/.env.example frontend/.env
+cp backend/.env.local.example backend/.env.local
 ```
 
-2. バックエンドの `.env` にBasic認証設定を追加します：
-```bash
-BASIC_AUTH_USERNAME=admin
-BASIC_AUTH_PASSWORD=change-me
-BASIC_AUTH_EMAIL=admin@example.com
-```
-
-3. GitHubトークンと `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BRANCH` もバックエンドの `.env` に追記します。
+2. GitHubトークンなどの本番設定は、`backend/.env.example`を参考に本番環境へ設定します。
 
 ## 注意事項
 
-- ⚠️ `.env` は絶対にGitにコミットしないでください（`.gitignore` に含まれています）
+- ⚠️ `.env`と`.env.local`は絶対にGitにコミットしないでください（`.gitignore` に含まれています）
 - ⚠️ `BASIC_AUTH_PASSWORD` は本番・Previewごとに安全な値を設定してください
 - ✅ Firebaseの環境変数は不要です

@@ -34,6 +34,7 @@ All endpoints are provided under `/api/*` with compatibility to existing Next.js
 - Set `DATABASE_URL` to Railway Postgres URL
 - Set `APP_BASE_URL` to the frontend public URL (used for inquiry thread links in emails)
 - Run `make migrate` after deployment or schema changes. The API server never migrates the database at startup.
+- Run `make mocks` only against the local PostgreSQL service. The mock command rejects non-local `DATABASE_URL` hosts before connecting, and it must never be pointed at production or a shared database.
 - Set Basic authentication env vars
   - `BASIC_AUTH_USERNAME`
   - `BASIC_AUTH_PASSWORD`

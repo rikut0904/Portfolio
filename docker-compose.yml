@@ -6,8 +6,23 @@ services:
       POSTGRES_DB: portfolio
       POSTGRES_USER: portfolio
       POSTGRES_PASSWORD: portfolio
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+
+  postgres-ci:
+    image: postgres:18-alpine
+    profiles: [ci]
+    environment:
+      POSTGRES_DB: portfolio_ci
+      POSTGRES_USER: portfolio_ci
+      POSTGRES_PASSWORD: portfolio_ci
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio_ci -d portfolio_ci"]
       interval: 2s
       timeout: 5s
       retries: 20
@@ -17,8 +32,33 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: portfolio-backend
-    env_file:
-      - ./backend/.env
+    environment:
+      PORT: "8080"
+      APP_MODE: "false"
+      DATABASE_URL: "${DATABASE_URL:-postgresql://portfolio:portfolio@postgres:5432/portfolio?sslmode=disable}"
+      CORS_ALLOWED_ORIGINS: "http://localhost:3001,http://127.0.0.1:3001"
+      CORS_ALLOW_CREDENTIALS: "false"
+      APP_BASE_URL: "http://localhost:3001"
+      BASIC_AUTH_USERNAME: "admin"
+      BASIC_AUTH_PASSWORD: "change-me"
+      BASIC_AUTH_EMAIL: "admin@example.com"
+      MAIL_FROM: ""
+      MAIL_TO: ""
+      MAIL_RETRY_MAX: "3"
+      MAIL_RETRY_INTERVAL_MS: "500"
+      AWS_REGION: "ap-northeast-1"
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      SES_CONFIGURATION_SET: ""
+      DISCORD_WEBHOOK_URL: "${DISCORD_WEBHOOK_URL:-}"
+      DISCORD_WEBHOOK_URLS: "${DISCORD_WEBHOOK_URLS:-}"
+      GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
+      GITHUB_OWNER: "${GITHUB_OWNER:-}"
+      GITHUB_REPO: "${GITHUB_REPO:-}"
+      GITHUB_BRANCH: "${GITHUB_BRANCH:-main}"
+      GOOGLE_CALENDAR_IDS: "${GOOGLE_CALENDAR_IDS:-}"
+      GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON: "${GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON:-}"
+      GOOGLE_CALENDAR_TIMEZONE: "${GOOGLE_CALENDAR_TIMEZONE:-Asia/Tokyo}"
     ports:
       - "8081:8080"
     healthcheck:
@@ -33,10 +73,14 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: portfolio-frontend
-    env_file:
-      - ./frontend/.env
+    environment:
+      BACKEND_API_URL: "http://backend:8080"
+      NEXT_PUBLIC_CONTACT_GUIDANCE_EMAIL: ""
     depends_on:
       backend:
         condition: service_healthy
     ports:
       - "3001:3001"
+
+volumes:
+  postgres_data:

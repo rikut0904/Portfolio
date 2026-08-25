@@ -12,24 +12,24 @@ jobs:
   backend:
     name: Migration and API integration
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://portfolio_ci:portfolio_ci@postgres-ci:5432/portfolio_ci?sslmode=disable
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
       - name: Prepare CI environment files
         run: |
-          cp frontend/.env.example frontend/.env
-          cp backend/.env.example backend/.env
-          sed -i 's|^DATABASE_URL=.*|DATABASE_URL=postgresql://portfolio:portfolio@postgres:5432/portfolio?sslmode=disable|' backend/.env
+          cp backend/.env.local.example backend/.env.local
 
       - name: Start disposable PostgreSQL
-        run: docker compose --profile ci up -d --wait postgres
+        run: docker compose --env-file backend/.env.local --profile ci up -d --wait postgres-ci
 
       - name: Run GORM migration
-        run: make migrate
+        run: make migrate MIGRATION_DB_SERVICE=postgres-ci
 
       - name: Start backend
-        run: docker compose up -d backend
+        run: docker compose --env-file backend/.env.local up -d backend
 
       - name: Wait for backend
         run: |
@@ -39,7 +39,7 @@ jobs:
             fi
             sleep 2
           done
-          docker compose logs backend
+          docker compose --env-file backend/.env.local logs backend
           exit 1
 
       - name: Check public health endpoint
@@ -56,4 +56,4 @@ jobs:
 
       - name: Stop integration services
         if: always()
-        run: docker compose --profile ci down -v
+        run: docker compose --env-file backend/.env.local down -v
