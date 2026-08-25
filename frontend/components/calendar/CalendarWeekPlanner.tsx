@@ -1360,8 +1360,7 @@ function CalendarWeekPlannerContent({
           headers: token ? { Authorization: token } : {},
         });
         const body = (await res.json().catch(() => ({}))) as
-          | CalendarPreferencesResponse
-          | { error?: string };
+          CalendarPreferencesResponse | { error?: string };
         if (!res.ok) {
           throw new Error(
             body && "error" in body
