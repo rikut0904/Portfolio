@@ -5,18 +5,32 @@ interface SiteLayoutProps {
   children: React.ReactNode;
   /** 週カレンダーなど横幅の広いコンテンツ向け */
   wide?: boolean;
+  className?: string;
 }
 
-export default function SiteLayout({ children, wide }: SiteLayoutProps) {
+export default function SiteLayout({
+  children,
+  wide = false,
+  className = "",
+}: SiteLayoutProps) {
   return (
     <>
       <Header />
       <main
-        className={`mx-auto px-6 pt-20 ${wide ? "max-w-7xl" : "max-w-5xl"}`}
+        className={[
+          "site-main",
+          wide ? "site-main--wide" : "",
+          className,
+        ]
+          .filter(Boolean)
+          .join(" ")}
       >
         {children}
       </main>
-      <footer className="text-center py-6">&copy; 2025 平田 陸翔</footer>
+      <footer className="site-footer">
+        <p>Designed &amp; built by Rikuto Hirata</p>
+        <p>&copy; {new Date().getFullYear()} 平田 陸翔</p>
+      </footer>
     </>
   );
 }
