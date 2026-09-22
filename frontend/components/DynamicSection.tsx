@@ -82,7 +82,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     ) : (
       <a
         href={url}
-        className="text-blue-700 underline underline-offset-4 hover:text-blue-900"
+        className="content-link"
         target={url.startsWith("http") ? "_blank" : undefined}
         rel={url.startsWith("http") ? "noreferrer" : undefined}
       >
@@ -103,7 +103,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       <FadeInSection>
         <section id={section.id}>
           <h2>{meta.displayName}</h2>
-          <div className="flex flex-col md:flex-row items-left gap-8 card">
+          <div className="flex flex-col md:flex-row md:items-center gap-8 card">
             {profileImageSrc && (
               <Image
                 src={profileImageSrc}
@@ -192,7 +192,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
   // 新しい管理画面形式（list, history）に対応
   const renderList = () => {
-    const lists = data?.items || data?.lists || [];
+    const lists =
+      Array.isArray(data?.items) && data.items.length > 0
+        ? data.items
+        : data?.lists || [];
     return (
       <FadeInSection>
         <section id={section.id}>
@@ -229,7 +232,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
     return (
       <FadeInSection>
-        <section id={section.id}>
+        <section id={section.id} className="history-section">
           <Accordion title={meta.displayName} defaultOpen={false}>
             <div className="flex flex-col gap-4">
               {histories.map((history, index: number) => (
