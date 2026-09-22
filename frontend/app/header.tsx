@@ -30,12 +30,17 @@ export default function Header() {
 
         <button
           type="button"
-          className="menu-button md:hidden"
-          onClick={() => setIsOpen(!isOpen)}
+          className={`menu-button ${isOpen ? "menu-button--open" : ""}`}
+          onClick={() => setIsOpen((open) => !open)}
           aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
           aria-expanded={isOpen}
+          aria-controls="mobile-navigation"
         >
-          <span aria-hidden="true">{isOpen ? "×" : "☰"}</span>
+          <span className="menu-button__icon" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </span>
         </button>
 
         <nav className="site-nav" aria-label="メインナビゲーション">
@@ -63,7 +68,8 @@ export default function Header() {
             onClick={closeMenu}
             aria-current={isActive(item.href) ? "page" : undefined}
           >
-            {item.label}
+            <span>{item.label}</span>
+            <span aria-hidden="true">↗</span>
           </Link>
         ))}
       </SlideInMenu>
