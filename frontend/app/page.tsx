@@ -92,7 +92,6 @@ export default function Home() {
           <React.Fragment key={section.id}>
             {isFirstOfMainHistoryGroup && (
               <section className="history-heading">
-                <p className="section-kicker">Career</p>
                 <h2>略歴</h2>
               </section>
             )}
