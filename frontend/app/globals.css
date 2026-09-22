@@ -68,18 +68,7 @@ body {
   min-height: 100vh;
   margin: 0;
   overflow-x: hidden;
-  background:
-    radial-gradient(
-      circle at 8% 4%,
-      rgba(200, 115, 165, 0.13),
-      transparent 27rem
-    ),
-    radial-gradient(
-      circle at 92% 18%,
-      rgba(116, 87, 183, 0.16),
-      transparent 30rem
-    ),
-    linear-gradient(180deg, var(--background-soft) 0, var(--background) 30rem);
+  background-color: var(--background);
   color: var(--foreground);
   font-family:
     "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
@@ -89,18 +78,7 @@ body {
 }
 
 body::before {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  content: "";
-  opacity: 0.42;
-  background-image: radial-gradient(
-    rgba(116, 87, 183, 0.16) 0.7px,
-    transparent 0.7px
-  );
-  background-size: 22px 22px;
-  mask-image: linear-gradient(to bottom, black, transparent 70%);
+  display: none;
 }
 
 ::selection {
@@ -117,7 +95,10 @@ a {
   position: fixed;
   inset: 0 0 auto;
   z-index: 40;
-  padding: 0.9rem clamp(1rem, 4vw, 3rem);
+  padding: 0 clamp(1rem, 4vw, 3rem);
+  border-bottom: 1px solid var(--card-border);
+  background: color-mix(in srgb, var(--background) 92%, transparent);
+  backdrop-filter: blur(16px);
 }
 
 .site-header__inner {
@@ -125,14 +106,8 @@ a {
   align-items: center;
   justify-content: space-between;
   width: min(1180px, 100%);
-  min-height: 3.75rem;
+  min-height: 4.75rem;
   margin: 0 auto;
-  padding: 0.55rem 0.75rem 0.55rem 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--surface-solid) 78%, transparent);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(18px);
 }
 
 .site-brand {
@@ -161,22 +136,37 @@ a {
 }
 
 .site-nav a {
-  padding: 0.65rem 0.9rem;
-  border-radius: 999px;
+  position: relative;
+  margin: 0 0.65rem;
+  padding: 0.8rem 0.1rem;
   color: var(--text-body);
   font-size: 0.82rem;
   font-weight: 700;
-  transition:
-    color 180ms ease,
-    background-color 180ms ease,
-    transform 180ms ease;
+  transition: color 180ms ease;
+}
+
+.site-nav a::after {
+  position: absolute;
+  right: 0;
+  bottom: 0.35rem;
+  left: 0;
+  height: 2px;
+  background: var(--primary-color);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 180ms ease;
 }
 
 .site-nav a:hover,
 .site-nav a[aria-current="page"] {
   color: var(--primary-strong);
-  background: var(--primary-light);
-  transform: translateY(-1px);
+}
+
+.site-nav a:hover::after,
+.site-nav a[aria-current="page"]::after {
+  transform: scaleX(1);
+  transform-origin: left;
 }
 
 .menu-button {
@@ -196,7 +186,7 @@ a {
   width: min(1080px, calc(100% - 2rem));
   min-height: calc(100vh - 8rem);
   margin: 0 auto;
-  padding: 8.5rem 0 4rem;
+  padding: 7.75rem 0 4rem;
 }
 
 .site-main--wide {
@@ -356,11 +346,7 @@ li + li {
   padding: clamp(1.5rem, 5vw, 4rem);
   border: 1px solid var(--card-border);
   border-radius: clamp(1.75rem, 5vw, 3.25rem);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--surface-solid) 88%, transparent),
-    color-mix(in srgb, var(--primary-light) 62%, transparent)
-  );
+  background: color-mix(in srgb, var(--surface-solid) 76%, var(--primary-light));
   box-shadow: var(--shadow-md);
 }
 
@@ -402,12 +388,11 @@ textarea {
 
 @media (max-width: 767px) {
   .site-header {
-    padding: 0.65rem;
+    padding: 0 0.9rem;
   }
 
   .site-header__inner {
-    min-height: 3.4rem;
-    padding-left: 1rem;
+    min-height: 4rem;
   }
 
   .site-nav {
@@ -416,7 +401,7 @@ textarea {
 
   .site-main {
     width: min(100% - 1.25rem, 1080px);
-    padding-top: 6.5rem;
+    padding-top: 5.75rem;
   }
 
   h2::after {
