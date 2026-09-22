@@ -45,9 +45,7 @@ export default function ActivityPage() {
           activitiesRes.json(),
         ]);
 
-        const publicActivities: Activity[] = (
-          activitiesData.activities || []
-        )
+        const publicActivities: Activity[] = (activitiesData.activities || [])
           .filter((activity: Activity) => activity.status === "公開")
           .sort((a: Activity, b: Activity) => a.order - b.order);
 
