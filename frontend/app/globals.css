@@ -1318,6 +1318,11 @@ h2::before {
     transform 180ms ease;
 }
 
+.contact-form .contact-category-option {
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
 .contact-category-option:hover {
   border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
   transform: translateY(-1px);
@@ -1343,12 +1348,14 @@ h2::before {
 }
 
 .contact-category-option__title {
+  display: block;
   color: var(--text-heading);
   font-size: 0.82rem;
   font-weight: 800;
 }
 
 .contact-category-option__description {
+  display: block;
   color: var(--text-muted);
   font-size: 0.7rem;
   line-height: 1.55;
