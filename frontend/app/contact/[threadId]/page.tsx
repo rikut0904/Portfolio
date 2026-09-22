@@ -133,7 +133,9 @@ export default function ContactThreadPage() {
       <FadeInSection>
         <section className="contact-thread-section">
           <h1>お問い合わせスレッド</h1>
-          <p className="contact-intro">お問い合わせ内容と返信状況を、このページで続けて確認できます。</p>
+          <p className="contact-intro">
+            お問い合わせ内容と返信状況を、このページで続けて確認できます。
+          </p>
 
           <div className="contact-thread-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="contact-thread-card card space-y-6">
