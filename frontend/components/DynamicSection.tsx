@@ -173,7 +173,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
+          <h2>
+            {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+          </h2>
           <div className="flex flex-col md:flex-row md:items-center gap-8 card">
             {profileImageSrc && (
               <Image
@@ -208,7 +210,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
+            <h2>
+              {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+            </h2>
             <div className="grid-card">
               {data.items
                 .filter(isGroupedCategorizedItem)
@@ -238,7 +242,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
+            <h2>
+              {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+            </h2>
             <div className="grid-card">
               {data.categories.map((category: string, index: number) => (
                 <div key={index} className="card">
@@ -270,7 +276,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
+          <h2>
+            {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+          </h2>
           <div className="grid-card">
             {lists.map((list: any, index: number) => (
               <div key={index} className="card">
@@ -305,7 +313,11 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       <FadeInSection>
         <section id={section.id} className="history-section">
           <Accordion
-            title={getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+            title={getJapaneseSectionTitle(
+              section.id,
+              meta.displayName,
+              meta.type,
+            )}
             defaultOpen={false}
           >
             <div className="flex flex-col gap-4">
