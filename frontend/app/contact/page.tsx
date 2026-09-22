@@ -110,7 +110,10 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="contact-form space-y-6 px-6 py-6">
+              <form
+                onSubmit={handleSubmit}
+                className="contact-form space-y-6 px-6 py-6"
+              >
                 <div className="space-y-2">
                   <label
                     className="text-sm font-medium text-[var(--text-body)]"
