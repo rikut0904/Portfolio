@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import SlideInMenu from "../components/SlideInMenu";
 
 const navigation = [
-  { href: "/", label: "Home" },
-  { href: "/calendar", label: "Calendar" },
-  { href: "/activities", label: "Activities" },
-  { href: "/product", label: "Works" },
-  { href: "/contact", label: "Contact" },
+  { href: "/", label: "ホーム" },
+  { href: "/calendar", label: "カレンダー" },
+  { href: "/activities", label: "課外活動" },
+  { href: "/product", label: "作品紹介" },
+  { href: "/contact", label: "お問い合わせ" },
 ];
 
 export default function Header() {
@@ -25,7 +25,7 @@ export default function Header() {
     <header className="site-header">
       <div className="site-header__inner">
         <Link href="/" className="site-brand" aria-label="平田陸翔のホーム">
-          RIKUTO HIRATA
+          平田 陸翔
         </Link>
 
         <button
