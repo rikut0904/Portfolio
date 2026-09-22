@@ -71,7 +71,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <SiteLayout>
+      <SiteLayout className="portfolio-home">
         <div className="flex items-center justify-center min-h-screen">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
         </div>
@@ -82,7 +82,7 @@ export default function Home() {
   const historyGroupStartIndex = findHistoryGroupStart();
 
   return (
-    <SiteLayout>
+    <SiteLayout className="portfolio-home">
       {/* 全セクションをデータベースから動的に表示 */}
       {sections.map((section, index) => {
         // 最も長い連続する履歴系セクショングループの最初の前に「略歴」を表示
