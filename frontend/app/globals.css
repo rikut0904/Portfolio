@@ -69,8 +69,16 @@ body {
   margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(circle at 8% 4%, rgba(200, 115, 165, 0.13), transparent 27rem),
-    radial-gradient(circle at 92% 18%, rgba(116, 87, 183, 0.16), transparent 30rem),
+    radial-gradient(
+      circle at 8% 4%,
+      rgba(200, 115, 165, 0.13),
+      transparent 27rem
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(116, 87, 183, 0.16),
+      transparent 30rem
+    ),
     linear-gradient(180deg, var(--background-soft) 0, var(--background) 30rem);
   color: var(--foreground);
   font-family:
@@ -87,7 +95,10 @@ body::before {
   pointer-events: none;
   content: "";
   opacity: 0.42;
-  background-image: radial-gradient(rgba(116, 87, 183, 0.16) 0.7px, transparent 0.7px);
+  background-image: radial-gradient(
+    rgba(116, 87, 183, 0.16) 0.7px,
+    transparent 0.7px
+  );
   background-size: 22px 22px;
   mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
@@ -342,8 +353,11 @@ li + li {
   padding: clamp(1.5rem, 5vw, 4rem);
   border: 1px solid var(--card-border);
   border-radius: clamp(1.75rem, 5vw, 3.25rem);
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--surface-solid) 88%, transparent), color-mix(in srgb, var(--primary-light) 62%, transparent));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface-solid) 88%, transparent),
+    color-mix(in srgb, var(--primary-light) 62%, transparent)
+  );
   box-shadow: var(--shadow-md);
 }
 
@@ -501,7 +515,6 @@ textarea {
     border-color: #514263;
   }
 }
-
 
 .product-card {
   display: flex;
