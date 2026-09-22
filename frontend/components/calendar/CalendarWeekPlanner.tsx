@@ -1092,7 +1092,8 @@ function WeekCalendarGrid({
                   ? {
                       backgroundColor:
                         PUBLIC_GRAY_EVENT_STYLE.backgroundColor as string,
-                      borderColor: PUBLIC_GRAY_EVENT_STYLE.borderColor as string,
+                      borderColor:
+                        PUBLIC_GRAY_EVENT_STYLE.borderColor as string,
                     }
                   : undefined;
               if (variant === "public") {
@@ -1111,19 +1112,6 @@ function WeekCalendarGrid({
                   key={day.toISOString()}
                   type="button"
                   onClick={() => {
-                    if (variant === "public") {
-                      if (
-                        publishedDayEvents.length === 1 &&
-                        primaryPublicEvent
-                      ) {
-                        onEventClick(primaryPublicEvent);
-                        return;
-                      }
-                      if (publishedDayEvents.length > 1) {
-                        onAllDayEventsClick(day, publishedDayEvents);
-                      }
-                      return;
-                    }
                     if (dayEvents.length === 1) {
                       onEventClick(firstEvent);
                       return;
@@ -1225,68 +1213,68 @@ function WeekCalendarGrid({
                 ))}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
                 {displayTimedEvents.map((event) => {
-                    const clipped = clipEventToDay(event, day);
-                    const gridPos = timedBlockPositionInGrid(clipped);
-                    if (!gridPos) {
-                      return null;
-                    }
-                    const { top, height } = gridPos;
-                    const eventInstanceKey = calendarEventInstanceKey(event);
-                    const { column, columnCount } = dayLayout.get(
-                      eventInstanceKey,
-                    ) ?? { column: 0, columnCount: 1 };
-                    const gapPx = columnCount > 1 ? 2 : 0;
-                    const leftStyle =
-                      columnCount === 1
-                        ? "0.5rem"
-                        : `calc(0.5rem + ${column} * (((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount}) + ${gapPx}px))`;
-                    const widthStyle =
-                      columnCount === 1
-                        ? "calc(100% - 1rem)"
-                        : `calc((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount})`;
-                    const blockStyle = {
-                      top,
-                      height,
-                      left: leftStyle,
-                      width: widthStyle,
-                      right: "auto" as const,
-                      ...eventBlockStyle(event),
-                    };
-                    const label =
-                      variant === "public"
-                        ? event.isPublished
-                          ? event.summary || "（タイトルなし）"
-                          : "予定あり"
-                        : event.summary || "（タイトルなし）";
-                    if (!canOpenEventDetail(event)) {
-                      return (
-                        <div
-                          key={`${eventInstanceKey}-${day.toISOString()}`}
-                          className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
-                          style={blockStyle}
-                          aria-label="予定あり"
-                        >
-                          <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
-                            {label}
-                          </span>
-                        </div>
-                      );
-                    }
+                  const clipped = clipEventToDay(event, day);
+                  const gridPos = timedBlockPositionInGrid(clipped);
+                  if (!gridPos) {
+                    return null;
+                  }
+                  const { top, height } = gridPos;
+                  const eventInstanceKey = calendarEventInstanceKey(event);
+                  const { column, columnCount } = dayLayout.get(
+                    eventInstanceKey,
+                  ) ?? { column: 0, columnCount: 1 };
+                  const gapPx = columnCount > 1 ? 2 : 0;
+                  const leftStyle =
+                    columnCount === 1
+                      ? "0.5rem"
+                      : `calc(0.5rem + ${column} * (((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount}) + ${gapPx}px))`;
+                  const widthStyle =
+                    columnCount === 1
+                      ? "calc(100% - 1rem)"
+                      : `calc((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount})`;
+                  const blockStyle = {
+                    top,
+                    height,
+                    left: leftStyle,
+                    width: widthStyle,
+                    right: "auto" as const,
+                    ...eventBlockStyle(event),
+                  };
+                  const label =
+                    variant === "public"
+                      ? event.isPublished
+                        ? event.summary || "（タイトルなし）"
+                        : "予定あり"
+                      : event.summary || "（タイトルなし）";
+                  if (!canOpenEventDetail(event)) {
                     return (
-                      <button
+                      <div
                         key={`${eventInstanceKey}-${day.toISOString()}`}
-                        type="button"
-                        onClick={() => onEventClick(event)}
-                        className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
+                        className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
                         style={blockStyle}
-                        aria-label={label}
+                        aria-label="予定あり"
                       >
                         <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
                           {label}
                         </span>
-                      </button>
+                      </div>
                     );
-                  })}
+                  }
+                  return (
+                    <button
+                      key={`${eventInstanceKey}-${day.toISOString()}`}
+                      type="button"
+                      onClick={() => onEventClick(event)}
+                      className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
+                      style={blockStyle}
+                      aria-label={label}
+                    >
+                      <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
