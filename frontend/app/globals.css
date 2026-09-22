@@ -1192,6 +1192,309 @@ h2::before {
   }
 }
 
+/* Contact page refinement */
+.contact-section {
+  width: min(1120px, 100%);
+  margin-inline: auto;
+}
+
+.contact-form-card__intro {
+  padding: clamp(1.5rem, 4vw, 2.25rem) !important;
+}
+
+.contact-form-card__eyebrow {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.65rem;
+  color: var(--primary-strong);
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+}
+
+.contact-form-card__eyebrow::before {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-light) 70%, transparent);
+  content: "";
+}
+
+.contact-form-card__intro h2,
+.contact-form-card__intro > p,
+.contact-form-meta {
+  position: relative;
+  z-index: 1;
+}
+
+.contact-form-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+}
+
+.contact-form-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.38rem 0.68rem;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 18%, transparent);
+  border-radius: 999px;
+  color: var(--text-body);
+  background: color-mix(in srgb, var(--surface-solid) 58%, transparent);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.contact-form {
+  padding: clamp(1.25rem, 4vw, 2.25rem) !important;
+}
+
+.contact-field {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.contact-field-label,
+.contact-category-group legend {
+  color: var(--text-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.contact-required,
+.contact-optional {
+  display: inline-flex;
+  margin-left: 0.4rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1.4;
+  vertical-align: 0.08em;
+}
+
+.contact-required {
+  color: var(--primary-strong);
+  background: var(--primary-light);
+}
+
+.contact-optional {
+  color: var(--text-muted);
+  background: var(--button-background);
+}
+
+.contact-category-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.contact-category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.65rem;
+}
+
+.contact-category-option {
+  position: relative;
+  display: grid;
+  gap: 0.18rem;
+  min-height: 4.5rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid var(--input-border);
+  border-radius: 1rem;
+  background: var(--input-background);
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.contact-category-option:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.contact-category-option[data-selected="true"] {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px
+    color-mix(in srgb, var(--primary-color) 11%, transparent);
+}
+
+.contact-category-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.contact-category-option:has(input:focus-visible) {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 38%, transparent);
+  outline-offset: 2px;
+}
+
+.contact-category-option__title {
+  color: var(--text-heading);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.contact-category-option__description {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.contact-field-help {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.contact-field-count {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.contact-notice {
+  display: flex;
+  gap: 0.7rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  font-size: 0.82rem;
+}
+
+.contact-notice::before {
+  flex: 0 0 auto;
+  font-weight: 900;
+}
+
+.contact-notice--error {
+  border: 1px solid color-mix(in srgb, #c84f63 30%, transparent);
+  color: #9d3045;
+  background: color-mix(in srgb, #fff0f3 88%, var(--surface-solid));
+}
+
+.contact-notice--error::before {
+  content: "!";
+}
+
+.contact-notice--success {
+  border: 1px solid color-mix(in srgb, #378c72 28%, transparent);
+  color: #276c58;
+  background: color-mix(in srgb, #ecfaf5 88%, var(--surface-solid));
+}
+
+.contact-notice--success::before {
+  content: "✓";
+}
+
+.contact-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.4rem;
+}
+
+.contact-submit-note {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.contact-primary-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding-inline: 1.35rem !important;
+}
+
+.contact-primary-action::after {
+  content: "→";
+  transition: transform 180ms ease;
+}
+
+.contact-primary-action:hover::after {
+  transform: translateX(0.18rem);
+}
+
+.contact-guide-card {
+  position: relative;
+  overflow: hidden;
+  padding: 1.25rem !important;
+  border-left: 3px solid var(--primary-color) !important;
+  background: color-mix(
+    in srgb,
+    var(--surface-solid) 88%,
+    var(--primary-light)
+  ) !important;
+}
+
+.contact-guide-card h3 {
+  font-size: 1rem;
+}
+
+.contact-process {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contact-process li {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  margin: 0;
+  color: var(--text-body);
+  font-size: 0.78rem;
+}
+
+.contact-process span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  font-size: 0.65rem;
+  font-weight: 850;
+}
+
+@media (max-width: 639px) {
+  .contact-category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-submit-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .contact-primary-action {
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
