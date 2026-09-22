@@ -1634,8 +1634,8 @@ function CalendarWeekPlannerContent({
   };
 
   const calendarSection = (
-    <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
-      <div className="border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
+    <section className="calendar-shell overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
+      <div className="calendar-shell__intro border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
         <div className="flex flex-col gap-5">
           {variant === "public" ? (
             <div>
@@ -1671,7 +1671,7 @@ function CalendarWeekPlannerContent({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-b border-[var(--card-border)] bg-white/70 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
+      <div className="calendar-toolbar flex flex-col gap-3 border-b border-[var(--card-border)] bg-white/70 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -1709,7 +1709,7 @@ function CalendarWeekPlannerContent({
         </div>
       </div>
 
-      <div className="px-3 py-4 sm:px-5 sm:py-6">
+      <div className="calendar-canvas px-3 py-4 sm:px-5 sm:py-6">
         {loading ? (
           <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">
             読み込み中...
