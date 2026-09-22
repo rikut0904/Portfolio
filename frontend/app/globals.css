@@ -346,7 +346,11 @@ li + li {
   padding: clamp(1.5rem, 5vw, 4rem);
   border: 1px solid var(--card-border);
   border-radius: clamp(1.75rem, 5vw, 3.25rem);
-  background: color-mix(in srgb, var(--surface-solid) 76%, var(--primary-light));
+  background: color-mix(
+    in srgb,
+    var(--surface-solid) 76%,
+    var(--primary-light)
+  );
   box-shadow: var(--shadow-md);
 }
 
