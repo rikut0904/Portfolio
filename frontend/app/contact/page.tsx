@@ -6,10 +6,26 @@ import FadeInSection from "../../components/FadeInSection";
 import SiteLayout from "../../components/layouts/SiteLayout";
 
 const CATEGORY_OPTIONS = [
-  { value: "general", label: "ご相談・ご質問" },
-  { value: "project", label: "制作依頼について" },
-  { value: "bug", label: "不具合報告" },
-  { value: "other", label: "その他" },
+  {
+    value: "general",
+    label: "ご相談・ご質問",
+    description: "活動や制作物について聞きたい",
+  },
+  {
+    value: "project",
+    label: "制作依頼について",
+    description: "Webサイトやシステムを相談したい",
+  },
+  {
+    value: "bug",
+    label: "不具合報告",
+    description: "表示や動作の問題を知らせたい",
+  },
+  {
+    value: "other",
+    label: "その他",
+    description: "上記に当てはまらないご連絡",
+  },
 ];
 
 const SUPPORT_GUIDANCE_EMAIL =
@@ -99,51 +115,68 @@ export default function ContactPage() {
           <div className="contact-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="contact-form-card card p-0 overflow-hidden">
               <div className="contact-form-card__intro border-b border-[var(--card-border)] bg-[var(--primary-light)] px-6 py-5">
-                <p className="mb-2 text-sm font-semibold tracking-[0.2em] text-[var(--text-heading)] uppercase">
-                  Contact
-                </p>
+                <p className="contact-form-card__eyebrow">ご連絡フォーム</p>
                 <h2 className="mb-2 border-none p-0 text-2xl">
                   ご相談内容を直接お送りください
                 </h2>
                 <p className="mb-0 text-sm text-[var(--text-body)]">
                   内容を確認後、通常1週間以内を目安に返信します。
                 </p>
+                <div
+                  className="contact-form-meta"
+                  aria-label="お問い合わせのご案内"
+                >
+                  <span>メールで返信</span>
+                  <span>返信目安 1週間以内</span>
+                </div>
               </div>
 
               <form
                 onSubmit={handleSubmit}
                 className="contact-form space-y-6 px-6 py-6"
               >
-                <div className="space-y-2">
-                  <label
-                    className="text-sm font-medium text-[var(--text-body)]"
-                    htmlFor="contact-category"
-                  >
+                <fieldset className="contact-category-group">
+                  <legend>
                     カテゴリ
-                  </label>
-                  <select
-                    id="contact-category"
-                    value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                    className="w-full rounded-md border border-[var(--input-border)] bg-[var(--input-background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
-                  >
+                    <span className="contact-required">必須</span>
+                  </legend>
+                  <div className="contact-category-grid">
                     {CATEGORY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                      <label
+                        key={option.value}
+                        className="contact-category-option"
+                        data-selected={category === option.value}
+                      >
+                        <input
+                          type="radio"
+                          name="contact-category"
+                          value={option.value}
+                          checked={category === option.value}
+                          onChange={(event) => setCategory(event.target.value)}
+                        />
+                        <span className="contact-category-option__title">
+                          {option.label}
+                        </span>
+                        <span className="contact-category-option__description">
+                          {option.description}
+                        </span>
+                      </label>
                     ))}
-                  </select>
-                </div>
+                  </div>
+                </fieldset>
 
-                <div className="space-y-2">
+                <div className="contact-field">
                   <label
                     className="text-sm font-medium text-[var(--text-body)]"
                     htmlFor="contact-subject"
                   >
                     件名
+                    <span className="contact-required">必須</span>
                   </label>
                   <input
                     id="contact-subject"
+                    required
+                    maxLength={100}
                     value={subject}
                     onChange={(event) => setSubject(event.target.value)}
                     placeholder="例: MTGのご相談"
@@ -151,35 +184,46 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="contact-field">
                   <label
                     className="text-sm font-medium text-[var(--text-body)]"
                     htmlFor="contact-message"
                   >
                     内容
+                    <span className="contact-required">必須</span>
                   </label>
                   <textarea
                     id="contact-message"
+                    required
+                    maxLength={2000}
+                    aria-describedby="contact-message-help"
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
                     placeholder="ご相談の背景、希望納期、困っていることなどを具体的にご記載ください。"
                     className="min-h-[180px] w-full rounded-md border border-[var(--input-border)] bg-[var(--input-background)] px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]"
                   />
-                  <p className="mb-0 text-xs text-gray-500">
-                    個人情報や機密情報は、必要最小限の範囲でご記載ください。
+                  <p id="contact-message-help" className="contact-field-help">
+                    <span>
+                      個人情報や機密情報は、必要最小限の範囲でご記載ください。
+                    </span>
+                    <span className="contact-field-count">
+                      {message.length} / 2000
+                    </span>
                   </p>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
+                  <div className="contact-field">
                     <label
                       className="text-sm font-medium text-[var(--text-body)]"
                       htmlFor="contact-name"
                     >
                       お名前
+                      <span className="contact-optional">任意</span>
                     </label>
                     <input
                       id="contact-name"
+                      autoComplete="name"
                       value={contactName}
                       onChange={(event) => setContactName(event.target.value)}
                       placeholder="例: 山田 太郎"
@@ -187,16 +231,19 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="contact-field">
                     <label
                       className="text-sm font-medium text-[var(--text-body)]"
                       htmlFor="contact-email"
                     >
                       返信用メールアドレス
+                      <span className="contact-required">必須</span>
                     </label>
                     <input
                       id="contact-email"
                       type="email"
+                      required
+                      autoComplete="email"
                       value={contactEmail}
                       onChange={(event) => setContactEmail(event.target.value)}
                       placeholder="example@email.com"
@@ -206,47 +253,63 @@ export default function ContactPage() {
                 </div>
 
                 {error && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  <div
+                    className="contact-notice contact-notice--error"
+                    role="alert"
+                  >
                     {error}
                   </div>
                 )}
 
                 {feedback && (
-                  <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                  <div
+                    className="contact-notice contact-notice--success"
+                    role="status"
+                  >
                     {feedback}
                   </div>
                 )}
 
-                <div className="flex justify-end">
+                <div className="contact-submit-row">
+                  <p className="contact-submit-note">
+                    送信前に、メールアドレスとお問い合わせ内容をご確認ください。
+                  </p>
                   <button
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canSubmit}
                     className="contact-primary-action rounded-md bg-[var(--primary-color)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmitting ? "送信中..." : "送信する"}
+                    {isSubmitting ? "送信中..." : "内容を送信する"}
                   </button>
                 </div>
               </form>
             </div>
 
             <aside className="contact-aside space-y-4">
-              <div className="card">
-                <h3 className="mb-3">返信の目安</h3>
-                <p className="text-sm">
-                  内容を確認後、通常1週間以内にメールで返信します。営業日や内容によっては前後する場合があります。
-                </p>
+              <div className="contact-guide-card card">
+                <h3 className="mb-4">お問い合わせの流れ</h3>
+                <ol className="contact-process">
+                  <li>
+                    <span>01</span>
+                    <p>フォームから内容を送信します。</p>
+                  </li>
+                  <li>
+                    <span>02</span>
+                    <p>内容を確認し、返信を準備します。</p>
+                  </li>
+                  <li>
+                    <span>03</span>
+                    <p>通常1週間以内にメールで返信します。</p>
+                  </li>
+                </ol>
               </div>
 
-              <div className="card">
+              <div className="contact-guide-card card">
                 <h3 className="mb-3">送信時のお願い</h3>
                 <ul className="mb-0 list-disc space-y-2 pl-5 text-sm text-[var(--text-body)]">
-                  <li>
-                    制作のご相談は、用途や希望時期があると回答しやすくなります。
-                  </li>
-                  <li>
-                    不具合報告は、発生手順や表示メッセージを添えてください。
-                  </li>
-                  <li>返信先メールアドレスに誤りがあると返答できません。</li>
+                  <li>用途や希望時期があると、より具体的に回答できます。</li>
+                  <li>不具合報告には、発生手順や表示内容を添えてください。</li>
+                  <li>メールアドレスに誤りがないかご確認ください。</li>
                 </ul>
               </div>
 
