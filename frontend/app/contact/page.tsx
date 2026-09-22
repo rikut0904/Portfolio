@@ -92,7 +92,9 @@ export default function ContactPage() {
       <FadeInSection>
         <section id="contact" className="contact-section">
           <h1>お問い合わせ</h1>
-          <p className="contact-intro">制作のご相談、不具合のご報告、そのほかのご質問をこちらからお送りいただけます。</p>
+          <p className="contact-intro">
+            制作のご相談、不具合のご報告、そのほかのご質問をこちらからお送りいただけます。
+          </p>
 
           <div className="contact-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="contact-form-card card p-0 overflow-hidden">
