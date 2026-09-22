@@ -30,129 +30,97 @@ export default function ProductCard({
 }: ProductCardProps) {
   const primaryLink = githubUrl;
 
-  const handleCardClick = () => {
-    if (!primaryLink) return;
-    window.open(primaryLink, "_blank", "noopener,noreferrer");
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (!primaryLink) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleCardClick();
+  const openRepository = () => {
+    if (primaryLink) {
+      window.open(primaryLink, "_blank", "noopener,noreferrer");
     }
   };
 
-  const CardContent = () => (
-    <>
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (!primaryLink) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openRepository();
+    }
+  };
+
+  return (
+    <article
+      className={`card product-card ${primaryLink ? "product-card--clickable" : ""}`}
+      onClick={primaryLink ? openRepository : undefined}
+      onKeyDown={primaryLink ? handleKeyDown : undefined}
+      role={primaryLink ? "link" : undefined}
+      tabIndex={primaryLink ? 0 : undefined}
+      aria-label={primaryLink ? `${title}のGitHubリポジトリを開く` : undefined}
+    >
       {image && (
-        <div className="relative w-full h-48 mb-4">
+        <div className="product-card__media">
           <Image
             src={image}
-            alt={title}
+            alt=""
             fill
-            className="rounded-lg object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover"
           />
         </div>
       )}
 
-      <div className="flex items-start justify-between gap-2 mb-2">
-        <h3 className="text-lg font-semibold flex-1">{title}</h3>
-        {deployStatus && (
-          <span
-            className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${
-              deployStatus === "公開中"
-                ? "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-                : "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-400"
-            }`}
-          >
-            {deployStatus}
-          </span>
-        )}
-      </div>
+      <div className="product-card__body">
+        <div className="product-card__heading">
+          <h3>{title}</h3>
+          {deployStatus && (
+            <span
+              className={`status-pill ${
+                deployStatus === "公開中"
+                  ? "status-pill--live"
+                  : "status-pill--private"
+              }`}
+            >
+              <span aria-hidden="true" />
+              {deployStatus}
+            </span>
+          )}
+        </div>
 
-      <p className="text-sm mb-3" style={{ color: "var(--text-body)" }}>
-        {description}
-      </p>
+        <p className="product-card__description">{description}</p>
 
-      <div className="space-y-2">
-        {(category || (createdYear && createdMonth)) && (
-          <div
-            className="flex flex-wrap gap-2 text-xs"
-            style={{ color: "var(--text-body)" }}
-          >
-            {category && (
-              <span
-                className="px-2 py-1 rounded"
-                style={{
-                  backgroundColor: "var(--button-background)",
-                  color: "var(--button-text)",
-                }}
-              >
-                {category}
-              </span>
-            )}
-            {createdYear && createdMonth && (
-              <span
-                className="px-2 py-1 rounded"
-                style={{
-                  backgroundColor: "var(--button-background)",
-                  color: "var(--button-text)",
-                }}
-              >
-                {createdYear}年{createdMonth}月
-              </span>
-            )}
-          </div>
-        )}
+        <div className="product-card__meta">
+          {category && <span className="meta-pill">{category}</span>}
+          {createdYear && createdMonth && (
+            <span className="meta-pill">
+              {createdYear}.{String(createdMonth).padStart(2, "0")}
+            </span>
+          )}
+        </div>
 
         {technologies && technologies.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {technologies.map((tech, index) => (
-              <span
-                key={index}
-                className="px-2 py-0.5 text-xs rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400"
-              >
-                {tech}
-              </span>
+          <div className="product-card__tech" aria-label="使用技術">
+            {technologies.map((tech) => (
+              <span key={tech}>{tech}</span>
             ))}
           </div>
         )}
 
-        {link && (
-          <div className="flex flex-wrap gap-2 pt-2">
+        <div className="product-card__actions">
+          {link && (
             <a
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-xs font-semibold transition-colors"
-              style={{
-                borderColor: "var(--primary-color)",
-                color: "var(--primary-color)",
-                backgroundColor: "var(--primary-light)",
-              }}
+              onClick={(event) => event.stopPropagation()}
+              className="product-link"
             >
-              プロダクトを見る
+              View product
+              <span aria-hidden="true">↗</span>
             </a>
-          </div>
-        )}
+          )}
+          {primaryLink && (
+            <span className="repository-hint" aria-hidden="true">
+              GitHub →
+            </span>
+          )}
+        </div>
       </div>
-    </>
-  );
-
-  return (
-    <div
-      className={`card ${primaryLink ? "cursor-pointer transition-all hover:shadow-lg hover:translate-y-[-5px]" : "cursor-default"}`}
-      onClick={primaryLink ? handleCardClick : undefined}
-      onKeyDown={primaryLink ? handleKeyDown : undefined}
-      role={primaryLink ? "link" : undefined}
-      tabIndex={primaryLink ? 0 : undefined}
-      style={{
-        opacity: primaryLink ? 1 : 0.9,
-      }}
-    >
-      <CardContent />
-    </div>
+    </article>
   );
 }
