@@ -114,26 +114,23 @@ export default function ContactPage() {
 
           <div className="contact-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
             <div className="contact-form-card card p-0 overflow-hidden">
-              <div className="contact-form-card__intro border-b border-[var(--card-border)] bg-[var(--primary-light)] px-6 py-5">
-                <h2 className="mb-2 border-none p-0 text-2xl">
-                  お気軽にご相談ください
-                </h2>
-                <p className="mb-0 text-sm text-[var(--text-body)]">
-                  内容を確認後、通常1週間以内を目安に返信します。
-                </p>
-                <div
-                  className="contact-form-meta"
-                  aria-label="お問い合わせのご案内"
-                >
-                  <span>メールで返信</span>
-                  <span>返信目安 1週間以内</span>
-                </div>
-              </div>
-
               <form
                 onSubmit={handleSubmit}
                 className="contact-form space-y-6 px-6 py-6"
               >
+                <div className="contact-form-summary">
+                  <p>
+                    必要事項をご入力ください。内容を確認後、メールで返信します。
+                  </p>
+                  <div
+                    className="contact-form-meta"
+                    aria-label="お問い合わせのご案内"
+                  >
+                    <span>メールで返信</span>
+                    <span>返信目安 1週間以内</span>
+                  </div>
+                </div>
+
                 <fieldset className="contact-category-group">
                   <legend>
                     カテゴリ
