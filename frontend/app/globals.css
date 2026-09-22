@@ -866,6 +866,332 @@ h2::before {
   }
 }
 
+/* Public inner pages */
+.calendar-page,
+.contact-page,
+.contact-thread-page,
+.products-page,
+.activities-page {
+  position: relative;
+}
+
+.calendar-shell,
+.contact-form-card,
+.contact-thread-card,
+.product-filter-panel {
+  border-color: var(--card-border) !important;
+  background: var(--surface-solid) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.calendar-shell {
+  border-radius: 2rem !important;
+}
+
+.calendar-shell__intro {
+  position: relative;
+  overflow: hidden;
+  background: var(--primary-light);
+}
+
+.calendar-shell__intro::after {
+  position: absolute;
+  top: -3.5rem;
+  right: clamp(1rem, 6vw, 5rem);
+  width: 8rem;
+  height: 8rem;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 20%, transparent);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.calendar-shell__intro h1 {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+}
+
+.calendar-toolbar {
+  background: color-mix(
+    in srgb,
+    var(--surface-solid) 92%,
+    var(--primary-light)
+  );
+}
+
+.calendar-toolbar button {
+  min-height: 2.6rem;
+  font-weight: 700;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.calendar-toolbar button:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 42%, transparent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.calendar-toolbar button:focus-visible,
+.calendar-shell button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.calendar-canvas {
+  background: color-mix(in srgb, var(--background) 45%, var(--surface-solid));
+}
+
+.calendar-shell h2::before,
+.calendar-shell h2::after {
+  display: none;
+}
+
+.contact-section,
+.contact-thread-section {
+  padding-top: 1rem;
+}
+
+.contact-section > h1,
+.contact-thread-section > h1 {
+  margin-bottom: 0.8rem;
+}
+
+.contact-intro {
+  max-width: 42rem;
+  margin-bottom: 2.5rem;
+  color: var(--text-body);
+}
+
+.contact-layout,
+.contact-thread-layout {
+  align-items: start;
+}
+
+.contact-form-card,
+.contact-thread-card {
+  border-radius: 1.75rem;
+}
+
+.contact-form-card__intro {
+  position: relative;
+  overflow: hidden;
+  background: var(--primary-light) !important;
+}
+
+.contact-form-card__intro::after {
+  position: absolute;
+  right: -2rem;
+  bottom: -3rem;
+  width: 8rem;
+  height: 8rem;
+  border: 1px solid color-mix(in srgb, var(--accent-color) 24%, transparent);
+  border-radius: 50%;
+  content: "";
+}
+
+.contact-form-card h2::before,
+.contact-form-card h2::after,
+.contact-thread-card h2::before,
+.contact-thread-card h2::after {
+  display: none;
+}
+
+.contact-form {
+  background: color-mix(in srgb, var(--surface-solid) 94%, var(--background));
+}
+
+.contact-form label,
+.contact-thread-card label {
+  display: inline-block;
+  color: var(--text-heading);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.contact-form input,
+.contact-form select,
+.contact-form textarea,
+.contact-thread-card textarea {
+  border-radius: 0.9rem !important;
+  padding: 0.78rem 0.9rem !important;
+  border-color: var(--input-border) !important;
+  background: var(--input-background) !important;
+  box-shadow: 0 1px 0 rgba(61, 43, 91, 0.03);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.contact-form input:focus,
+.contact-form select:focus,
+.contact-form textarea:focus,
+.contact-thread-card textarea:focus {
+  border-color: var(--primary-color) !important;
+  outline: 0;
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+.contact-primary-action {
+  min-height: 2.8rem;
+  border-radius: 999px !important;
+  box-shadow: 0 8px 20px
+    color-mix(in srgb, var(--primary-color) 24%, transparent);
+  transition:
+    box-shadow 180ms ease,
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.contact-primary-action:hover:not(:disabled) {
+  box-shadow: 0 12px 26px
+    color-mix(in srgb, var(--primary-color) 30%, transparent);
+  transform: translateY(-2px);
+}
+
+.contact-aside {
+  position: sticky;
+  top: 6.5rem;
+}
+
+.contact-aside .card {
+  border-radius: 1.25rem;
+  box-shadow: none;
+}
+
+.contact-aside .card:hover {
+  transform: translateY(-2px);
+}
+
+.contact-thread-message {
+  border-radius: 1.15rem !important;
+  background: color-mix(
+    in srgb,
+    var(--primary-light) 52%,
+    var(--surface-solid)
+  ) !important;
+}
+
+.products-page__heading {
+  position: relative;
+  margin-bottom: 2.5rem;
+  padding-right: clamp(0rem, 8vw, 7rem);
+}
+
+.products-page__heading h1 {
+  margin-bottom: 0.9rem;
+}
+
+.products-result-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.42rem 0.75rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.products-page .accordion {
+  margin-bottom: 2rem;
+}
+
+.product-filter-panel {
+  margin: 0 !important;
+  padding: clamp(1rem, 3vw, 1.5rem) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.product-filter-panel label {
+  color: var(--text-heading) !important;
+  font-size: 0.78rem !important;
+  font-weight: 750 !important;
+}
+
+.product-filter-panel select {
+  min-height: 2.8rem;
+  padding: 0.65rem 2.25rem 0.65rem 0.8rem !important;
+  border-color: var(--input-border) !important;
+  border-radius: 0.85rem !important;
+  background: var(--input-background) !important;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.product-filter-panel select:focus {
+  border-color: var(--primary-color) !important;
+  outline: 0;
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--primary-color) 14%, transparent);
+}
+
+.product-filter-panel button {
+  border: 1px solid transparent;
+  font-weight: 700;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.product-filter-panel button:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.products-empty {
+  grid-column: 1 / -1;
+}
+
+.activities-page .activity-group > h2 {
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 767px) {
+  .calendar-shell {
+    margin-inline: -0.15rem;
+    border-radius: 1.25rem !important;
+  }
+
+  .calendar-shell__intro::after {
+    right: -3rem;
+  }
+
+  .calendar-toolbar > div:first-child {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .calendar-toolbar button {
+    width: 100%;
+  }
+
+  .contact-aside {
+    position: static;
+  }
+
+  .contact-form-card,
+  .contact-thread-card {
+    border-radius: 1.25rem;
+  }
+
+  .products-page__heading {
+    padding-right: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
