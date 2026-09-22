@@ -1495,6 +1495,38 @@ h2::before {
   }
 }
 
+.contact-form-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.contact-form-summary > p {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--text-body);
+  font-size: 0.8rem;
+}
+
+.contact-form-summary .contact-form-meta {
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+@media (max-width: 639px) {
+  .contact-form-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .contact-form-summary .contact-form-meta {
+    width: 100%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
