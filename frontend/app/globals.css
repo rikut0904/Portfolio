@@ -2,10 +2,10 @@
 
 :root {
   color-scheme: light;
-  --background: #f8f6ff;
-  --background-soft: #efeaff;
-  --surface: rgba(255, 255, 255, 0.82);
-  --surface-solid: #fffdff;
+  --background: #faf5ff;
+  --background-soft: #f5ebff;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-solid: #ffffff;
   --foreground: #222024;
   --primary-color: #7457b7;
   --primary-strong: #51358e;
@@ -346,11 +346,7 @@ li + li {
   padding: clamp(1.5rem, 5vw, 4rem);
   border: 1px solid var(--card-border);
   border-radius: clamp(1.75rem, 5vw, 3.25rem);
-  background: color-mix(
-    in srgb,
-    var(--surface-solid) 76%,
-    var(--primary-light)
-  );
+  background: var(--primary-light);
   box-shadow: var(--shadow-md);
 }
 
