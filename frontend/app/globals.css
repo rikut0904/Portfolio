@@ -670,7 +670,6 @@ textarea {
   letter-spacing: 0.04em;
 }
 
-
 .section-kicker {
   margin-bottom: 0.35rem;
   color: var(--primary-color);
@@ -692,7 +691,11 @@ textarea {
   color: var(--primary-strong);
   font-weight: 700;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--primary-color) 45%, transparent);
+  text-decoration-color: color-mix(
+    in srgb,
+    var(--primary-color) 45%,
+    transparent
+  );
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
 }
