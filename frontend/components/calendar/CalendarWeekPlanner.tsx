@@ -386,6 +386,52 @@ function layoutTimedEventsForDay(
   return result;
 }
 
+function mergePublicBusyEventsForDay(
+  day: Date,
+  events: NormalizedEvent[],
+): NormalizedEvent[] {
+  const clippedEvents = events
+    .filter((event) => intersectsDay(event, day))
+    .map((event) => ({
+      source: event,
+      ...clipEventToDay(event, day),
+    }))
+    .sort(
+      (a, b) =>
+        a.start.getTime() - b.start.getTime() ||
+        a.end.getTime() - b.end.getTime(),
+    );
+
+  const merged: Array<{
+    source: NormalizedEvent;
+    start: Date;
+    end: Date;
+  }> = [];
+
+  for (const clipped of clippedEvents) {
+    const previous = merged[merged.length - 1];
+    if (previous && clipped.start < previous.end) {
+      if (clipped.end > previous.end) {
+        previous.end = clipped.end;
+      }
+      continue;
+    }
+    merged.push({ ...clipped });
+  }
+
+  return merged.map((block, index) => ({
+    ...block.source,
+    id: `public-busy-${dayTimestamp(day)}-${index}`,
+    calendarId: "public-busy",
+    summary: "予定あり",
+    start: block.start.toISOString(),
+    end: block.end.toISOString(),
+    startDate: block.start,
+    endDate: block.end,
+    isPublished: false,
+  }));
+}
+
 function useModalBodyLock(active: boolean) {
   useEffect(() => {
     if (!active) {
@@ -994,14 +1040,13 @@ function WeekCalendarGrid({
                 (event) => event.isPublished,
               );
               const primaryPublicEvent = publishedDayEvents[0] || null;
-              const firstStyle = eventBlockStyle(
-                variant === "public" && primaryPublicEvent
-                  ? primaryPublicEvent
-                  : firstEvent,
-              );
+              const firstStyle =
+                variant === "public"
+                  ? PUBLIC_GRAY_EVENT_STYLE
+                  : eventBlockStyle(firstEvent);
               const firstTitle =
                 variant === "public"
-                  ? primaryPublicEvent?.summary || "予定あり"
+                  ? "予定あり"
                   : firstEvent.summary || "（タイトルなし）";
               const allDayBody = (
                 <>
@@ -1029,9 +1074,7 @@ function WeekCalendarGrid({
                       </span>
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
                         {variant === "public"
-                          ? publishedDayEvents.length > 0
-                            ? `他 ${Math.max(publishedDayEvents.length - 1, 0)} 件の公開予定`
-                            : "公開予定なし"
+                          ? null
                           : `他 ${dayEvents.length - 1} 件の予定`}
                       </span>
                       <span
@@ -1045,18 +1088,14 @@ function WeekCalendarGrid({
                 </>
               );
               const publicAllDayCardStyle =
-                variant === "public" && primaryPublicEvent
+                variant === "public"
                   ? {
                       backgroundColor:
-                        PUBLIC_PUBLISHED_EVENT_STYLE.backgroundColor as string,
-                      borderColor:
-                        PUBLIC_PUBLISHED_EVENT_STYLE.borderColor as string,
+                        PUBLIC_GRAY_EVENT_STYLE.backgroundColor as string,
+                      borderColor: PUBLIC_GRAY_EVENT_STYLE.borderColor as string,
                     }
                   : undefined;
-              if (
-                variant === "public" &&
-                (!primaryPublicEvent || publishedDayEvents.length === 0)
-              ) {
+              if (variant === "public") {
                 return (
                   <div
                     key={day.toISOString()}
@@ -1126,7 +1165,11 @@ function WeekCalendarGrid({
             </div>
           </div>
           {days.map((day) => {
-            const dayLayout = layoutTimedEventsForDay(day, timedEvents);
+            const displayTimedEvents =
+              variant === "public"
+                ? mergePublicBusyEventsForDay(day, timedEvents)
+                : timedEvents.filter((event) => intersectsDay(event, day));
+            const dayLayout = layoutTimedEventsForDay(day, displayTimedEvents);
             return (
               <div
                 key={day.toISOString()}
@@ -1181,9 +1224,7 @@ function WeekCalendarGrid({
                   />
                 ))}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
-                {timedEvents
-                  .filter((event) => intersectsDay(event, day))
-                  .map((event) => {
+                {displayTimedEvents.map((event) => {
                     const clipped = clipEventToDay(event, day);
                     const gridPos = timedBlockPositionInGrid(clipped);
                     if (!gridPos) {
