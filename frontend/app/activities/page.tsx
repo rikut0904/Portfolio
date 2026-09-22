@@ -107,7 +107,6 @@ export default function ActivityPage() {
     <SiteLayout className="activities-page">
       <section id="activity" className="page-section">
         <FadeInSection>
-          <p className="section-kicker">Activities</p>
           <h1>課外活動</h1>
           <p className="page-lead">
             コミュニティ運営やイベント、学外での取り組みを紹介します。
