@@ -110,7 +110,7 @@ export default function ProductCard({
               onClick={(event) => event.stopPropagation()}
               className="product-link"
             >
-              View product
+              作品を見る
               <span aria-hidden="true">↗</span>
             </a>
           )}
