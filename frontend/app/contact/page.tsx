@@ -88,14 +88,15 @@ export default function ContactPage() {
   };
 
   return (
-    <SiteLayout>
+    <SiteLayout className="contact-page">
       <FadeInSection>
-        <section id="contact" className="py-8">
+        <section id="contact" className="contact-section">
           <h1>お問い合わせ</h1>
+          <p className="contact-intro">制作のご相談、不具合のご報告、そのほかのご質問をこちらからお送りいただけます。</p>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="card p-0 overflow-hidden">
-              <div className="border-b border-[var(--card-border)] bg-[var(--primary-light)] px-6 py-5">
+          <div className="contact-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="contact-form-card card p-0 overflow-hidden">
+              <div className="contact-form-card__intro border-b border-[var(--card-border)] bg-[var(--primary-light)] px-6 py-5">
                 <p className="mb-2 text-sm font-semibold tracking-[0.2em] text-[var(--text-heading)] uppercase">
                   Contact
                 </p>
@@ -107,7 +108,7 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6 px-6 py-6">
+              <form onSubmit={handleSubmit} className="contact-form space-y-6 px-6 py-6">
                 <div className="space-y-2">
                   <label
                     className="text-sm font-medium text-[var(--text-body)]"
@@ -215,7 +216,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="rounded-md bg-[var(--primary-color)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="contact-primary-action rounded-md bg-[var(--primary-color)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {isSubmitting ? "送信中..." : "送信する"}
                   </button>
@@ -223,7 +224,7 @@ export default function ContactPage() {
               </form>
             </div>
 
-            <aside className="space-y-4">
+            <aside className="contact-aside space-y-4">
               <div className="card">
                 <h3 className="mb-3">返信の目安</h3>
                 <p className="text-sm">
@@ -261,7 +262,7 @@ export default function ContactPage() {
                     <div className="mt-4">
                       <Link
                         href={threadPath}
-                        className="inline-flex rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                        className="contact-primary-action inline-flex rounded-md bg-[var(--primary-color)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
                       >
                         お問い合わせスレッドを確認する
                       </Link>
