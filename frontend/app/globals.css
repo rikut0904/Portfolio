@@ -1,122 +1,336 @@
 @import "tailwindcss";
 
-/* カラーパレット */
 :root {
-  --background: #faf5ff;
-  --foreground: #171717;
-  --primary-color: #6b46c1;
-  --primary-light: #f5ebff;
-  --card-background: #ffffff;
-  --card-border: #d1d5db;
-  --accordion-background: #f5ebff;
-  --header-color: var(--text-heading);
-  --text-heading: #6b46c1;
-  --text-body: #4b5563;
-  --input-background: #ffffff;
-  --input-border: #d1d5db;
-  --button-background: #e5e7eb;
-  --button-text: #374151;
+  color-scheme: light;
+  --background: #f7f4ed;
+  --background-soft: #eef5f1;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-solid: #fffdf8;
+  --foreground: #1f2926;
+  --primary-color: #267267;
+  --primary-strong: #174f48;
+  --primary-light: #deeee8;
+  --accent-color: #db765c;
+  --accent-light: #f8dfd6;
+  --card-background: var(--surface);
+  --card-border: rgba(38, 114, 103, 0.16);
+  --accordion-background: rgba(222, 238, 232, 0.7);
+  --header-color: var(--foreground);
+  --text-heading: #173d38;
+  --text-body: #53615d;
+  --text-muted: #74817d;
+  --input-background: #fffdf8;
+  --input-border: #cbd9d4;
+  --button-background: #e7efeb;
+  --button-text: #29423d;
+  --shadow-sm: 0 8px 24px rgba(31, 55, 49, 0.07);
+  --shadow-md: 0 20px 50px rgba(31, 55, 49, 0.11);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #121212;
-    --foreground: #b0b0b0;
-    --primary-color: #a78bfa;
-    --primary-light: #1a1625;
-    --card-background: #1e1e1e;
-    --card-border: #2d2d2d;
-    --accordion-background: #1a1625;
-    --header-color: var(--text-heading);
-    --text-heading: #c4b5fd;
-    --text-body: #9ca3af;
-    --input-background: #252525;
-    --input-border: #404040;
-    --button-background: #2d2d2d;
-    --button-text: #b0b0b0;
+    color-scheme: dark;
+    --background: #101816;
+    --background-soft: #16231f;
+    --surface: rgba(26, 38, 34, 0.84);
+    --surface-solid: #1a2622;
+    --foreground: #edf4f0;
+    --primary-color: #7fc7b8;
+    --primary-strong: #b4e3d9;
+    --primary-light: #1b3630;
+    --accent-color: #ee9c84;
+    --accent-light: #3b2923;
+    --card-background: var(--surface);
+    --card-border: rgba(127, 199, 184, 0.2);
+    --accordion-background: rgba(27, 54, 48, 0.72);
+    --header-color: var(--foreground);
+    --text-heading: #d9eee8;
+    --text-body: #b8c7c2;
+    --text-muted: #91a39d;
+    --input-background: #1a2622;
+    --input-border: #37534b;
+    --button-background: #263a34;
+    --button-text: #d9e8e3;
+    --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.22);
+    --shadow-md: 0 22px 56px rgba(0, 0, 0, 0.32);
   }
 }
 
-/* 基本ボディ設定 */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  background-color: var(--background);
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 8% 4%, rgba(219, 118, 92, 0.12), transparent 27rem),
+    radial-gradient(circle at 92% 18%, rgba(38, 114, 103, 0.14), transparent 30rem),
+    linear-gradient(180deg, var(--background-soft) 0, var(--background) 30rem);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family:
+    "Noto Sans JP", "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+  line-height: 1.8;
+  letter-spacing: 0.015em;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* ヘッダー共通デザイン */
-header {
-  background-color: var(--primary-light);
-  color: var(--header-color);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  opacity: 0.42;
+  background-image: radial-gradient(rgba(38, 114, 103, 0.16) 0.7px, transparent 0.7px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
 
-@media (prefers-color-scheme: dark) {
-  header {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-  }
+::selection {
+  background: var(--accent-light);
+  color: var(--foreground);
 }
 
-/* ページ全体の大見出し h1 */
-h1 {
-  font-size: 2.25rem;
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  padding: 0.9rem clamp(1rem, 4vw, 3rem);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1180px, 100%);
+  min-height: 3.75rem;
+  margin: 0 auto;
+  padding: 0.55rem 0.75rem 0.55rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-solid) 78%, transparent);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(18px);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--text-heading);
+  font-size: 0.98rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.site-brand::before {
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 0 6px var(--accent-light);
+  content: "";
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.site-nav a {
+  padding: 0.65rem 0.9rem;
+  border-radius: 999px;
+  color: var(--text-body);
+  font-size: 0.82rem;
   font-weight: 700;
-  margin-bottom: 2rem;
-  border-bottom: 3px solid var(--primary-color);
-  padding-left: 1rem;
-  color: var(--text-heading);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
 }
 
-/* セクション見出し h2 */
-h2 {
-  font-size: 1.875rem;
-  font-weight: 600;
-  margin: 1.2rem 0;
-  border-left: 8px solid var(--primary-color);
-  padding-left: 1rem;
-  color: var(--text-heading);
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  transform: translateY(-1px);
 }
 
-/* 小見出し h3 */
+.menu-button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--primary-strong);
+  background: var(--primary-light);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.site-main {
+  width: min(1080px, calc(100% - 2rem));
+  min-height: calc(100vh - 8rem);
+  margin: 0 auto;
+  padding: 8.5rem 0 4rem;
+}
+
+.site-main--wide {
+  width: min(1320px, calc(100% - 2rem));
+}
+
+.site-footer {
+  width: min(1080px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.5rem 0 2rem;
+  border-top: 1px solid var(--card-border);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+section {
+  position: relative;
+  margin-bottom: clamp(4rem, 9vw, 7rem);
+  scroll-margin-top: 7rem;
+}
+
+h1,
+h2,
 h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
   color: var(--text-heading);
-  margin-bottom: 1rem;
+  line-height: 1.25;
+  text-wrap: balance;
 }
 
-/* 段落とリストの共通マージン設定 */
+h1 {
+  margin: 0 0 2.5rem;
+  padding: 0;
+  border: 0;
+  font-size: clamp(2.5rem, 6vw, 5.2rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+}
+
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 0 0 2rem;
+  padding: 0;
+  border: 0;
+  font-size: clamp(1.75rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+h2::before {
+  flex: 0 0 auto;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 3px solid var(--accent-color);
+  border-radius: 50%;
+  content: "";
+}
+
+h2::after {
+  flex: 1;
+  height: 1px;
+  margin-left: 0.35rem;
+  background: linear-gradient(90deg, var(--card-border), transparent);
+  content: "";
+}
+
+h3 {
+  margin: 0 0 0.8rem;
+  font-size: clamp(1.1rem, 2vw, 1.35rem);
+  font-weight: 750;
+  letter-spacing: -0.015em;
+}
+
 p,
 ol,
 ul {
+  margin: 0 0 0.85rem;
   color: var(--text-body);
-  margin-bottom: 0.75rem;
 }
 
-/* カードスタイル */
+ol,
+ul {
+  padding-left: 1.25rem;
+}
+
+li + li {
+  margin-top: 0.35rem;
+}
+
 .card {
-  background-color: var(--card-background);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.25rem, 3vw, 1.75rem);
   border: 1px solid var(--card-border);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 1.5rem;
+  background: var(--card-background);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(14px);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  .card {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  }
+.card::after {
+  position: absolute;
+  inset: auto -3rem -4rem auto;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%;
+  background: var(--primary-light);
+  opacity: 0.35;
+  pointer-events: none;
+  content: "";
 }
 
-/* ホバーエフェクトはコンポーネント側で制御 */
+.card:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 44%, transparent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-5px);
+}
 
-/* スクロール時のフェードインアニメーション */
+.card img {
+  transition: transform 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card:hover img {
+  transform: scale(1.025);
+}
+
+.grid-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: clamp(1rem, 2.5vw, 1.6rem);
+}
+
 .fade-in-section {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(24px);
   transition:
-    opacity 0.6s ease-out,
-    transform 0.6s ease-out;
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .fade-in-section.is-visible {
@@ -124,11 +338,101 @@ ul {
   transform: translateY(0);
 }
 
-/* グリッド（カード一覧に使用） */
-.grid-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+.portfolio-home > .fade-in-section:first-child section {
+  padding: clamp(1.5rem, 5vw, 4rem);
+  border: 1px solid var(--card-border);
+  border-radius: clamp(1.75rem, 5vw, 3.25rem);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-solid) 88%, transparent), color-mix(in srgb, var(--primary-light) 62%, transparent));
+  box-shadow: var(--shadow-md);
+}
+
+.portfolio-home > .fade-in-section:first-child h2 {
+  font-size: clamp(2.2rem, 5vw, 4.4rem);
+}
+
+.portfolio-home > .fade-in-section:first-child .card {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.portfolio-home > .fade-in-section:first-child .card:hover {
+  transform: none;
+}
+
+.portfolio-home > .fade-in-section:first-child img {
+  width: clamp(9rem, 22vw, 14rem);
+  height: clamp(9rem, 22vw, 14rem);
+  border: 0.5rem solid color-mix(in srgb, var(--surface-solid) 86%, transparent);
+  box-shadow: var(--shadow-md);
+}
+
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+
+select,
+input,
+textarea {
+  border-radius: 0.8rem;
+}
+
+@media (max-width: 767px) {
+  .site-header {
+    padding: 0.65rem;
+  }
+
+  .site-header__inner {
+    min-height: 3.4rem;
+    padding-left: 1rem;
+  }
+
+  .site-nav {
+    display: none;
+  }
+
+  .site-main {
+    width: min(100% - 1.25rem, 1080px);
+    padding-top: 6.5rem;
+  }
+
+  h2::after {
+    display: none;
+  }
+
+  section {
+    margin-bottom: 4rem;
+  }
+
+  .card {
+    border-radius: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .fade-in-section {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* 管理画面のダークモード調整 */
@@ -139,97 +443,61 @@ ul {
   }
 
   .admin .bg-white {
-    background-color: var(--card-background);
+    background-color: var(--surface-solid);
   }
 
   .admin .bg-gray-200 {
-    background-color: #2d2d2d;
+    background-color: #263a34;
   }
 
   .admin .bg-gray-300 {
-    background-color: #3f3f46;
+    background-color: #37534b;
   }
 
   .admin .bg-blue-50 {
-    background-color: #0b1220;
+    background-color: #102237;
   }
 
   .admin .bg-green-50 {
-    background-color: #0b1c13;
+    background-color: #102d24;
   }
 
-  .admin .bg-purple-50 {
+  .admin .bg-purple-50,
+  .admin .bg-purple-100 {
     background-color: var(--primary-light);
   }
 
-  .admin .bg-purple-100 {
-    background-color: #2a2138;
-  }
-
   .admin .bg-red-50 {
-    background-color: #1f0b0b;
+    background-color: #351a1a;
   }
 
-  .admin .text-gray-900 {
-    color: #f3f4f6;
-  }
-
+  .admin .text-gray-900,
   .admin .text-gray-800 {
-    color: #e5e7eb;
+    color: #edf4f0;
   }
 
   .admin .text-gray-700 {
-    color: #d1d5db;
+    color: #d8e4df;
   }
 
   .admin .text-gray-600,
   .admin .text-gray-500 {
-    color: #9ca3af;
+    color: #a5b8b1;
   }
 
-  .admin .text-purple-700 {
-    color: #c4b5fd;
-  }
-
+  .admin .text-purple-700,
   .admin .text-purple-600 {
-    color: #d8b4fe;
+    color: var(--primary-color);
   }
 
   .admin .text-blue-800 {
-    color: #93c5fd;
+    color: #a7cdf8;
   }
 
-  .admin .border-gray-300 {
-    border-color: #404040;
-  }
-
-  .admin .border-purple-200 {
-    border-color: #3f2b5f;
-  }
-
+  .admin .border-gray-300,
   .admin .border-gray-200,
   .admin .border-b,
   .admin .border-t {
-    border-color: #2d2d2d;
-  }
-
-  .admin .hover\:bg-gray-50:hover {
-    background-color: #1a1a1a;
-  }
-
-  .admin .hover\:bg-gray-300:hover {
-    background-color: #4b5563;
-  }
-
-  .admin .hover\:text-gray-900:hover {
-    color: #f3f4f6;
-  }
-
-  .admin .hover\:bg-purple-100:hover {
-    background-color: #35264a;
-  }
-
-  .admin .hover\:text-blue-800:hover {
-    color: #bfdbfe;
+    border-color: #37534b;
   }
 }
