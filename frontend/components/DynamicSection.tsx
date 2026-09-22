@@ -65,7 +65,10 @@ type SectionData = {
   histories?: HistoryBlock[];
 } & ProfileData;
 
-const historyTitleById: Record<string, string> = {
+const sectionTitleById: Record<string, string> = {
+  profile: "プロフィール",
+  specializations: "専門領域",
+  licenses: "資格",
   schoolHistory: "学歴",
   communityHistory: "コミュニティ参加歴",
   eventJoinHistory: "イベント参加歴",
@@ -76,13 +79,39 @@ const historyTitleById: Record<string, string> = {
   travel: "訪問・旅行歴",
 };
 
-const getJapaneseHistoryTitle = (id: string, displayName: string) => {
-  if (historyTitleById[id]) return historyTitleById[id];
+const getJapaneseSectionTitle = (
+  id: string,
+  displayName: string,
+  type: string,
+) => {
+  if (sectionTitleById[id]) return sectionTitleById[id];
 
   const title = displayName.trim();
   if (/[ぁ-んァ-ヶ一-龠]/.test(title)) return title;
 
   const normalized = title.toLowerCase();
+  if (normalized.includes("profile") || normalized.includes("about")) {
+    return "プロフィール";
+  }
+  if (
+    normalized.includes("specialization") ||
+    normalized.includes("expertise") ||
+    normalized.includes("skill")
+  ) {
+    return "専門領域";
+  }
+  if (
+    normalized.includes("license") ||
+    normalized.includes("qualification") ||
+    normalized.includes("certification")
+  ) {
+    return "資格";
+  }
+  if (normalized.includes("research")) return "研究";
+  if (normalized.includes("technology") || normalized.includes("tech stack")) {
+    return "使用技術";
+  }
+  if (normalized.includes("activity")) return "課外活動";
   if (normalized.includes("school") || normalized.includes("education")) {
     return "学歴";
   }
@@ -104,7 +133,7 @@ const getJapaneseHistoryTitle = (id: string, displayName: string) => {
   if (normalized.includes("award")) return "受賞歴";
   if (normalized.includes("travel")) return "訪問・旅行歴";
 
-  return "その他の経歴";
+  return type === "history" ? "その他の経歴" : "その他";
 };
 
 const isGroupedCategorizedItem = (
@@ -144,7 +173,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{meta.displayName}</h2>
+          <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
           <div className="flex flex-col md:flex-row md:items-center gap-8 card">
             {profileImageSrc && (
               <Image
@@ -179,7 +208,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{meta.displayName}</h2>
+            <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
             <div className="grid-card">
               {data.items
                 .filter(isGroupedCategorizedItem)
@@ -209,7 +238,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{meta.displayName}</h2>
+            <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
             <div className="grid-card">
               {data.categories.map((category: string, index: number) => (
                 <div key={index} className="card">
@@ -241,7 +270,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{meta.displayName}</h2>
+          <h2>{getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}</h2>
           <div className="grid-card">
             {lists.map((list: any, index: number) => (
               <div key={index} className="card">
@@ -276,7 +305,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       <FadeInSection>
         <section id={section.id} className="history-section">
           <Accordion
-            title={getJapaneseHistoryTitle(section.id, meta.displayName)}
+            title={getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
             defaultOpen={false}
           >
             <div className="flex flex-col gap-4">
