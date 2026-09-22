@@ -65,6 +65,48 @@ type SectionData = {
   histories?: HistoryBlock[];
 } & ProfileData;
 
+const historyTitleById: Record<string, string> = {
+  schoolHistory: "学歴",
+  communityHistory: "コミュニティ参加歴",
+  eventJoinHistory: "イベント参加歴",
+  eventManagementHistory: "イベント運営歴",
+  workHistory: "職歴",
+  internshipHistory: "インターン歴",
+  awardHistory: "受賞歴",
+  travel: "訪問・旅行歴",
+};
+
+const getJapaneseHistoryTitle = (id: string, displayName: string) => {
+  if (historyTitleById[id]) return historyTitleById[id];
+
+  const title = displayName.trim();
+  if (/[ぁ-んァ-ヶ一-龠]/.test(title)) return title;
+
+  const normalized = title.toLowerCase();
+  if (normalized.includes("school") || normalized.includes("education")) {
+    return "学歴";
+  }
+  if (normalized.includes("community")) return "コミュニティ参加歴";
+  if (normalized.includes("management") || normalized.includes("organizer")) {
+    return "イベント運営歴";
+  }
+  if (
+    normalized.includes("event") ||
+    normalized.includes("participation") ||
+    normalized.includes("join")
+  ) {
+    return "イベント参加歴";
+  }
+  if (normalized.includes("intern")) return "インターン歴";
+  if (normalized.includes("work") || normalized.includes("career")) {
+    return "職歴";
+  }
+  if (normalized.includes("award")) return "受賞歴";
+  if (normalized.includes("travel")) return "訪問・旅行歴";
+
+  return "その他の経歴";
+};
+
 const isGroupedCategorizedItem = (
   item: GroupedCategorizedItem | FlatCategorizedItem | HistoryBlock,
 ): item is GroupedCategorizedItem => "title" in item;
@@ -233,7 +275,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id} className="history-section">
-          <Accordion title={meta.displayName} defaultOpen={false}>
+          <Accordion
+            title={getJapaneseHistoryTitle(section.id, meta.displayName)}
+            defaultOpen={false}
+          >
             <div className="flex flex-col gap-4">
               {histories.map((history, index: number) => (
                 <div key={index} className="card">
