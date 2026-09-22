@@ -17,11 +17,7 @@ export default function SiteLayout({
     <>
       <Header />
       <main
-        className={[
-          "site-main",
-          wide ? "site-main--wide" : "",
-          className,
-        ]
+        className={["site-main", wide ? "site-main--wide" : "", className]
           .filter(Boolean)
           .join(" ")}
       >
