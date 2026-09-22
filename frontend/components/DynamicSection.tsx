@@ -65,6 +65,77 @@ type SectionData = {
   histories?: HistoryBlock[];
 } & ProfileData;
 
+const sectionTitleById: Record<string, string> = {
+  profile: "プロフィール",
+  specializations: "専門領域",
+  licenses: "資格",
+  schoolHistory: "学歴",
+  communityHistory: "コミュニティ参加歴",
+  eventJoinHistory: "イベント参加歴",
+  eventManagementHistory: "イベント運営歴",
+  workHistory: "職歴",
+  internshipHistory: "インターン歴",
+  awardHistory: "受賞歴",
+  travel: "訪問・旅行歴",
+};
+
+const getJapaneseSectionTitle = (
+  id: string,
+  displayName: string,
+  type: string,
+) => {
+  if (sectionTitleById[id]) return sectionTitleById[id];
+
+  const title = displayName.trim();
+  if (/[ぁ-んァ-ヶ一-龠]/.test(title)) return title;
+
+  const normalized = title.toLowerCase();
+  if (normalized.includes("profile") || normalized.includes("about")) {
+    return "プロフィール";
+  }
+  if (
+    normalized.includes("specialization") ||
+    normalized.includes("expertise") ||
+    normalized.includes("skill")
+  ) {
+    return "専門領域";
+  }
+  if (
+    normalized.includes("license") ||
+    normalized.includes("qualification") ||
+    normalized.includes("certification")
+  ) {
+    return "資格";
+  }
+  if (normalized.includes("research")) return "研究";
+  if (normalized.includes("technology") || normalized.includes("tech stack")) {
+    return "使用技術";
+  }
+  if (normalized.includes("activity")) return "課外活動";
+  if (normalized.includes("school") || normalized.includes("education")) {
+    return "学歴";
+  }
+  if (normalized.includes("community")) return "コミュニティ参加歴";
+  if (normalized.includes("management") || normalized.includes("organizer")) {
+    return "イベント運営歴";
+  }
+  if (
+    normalized.includes("event") ||
+    normalized.includes("participation") ||
+    normalized.includes("join")
+  ) {
+    return "イベント参加歴";
+  }
+  if (normalized.includes("intern")) return "インターン歴";
+  if (normalized.includes("work") || normalized.includes("career")) {
+    return "職歴";
+  }
+  if (normalized.includes("award")) return "受賞歴";
+  if (normalized.includes("travel")) return "訪問・旅行歴";
+
+  return type === "history" ? "その他の経歴" : "その他";
+};
+
 const isGroupedCategorizedItem = (
   item: GroupedCategorizedItem | FlatCategorizedItem | HistoryBlock,
 ): item is GroupedCategorizedItem => "title" in item;
@@ -82,7 +153,7 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     ) : (
       <a
         href={url}
-        className="text-blue-700 underline underline-offset-4 hover:text-blue-900"
+        className="content-link"
         target={url.startsWith("http") ? "_blank" : undefined}
         rel={url.startsWith("http") ? "noreferrer" : undefined}
       >
@@ -102,8 +173,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{meta.displayName}</h2>
-          <div className="flex flex-col md:flex-row items-left gap-8 card">
+          <h2>
+            {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+          </h2>
+          <div className="flex flex-col md:flex-row md:items-center gap-8 card">
             {profileImageSrc && (
               <Image
                 src={profileImageSrc}
@@ -137,7 +210,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{meta.displayName}</h2>
+            <h2>
+              {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+            </h2>
             <div className="grid-card">
               {data.items
                 .filter(isGroupedCategorizedItem)
@@ -167,7 +242,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
       return (
         <FadeInSection>
           <section id={section.id}>
-            <h2>{meta.displayName}</h2>
+            <h2>
+              {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+            </h2>
             <div className="grid-card">
               {data.categories.map((category: string, index: number) => (
                 <div key={index} className="card">
@@ -192,11 +269,16 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
   // 新しい管理画面形式（list, history）に対応
   const renderList = () => {
-    const lists = data?.items || data?.lists || [];
+    const lists =
+      Array.isArray(data?.items) && data.items.length > 0
+        ? data.items
+        : data?.lists || [];
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>{meta.displayName}</h2>
+          <h2>
+            {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+          </h2>
           <div className="grid-card">
             {lists.map((list: any, index: number) => (
               <div key={index} className="card">
@@ -229,8 +311,15 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
 
     return (
       <FadeInSection>
-        <section id={section.id}>
-          <Accordion title={meta.displayName} defaultOpen={false}>
+        <section id={section.id} className="history-section">
+          <Accordion
+            title={getJapaneseSectionTitle(
+              section.id,
+              meta.displayName,
+              meta.type,
+            )}
+            defaultOpen={false}
+          >
             <div className="flex flex-col gap-4">
               {histories.map((history, index: number) => (
                 <div key={index} className="card">

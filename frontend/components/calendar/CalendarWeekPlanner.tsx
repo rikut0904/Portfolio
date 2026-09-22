@@ -386,6 +386,52 @@ function layoutTimedEventsForDay(
   return result;
 }
 
+function mergePublicBusyEventsForDay(
+  day: Date,
+  events: NormalizedEvent[],
+): NormalizedEvent[] {
+  const clippedEvents = events
+    .filter((event) => intersectsDay(event, day))
+    .map((event) => ({
+      source: event,
+      ...clipEventToDay(event, day),
+    }))
+    .sort(
+      (a, b) =>
+        a.start.getTime() - b.start.getTime() ||
+        a.end.getTime() - b.end.getTime(),
+    );
+
+  const merged: Array<{
+    source: NormalizedEvent;
+    start: Date;
+    end: Date;
+  }> = [];
+
+  for (const clipped of clippedEvents) {
+    const previous = merged[merged.length - 1];
+    if (previous && clipped.start < previous.end) {
+      if (clipped.end > previous.end) {
+        previous.end = clipped.end;
+      }
+      continue;
+    }
+    merged.push({ ...clipped });
+  }
+
+  return merged.map((block, index) => ({
+    ...block.source,
+    id: `public-busy-${dayTimestamp(day)}-${index}`,
+    calendarId: "public-busy",
+    summary: "予定あり",
+    start: block.start.toISOString(),
+    end: block.end.toISOString(),
+    startDate: block.start,
+    endDate: block.end,
+    isPublished: false,
+  }));
+}
+
 function useModalBodyLock(active: boolean) {
   useEffect(() => {
     if (!active) {
@@ -994,14 +1040,13 @@ function WeekCalendarGrid({
                 (event) => event.isPublished,
               );
               const primaryPublicEvent = publishedDayEvents[0] || null;
-              const firstStyle = eventBlockStyle(
-                variant === "public" && primaryPublicEvent
-                  ? primaryPublicEvent
-                  : firstEvent,
-              );
+              const firstStyle =
+                variant === "public"
+                  ? PUBLIC_GRAY_EVENT_STYLE
+                  : eventBlockStyle(firstEvent);
               const firstTitle =
                 variant === "public"
-                  ? primaryPublicEvent?.summary || "予定あり"
+                  ? "予定あり"
                   : firstEvent.summary || "（タイトルなし）";
               const allDayBody = (
                 <>
@@ -1029,9 +1074,7 @@ function WeekCalendarGrid({
                       </span>
                       <span className="mt-1 text-[10px] font-medium text-[var(--text-body)] sm:text-[11px]">
                         {variant === "public"
-                          ? publishedDayEvents.length > 0
-                            ? `他 ${Math.max(publishedDayEvents.length - 1, 0)} 件の公開予定`
-                            : "公開予定なし"
+                          ? null
                           : `他 ${dayEvents.length - 1} 件の予定`}
                       </span>
                       <span
@@ -1045,18 +1088,15 @@ function WeekCalendarGrid({
                 </>
               );
               const publicAllDayCardStyle =
-                variant === "public" && primaryPublicEvent
+                variant === "public"
                   ? {
                       backgroundColor:
-                        PUBLIC_PUBLISHED_EVENT_STYLE.backgroundColor as string,
+                        PUBLIC_GRAY_EVENT_STYLE.backgroundColor as string,
                       borderColor:
-                        PUBLIC_PUBLISHED_EVENT_STYLE.borderColor as string,
+                        PUBLIC_GRAY_EVENT_STYLE.borderColor as string,
                     }
                   : undefined;
-              if (
-                variant === "public" &&
-                (!primaryPublicEvent || publishedDayEvents.length === 0)
-              ) {
+              if (variant === "public") {
                 return (
                   <div
                     key={day.toISOString()}
@@ -1072,19 +1112,6 @@ function WeekCalendarGrid({
                   key={day.toISOString()}
                   type="button"
                   onClick={() => {
-                    if (variant === "public") {
-                      if (
-                        publishedDayEvents.length === 1 &&
-                        primaryPublicEvent
-                      ) {
-                        onEventClick(primaryPublicEvent);
-                        return;
-                      }
-                      if (publishedDayEvents.length > 1) {
-                        onAllDayEventsClick(day, publishedDayEvents);
-                      }
-                      return;
-                    }
                     if (dayEvents.length === 1) {
                       onEventClick(firstEvent);
                       return;
@@ -1126,7 +1153,11 @@ function WeekCalendarGrid({
             </div>
           </div>
           {days.map((day) => {
-            const dayLayout = layoutTimedEventsForDay(day, timedEvents);
+            const displayTimedEvents =
+              variant === "public"
+                ? mergePublicBusyEventsForDay(day, timedEvents)
+                : timedEvents.filter((event) => intersectsDay(event, day));
+            const dayLayout = layoutTimedEventsForDay(day, displayTimedEvents);
             return (
               <div
                 key={day.toISOString()}
@@ -1181,71 +1212,69 @@ function WeekCalendarGrid({
                   />
                 ))}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
-                {timedEvents
-                  .filter((event) => intersectsDay(event, day))
-                  .map((event) => {
-                    const clipped = clipEventToDay(event, day);
-                    const gridPos = timedBlockPositionInGrid(clipped);
-                    if (!gridPos) {
-                      return null;
-                    }
-                    const { top, height } = gridPos;
-                    const eventInstanceKey = calendarEventInstanceKey(event);
-                    const { column, columnCount } = dayLayout.get(
-                      eventInstanceKey,
-                    ) ?? { column: 0, columnCount: 1 };
-                    const gapPx = columnCount > 1 ? 2 : 0;
-                    const leftStyle =
-                      columnCount === 1
-                        ? "0.5rem"
-                        : `calc(0.5rem + ${column} * (((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount}) + ${gapPx}px))`;
-                    const widthStyle =
-                      columnCount === 1
-                        ? "calc(100% - 1rem)"
-                        : `calc((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount})`;
-                    const blockStyle = {
-                      top,
-                      height,
-                      left: leftStyle,
-                      width: widthStyle,
-                      right: "auto" as const,
-                      ...eventBlockStyle(event),
-                    };
-                    const label =
-                      variant === "public"
-                        ? event.isPublished
-                          ? event.summary || "（タイトルなし）"
-                          : "予定あり"
-                        : event.summary || "（タイトルなし）";
-                    if (!canOpenEventDetail(event)) {
-                      return (
-                        <div
-                          key={`${eventInstanceKey}-${day.toISOString()}`}
-                          className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
-                          style={blockStyle}
-                          aria-label="予定あり"
-                        >
-                          <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
-                            {label}
-                          </span>
-                        </div>
-                      );
-                    }
+                {displayTimedEvents.map((event) => {
+                  const clipped = clipEventToDay(event, day);
+                  const gridPos = timedBlockPositionInGrid(clipped);
+                  if (!gridPos) {
+                    return null;
+                  }
+                  const { top, height } = gridPos;
+                  const eventInstanceKey = calendarEventInstanceKey(event);
+                  const { column, columnCount } = dayLayout.get(
+                    eventInstanceKey,
+                  ) ?? { column: 0, columnCount: 1 };
+                  const gapPx = columnCount > 1 ? 2 : 0;
+                  const leftStyle =
+                    columnCount === 1
+                      ? "0.5rem"
+                      : `calc(0.5rem + ${column} * (((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount}) + ${gapPx}px))`;
+                  const widthStyle =
+                    columnCount === 1
+                      ? "calc(100% - 1rem)"
+                      : `calc((100% - 1rem - ${(columnCount - 1) * gapPx}px) / ${columnCount})`;
+                  const blockStyle = {
+                    top,
+                    height,
+                    left: leftStyle,
+                    width: widthStyle,
+                    right: "auto" as const,
+                    ...eventBlockStyle(event),
+                  };
+                  const label =
+                    variant === "public"
+                      ? event.isPublished
+                        ? event.summary || "（タイトルなし）"
+                        : "予定あり"
+                      : event.summary || "（タイトルなし）";
+                  if (!canOpenEventDetail(event)) {
                     return (
-                      <button
+                      <div
                         key={`${eventInstanceKey}-${day.toISOString()}`}
-                        type="button"
-                        onClick={() => onEventClick(event)}
-                        className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
+                        className="absolute z-10 min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm"
                         style={blockStyle}
-                        aria-label={label}
+                        aria-label="予定あり"
                       >
                         <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
                           {label}
                         </span>
-                      </button>
+                      </div>
                     );
-                  })}
+                  }
+                  return (
+                    <button
+                      key={`${eventInstanceKey}-${day.toISOString()}`}
+                      type="button"
+                      onClick={() => onEventClick(event)}
+                      className="absolute min-h-0 min-w-0 overflow-hidden rounded-xl border text-left shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary-color)] focus-visible:ring-offset-1"
+                      style={blockStyle}
+                      aria-label={label}
+                    >
+                      <span className="block truncate px-1 pt-0.5 text-[10px] font-semibold leading-tight sm:text-[11px]">
+                        {label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             );
           })}
@@ -1634,8 +1663,8 @@ function CalendarWeekPlannerContent({
   };
 
   const calendarSection = (
-    <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
-      <div className="border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
+    <section className="calendar-shell overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
+      <div className="calendar-shell__intro border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
         <div className="flex flex-col gap-5">
           {variant === "public" ? (
             <div>
@@ -1671,7 +1700,7 @@ function CalendarWeekPlannerContent({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-b border-[var(--card-border)] bg-white/70 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
+      <div className="calendar-toolbar flex flex-col gap-3 border-b border-[var(--card-border)] bg-white/70 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -1709,7 +1738,7 @@ function CalendarWeekPlannerContent({
         </div>
       </div>
 
-      <div className="px-3 py-4 sm:px-5 sm:py-6">
+      <div className="calendar-canvas px-3 py-4 sm:px-5 sm:py-6">
         {loading ? (
           <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">
             読み込み中...
