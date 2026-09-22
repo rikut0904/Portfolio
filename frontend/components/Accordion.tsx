@@ -41,11 +41,7 @@ export default function Accordion({
           />
         </svg>
       </button>
-      <div
-        id={contentId}
-        className="accordion__content"
-        aria-hidden={!isOpen}
-      >
+      <div id={contentId} className="accordion__content" aria-hidden={!isOpen}>
         <div className="accordion__inner">{children}</div>
       </div>
     </div>
