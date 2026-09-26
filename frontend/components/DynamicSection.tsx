@@ -3,7 +3,6 @@
 import React from "react";
 import Image from "next/image";
 import FadeInSection from "./FadeInSection";
-import Accordion from "./Accordion";
 
 interface Section {
   id: string;
@@ -312,19 +311,18 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id} className="history-section">
-          <Accordion
-            title={getJapaneseSectionTitle(
-              section.id,
-              meta.displayName,
-              meta.type,
-            )}
-            defaultOpen={false}
-          >
-            <div className="flex flex-col gap-4">
-              {histories.map((history, index: number) => (
-                <div key={index} className="card">
-                  <h3>{renderLinkedText(history.date || "", history.url)}</h3>
-                  <ul className="list-disc ml-5">
+          <h2>
+            {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
+          </h2>
+          <div className="history-timeline">
+            {histories.map((history, index: number) => (
+              <article key={index} className="history-timeline__item">
+                <div className="history-timeline__date">
+                  {renderLinkedText(history.date || "", history.url)}
+                </div>
+                <div className="history-timeline__content">
+                  <span className="history-timeline__marker" aria-hidden="true" />
+                  <ul>
                     {history.details?.map((detail, detailIndex: number) => (
                       <li key={detailIndex}>
                         {renderLinkedText(
@@ -337,9 +335,9 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
                     ))}
                   </ul>
                 </div>
-              ))}
-            </div>
-          </Accordion>
+              </article>
+            ))}
+          </div>
         </section>
       </FadeInSection>
     );

@@ -788,7 +788,7 @@ h2::before {
 .mobile-menu__close span::after {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 0.3rem;
   width: 1rem;
   height: 2px;
   border-radius: 999px;
@@ -1830,6 +1830,72 @@ h2::before {
   margin-bottom: 0.85rem;
 }
 
+.history-timeline {
+  position: relative;
+  display: grid;
+  gap: 1.5rem;
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  padding: 0.5rem 0;
+}
+
+.history-timeline::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0.3rem;
+  width: 2px;
+  background: color-mix(in srgb, var(--primary-color) 28%, transparent);
+  content: "";
+}
+
+.history-timeline__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 1.5rem;
+  padding-left: 1.5rem;
+}
+
+.history-timeline__date {
+  padding-top: 0.15rem;
+  color: var(--primary-strong);
+  font-size: 0.95rem;
+  font-weight: 750;
+}
+
+.history-timeline__content {
+  min-width: 0;
+  padding: 0.05rem 0 0.1rem;
+}
+
+.history-timeline__marker {
+  position: absolute;
+  top: 0.35rem;
+  left: -0.1rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 3px solid var(--surface-solid);
+  border-radius: 50%;
+  background: var(--accent-color);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+.history-timeline__content ul {
+  margin: 0;
+  padding-left: 1.15rem;
+  list-style: disc;
+}
+
+.history-timeline__content li {
+  color: var(--text-body);
+  font-size: 0.95rem;
+}
+
+.history-timeline__content li + li {
+  margin-top: 0.45rem;
+}
+
 .accordion {
   overflow: hidden;
   border: 1px solid var(--card-border);
@@ -2023,6 +2089,19 @@ h2::before {
 
   .history-section {
     margin-bottom: 0.7rem;
+  }
+
+  .history-timeline {
+    gap: 1.25rem;
+  }
+
+  .history-timeline__item {
+    display: block;
+    padding-left: 1.5rem;
+  }
+
+  .history-timeline__date {
+    margin-bottom: 0.35rem;
   }
 
   .accordion__trigger {
