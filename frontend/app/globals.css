@@ -2,7 +2,7 @@
 
 :root {
   color-scheme: light;
-  --background: #f8f6ff;
+  --background: #faf5ff;
   --background-soft: #efeaff;
   --surface: rgba(255, 255, 255, 0.82);
   --surface-solid: #fffdff;
@@ -354,20 +354,30 @@ li + li {
   box-shadow: var(--shadow-md);
 }
 
-.portfolio-home > .fade-in-section:first-child h2 {
-  font-size: clamp(2.2rem, 5vw, 4.4rem);
+.portfolio-home > .fade-in-section .profile-heading,
+.portfolio-home > .fade-in-section h2 {
+  margin-bottom: 1.5rem;
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
 }
 
-.portfolio-home > .fade-in-section:first-child .card {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
+.portfolio-home > .fade-in-section:first-child .profile-layout {
+  display: flex;
+  align-items: center;
+  gap: clamp(1.5rem, 5vw, 3.5rem);
+  position: relative;
+  z-index: 1;
 }
 
-.portfolio-home > .fade-in-section:first-child .card:hover {
-  transform: none;
+.portfolio-home > .fade-in-section:first-child .profile-layout > div {
+  min-width: 0;
+}
+
+.portfolio-home > .fade-in-section:first-child .profile-layout p:last-child {
+  margin-bottom: 0;
+}
+
+.portfolio-home > .fade-in-section:first-child .profile-layout h3 {
+  margin-bottom: 1rem;
 }
 
 .portfolio-home > .fade-in-section:first-child img {
@@ -390,7 +400,7 @@ textarea {
   border-radius: 0.8rem;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 600px) {
   .site-header {
     padding: 0 0.9rem;
   }
@@ -406,6 +416,11 @@ textarea {
   .site-main {
     width: min(100% - 1.25rem, 1080px);
     padding-top: 5.75rem;
+  }
+
+  .portfolio-home > .fade-in-section:first-child .profile-layout {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   h2::after {
@@ -500,8 +515,7 @@ h2::before {
   overflow: hidden;
 }
 
-.portfolio-home > .fade-in-section:first-child section::before,
-.portfolio-home > .fade-in-section:first-child section::after {
+.portfolio-home > .fade-in-section:first-child section::before {
   position: absolute;
   z-index: -1;
   border: 1px solid color-mix(in srgb, var(--primary-color) 18%, transparent);
@@ -516,15 +530,6 @@ h2::before {
   width: 10rem;
   height: 10rem;
   animation: decoration-float 7s ease-in-out infinite;
-}
-
-.portfolio-home > .fade-in-section:first-child section::after {
-  bottom: -2.5rem;
-  left: 42%;
-  width: 5.5rem;
-  height: 5.5rem;
-  background: color-mix(in srgb, var(--accent-light) 58%, transparent);
-  animation: decoration-float 6s 1s ease-in-out infinite reverse;
 }
 
 .accordion__trigger span:first-child {
@@ -854,13 +859,13 @@ h2::before {
   outline-offset: 3px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 600px) {
   .menu-button {
     display: grid;
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 599px) {
   .mobile-menu {
     display: none;
   }

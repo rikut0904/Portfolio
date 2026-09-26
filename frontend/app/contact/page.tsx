@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import FadeInSection from "../../components/FadeInSection";
 import SiteLayout from "../../components/layouts/SiteLayout";
@@ -42,6 +42,10 @@ export default function ContactPage() {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const [threadPath, setThreadPath] = useState("");
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, []);
 
   const canSubmit = useMemo(() => {
     return (
@@ -122,13 +126,6 @@ export default function ContactPage() {
                   <p>
                     必要事項をご入力ください。内容を確認後、メールで返信します。
                   </p>
-                  <div
-                    className="contact-form-meta"
-                    aria-label="お問い合わせのご案内"
-                  >
-                    <span>メールで返信</span>
-                    <span>返信目安 1週間以内</span>
-                  </div>
                 </div>
 
                 <fieldset className="contact-category-group">

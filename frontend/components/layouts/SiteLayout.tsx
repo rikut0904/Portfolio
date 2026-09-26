@@ -24,8 +24,7 @@ export default function SiteLayout({
         {children}
       </main>
       <footer className="site-footer">
-        <p>制作・運営：平田 陸翔</p>
-        <p>&copy; {new Date().getFullYear()} 平田 陸翔</p>
+        <p>&copy; 2025 - {new Date().getFullYear()} 平田 陸翔</p>
       </footer>
     </>
   );

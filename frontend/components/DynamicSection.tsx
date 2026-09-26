@@ -173,10 +173,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
     return (
       <FadeInSection>
         <section id={section.id}>
-          <h2>
+          <h2 className="profile-heading">
             {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
           </h2>
-          <div className="flex flex-col md:flex-row md:items-center gap-8 card">
+          <div className="profile-layout">
             {profileImageSrc && (
               <Image
                 src={profileImageSrc}
