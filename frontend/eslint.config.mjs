@@ -7,7 +7,7 @@ import tseslint from "typescript-eslint";
 
 const config = tseslint.config(
   {
-    ignores: [".next/**", "node_modules/**", "public/**"],
+    ignores: [".next/**", "next-env.d.ts", "node_modules/**", "public/**"],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
