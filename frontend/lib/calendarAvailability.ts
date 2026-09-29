@@ -8,7 +8,7 @@ export type CalendarBusyEvent = {
 };
 
 /** モーダルで選べる MTG の長さ（分） */
-export const MTG_DURATION_OPTIONS_MINUTES = [30, 60, 90, 120, 180] as const;
+export const MTG_DURATION_OPTIONS_MINUTES = [30, 60, 90] as const;
 
 function intersectsDay(event: CalendarBusyEvent, day: Date) {
   const dayStart = startOfDay(day);

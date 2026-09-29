@@ -1142,15 +1142,10 @@ function WeekCalendarGrid({
                 className="absolute inset-x-0 border-t border-dashed border-[var(--card-border)] text-[10px] text-[var(--text-body)] first:border-t-0 sm:text-xs sm:first:border-t"
                 style={{ top: (hour - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT }}
               >
-                <span className="-translate-y-1/2 rounded bg-gray-100 px-1">{`${hour.toString().padStart(2, "0")}:00`}</span>
+                <span className="-translate-y-1/2 px-1 text-xs sm:text-sm">{`${hour.toString().padStart(2, "0")}:00`}</span>
               </div>
             ))}
             <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
-            <div className="pointer-events-none absolute bottom-0 left-0 z-[1] flex -translate-y-1/2 items-center">
-              <span className="rounded bg-gray-100 px-1 text-[10px] text-[var(--text-body)] shadow-sm sm:text-xs">
-                {`${GRID_DISPLAY_END_HOUR.toString().padStart(2, "0")}:00`}
-              </span>
-            </div>
           </div>
           {days.map((day) => {
             const displayTimedEvents =
