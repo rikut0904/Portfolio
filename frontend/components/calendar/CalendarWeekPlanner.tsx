@@ -84,18 +84,22 @@ function formatDateKeyInTimeZone(date: Date, timeZone: string) {
 }
 
 function parseAllDayDate(value: string) {
-  return new Date(`${value}T00:00:00Z`);
+  // Google Calendar の終日予定は日付だけがカレンダーのタイムゾーンで返る。
+  // UTC として解釈すると、日本時間では翌日の朝まで予定がある扱いになる。
+  return new Date(`${value}T00:00:00`);
 }
 
 function shiftDateKeyByDays(value: string, days: number) {
   const date = parseAllDayDate(value);
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
+  date.setDate(date.getDate() + days);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function formatAllDayDateLabel(value: string) {
   return new Intl.DateTimeFormat("ja-JP", {
-    timeZone: "UTC",
     year: "numeric",
     month: "long",
     day: "numeric",
