@@ -1833,15 +1833,6 @@ h2::before {
   padding: 0;
 }
 
-.product-card--clickable {
-  cursor: pointer;
-}
-
-.product-card--clickable:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--primary-color) 55%, transparent);
-  outline-offset: 4px;
-}
-
 .product-card__media {
   position: relative;
   width: 100%;
@@ -1939,17 +1930,23 @@ h2::before {
 }
 
 .product-card__actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
   margin-top: auto;
   padding-top: 1.15rem;
 }
 
+.product-card__action-placeholder {
+  display: block;
+  min-height: 2.55rem;
+}
+
 .product-link {
   display: inline-flex;
   align-items: center;
+  justify-self: start;
   gap: 0.4rem;
   padding: 0.62rem 0.85rem;
   border: 1px solid color-mix(in srgb, var(--primary-color) 42%, transparent);
@@ -1975,6 +1972,27 @@ h2::before {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.04em;
+}
+
+.repository-link {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  border-radius: 0.45rem;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease;
+}
+
+.repository-link:hover {
+  color: var(--primary-strong);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.repository-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 45%, transparent);
+  outline-offset: 3px;
 }
 
 .section-kicker {

@@ -1,6 +1,3 @@
-"use client";
-
-import React from "react";
 import Image from "next/image";
 
 interface ProductCardProps {
@@ -28,31 +25,8 @@ export default function ProductCard({
   createdYear,
   createdMonth,
 }: ProductCardProps) {
-  const primaryLink = githubUrl;
-
-  const openRepository = () => {
-    if (primaryLink) {
-      window.open(primaryLink, "_blank", "noopener,noreferrer");
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
-    if (!primaryLink) return;
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      openRepository();
-    }
-  };
-
   return (
-    <article
-      className={`card product-card ${primaryLink ? "product-card--clickable" : ""}`}
-      onClick={primaryLink ? openRepository : undefined}
-      onKeyDown={primaryLink ? handleKeyDown : undefined}
-      role={primaryLink ? "link" : undefined}
-      tabIndex={primaryLink ? 0 : undefined}
-      aria-label={primaryLink ? `${title}のGitHubリポジトリを開く` : undefined}
-    >
+    <article className="card product-card">
       {image && (
         <div className="product-card__media">
           <Image
@@ -107,17 +81,34 @@ export default function ProductCard({
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={(event) => event.stopPropagation()}
               className="product-link"
             >
               作品を見る
               <span aria-hidden="true">↗</span>
             </a>
           )}
-          {primaryLink && (
-            <span className="repository-hint" aria-hidden="true">
+          {!link && (
+            <span
+              className="product-card__action-placeholder"
+              aria-hidden="true"
+            />
+          )}
+          {githubUrl && (
+            <a
+              href={githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="repository-hint repository-link"
+              aria-label={`${title}のGitHubリポジトリを開く`}
+            >
               GitHub →
-            </span>
+            </a>
+          )}
+          {!githubUrl && (
+            <span
+              className="product-card__action-placeholder"
+              aria-hidden="true"
+            />
           )}
         </div>
       </div>
