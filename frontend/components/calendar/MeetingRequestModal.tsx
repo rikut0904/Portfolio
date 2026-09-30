@@ -326,6 +326,9 @@ export default function MeetingRequestModal({
                     aria-labelledby="mtg-schedule-heading"
                     className="meeting-request-section flex min-h-0 min-w-0 flex-1 flex-col md:basis-0"
                   >
+                    <h3 id="mtg-schedule-heading" className="sr-only">
+                      打ち合わせ日時
+                    </h3>
                     <div className="meeting-request-label">
                       打ち合わせの長さ
                     </div>
@@ -412,6 +415,9 @@ export default function MeetingRequestModal({
                     aria-labelledby="mtg-contact-heading"
                     className="meeting-request-section mt-6 flex min-h-0 min-w-0 flex-1 flex-col border-t border-[var(--card-border)] pt-6 md:mt-0 md:basis-0 md:border-l md:border-t-0 md:pl-8 md:pt-0"
                   >
+                    <h3 id="mtg-contact-heading" className="sr-only">
+                      連絡先
+                    </h3>
                     {rangeLabel ? (
                       <div className="meeting-request-selection mt-4 mb-4">
                         <span>選択中の候補</span>
