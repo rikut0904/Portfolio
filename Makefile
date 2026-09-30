@@ -55,6 +55,7 @@ install-backend:
 	cd $(BACKEND_DIR) && $(GO) mod tidy && $(GO) mod download
 
 up:
+	$(COMPOSE) --profile ci up -d --wait postgres
 	$(COMPOSE) up --build
 
 down:
