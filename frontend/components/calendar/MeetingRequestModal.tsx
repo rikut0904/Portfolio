@@ -326,7 +326,9 @@ export default function MeetingRequestModal({
                     aria-labelledby="mtg-schedule-heading"
                     className="meeting-request-section flex min-h-0 min-w-0 flex-1 flex-col md:basis-0"
                   >
-                    <div className="meeting-request-label">打ち合わせの長さ</div>
+                    <div className="meeting-request-label">
+                      打ち合わせの長さ
+                    </div>
                     <div
                       className="meeting-request-duration-grid mt-2"
                       aria-label="打ち合わせの長さ"
@@ -336,8 +338,12 @@ export default function MeetingRequestModal({
                           key={m}
                           type="button"
                           className="meeting-request-choice"
-                          data-selected={!isCustomDuration && durationMinutes === m}
-                          aria-pressed={!isCustomDuration && durationMinutes === m}
+                          data-selected={
+                            !isCustomDuration && durationMinutes === m
+                          }
+                          aria-pressed={
+                            !isCustomDuration && durationMinutes === m
+                          }
                           onClick={() => {
                             setCustomDurationHours("");
                             setDurationMinutes(m);

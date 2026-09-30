@@ -321,7 +321,10 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
                   {renderLinkedText(history.date || "", history.url)}
                 </div>
                 <div className="history-timeline__content">
-                  <span className="history-timeline__marker" aria-hidden="true" />
+                  <span
+                    className="history-timeline__marker"
+                    aria-hidden="true"
+                  />
                   <ul>
                     {history.details?.map((detail, detailIndex: number) => (
                       <li key={detailIndex}>

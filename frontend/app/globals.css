@@ -957,7 +957,11 @@ h2::before {
 
 .meeting-request-header {
   border-bottom: 1px solid var(--card-border);
-  background: color-mix(in srgb, var(--primary-light) 36%, var(--surface-solid));
+  background: color-mix(
+    in srgb,
+    var(--primary-light) 36%,
+    var(--surface-solid)
+  );
 }
 
 .meeting-request-header h2 {
