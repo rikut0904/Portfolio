@@ -129,13 +129,16 @@ export default function ContactThreadPage() {
   }, [detail?.replies]);
 
   return (
-    <SiteLayout>
+    <SiteLayout className="contact-thread-page">
       <FadeInSection>
-        <section className="py-8">
+        <section className="contact-thread-section">
           <h1>お問い合わせスレッド</h1>
+          <p className="contact-intro">
+            お問い合わせ内容と返信状況を、このページで続けて確認できます。
+          </p>
 
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="card space-y-6">
+          <div className="contact-thread-layout grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="contact-thread-card card space-y-6">
               {loading && (
                 <p className="text-sm text-gray-500">読み込み中...</p>
               )}
@@ -156,7 +159,7 @@ export default function ContactThreadPage() {
                     </p>
                   </div>
 
-                  <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card-background)] p-4">
+                  <div className="contact-thread-message rounded-lg border border-[var(--card-border)] bg-[var(--card-background)] p-4">
                     <p className="mb-2 text-xs text-gray-500">
                       お問い合わせ内容
                     </p>
@@ -169,7 +172,7 @@ export default function ContactThreadPage() {
                     {replies.map((reply) => (
                       <div
                         key={reply.id}
-                        className="rounded-lg border border-[var(--card-border)] bg-[var(--card-background)] p-4"
+                        className="contact-thread-message rounded-lg border border-[var(--card-border)] bg-[var(--card-background)] p-4"
                       >
                         <div className="mb-2 flex items-center justify-between text-xs text-gray-500">
                           <span>
@@ -212,7 +215,7 @@ export default function ContactThreadPage() {
                         type="button"
                         onClick={handleReply}
                         disabled={submitting}
-                        className="rounded-md bg-[var(--primary-color)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="contact-primary-action rounded-md bg-[var(--primary-color)] px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {submitting ? "送信中..." : "返信を送信する"}
                       </button>
@@ -222,7 +225,7 @@ export default function ContactThreadPage() {
               )}
             </div>
 
-            <aside className="space-y-4">
+            <aside className="contact-aside space-y-4">
               <div className="card">
                 <h3 className="mb-3">使い方</h3>
                 <p className="text-sm">

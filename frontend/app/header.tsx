@@ -2,51 +2,79 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import SlideInMenu from "../components/SlideInMenu";
+
+const navigation = [
+  { href: "/", label: "ホーム" },
+  { href: "/calendar", label: "カレンダー" },
+  { href: "/activities", label: "課外活動" },
+  { href: "/product", label: "作品紹介" },
+  { href: "/contact", label: "お問い合わせ" },
+];
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname();
   const closeMenu = useCallback(() => setIsOpen(false), []);
 
+  const isActive = (href: string) =>
+    href === "/" ? pathname === href : pathname.startsWith(href);
+
   return (
-    <header className="fixed inset-x-0 top-0 z-40 p-4 bg-primary-light shadow-md">
-      <div className="flex justify-between items-center">
-        <div className="text-xl font-bold text-header-color">
-          <Link href="/">平田 陸翔</Link>
+    <>
+      <header className="site-header">
+        <div className="site-header__inner">
+          <Link href="/" className="site-brand" aria-label="平田陸翔のホーム">
+            平田 陸翔
+          </Link>
+
+          <button
+            type="button"
+            className={`menu-button ${isOpen ? "menu-button--open" : ""}`}
+            onClick={() => setIsOpen((open) => !open)}
+            aria-label={isOpen ? "メニューを閉じる" : "メニューを開く"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
+          >
+            <span className="menu-button__icon" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </span>
+          </button>
+
+          <nav className="site-nav" aria-label="メインナビゲーション">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive(item.href) ? "page" : undefined}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
         </div>
-        <button className="md:hidden" onClick={() => setIsOpen(!isOpen)}>
-          <span className="text-3xl">☰</span>
-        </button>
-        <nav className="hidden md:flex space-x-6">
-          <Link href="/">Home</Link>
-          <Link href="/calendar">カレンダー</Link>
-          <Link href="/activities">課外活動</Link>
-          <Link href="/product">作品紹介</Link>
-          <Link href="/contact">お問い合わせ</Link>
-        </nav>
-      </div>
+      </header>
 
       <SlideInMenu
         isOpen={isOpen}
         onClose={closeMenu}
         ariaLabel="メインメニュー"
       >
-        <Link href="/" onClick={closeMenu}>
-          Home
-        </Link>
-        <Link href="/calendar" onClick={closeMenu}>
-          カレンダー
-        </Link>
-        <Link href="/activities" onClick={closeMenu}>
-          課外活動
-        </Link>
-        <Link href="/product" onClick={closeMenu}>
-          作品紹介
-        </Link>
-        <Link href="/contact" onClick={closeMenu}>
-          お問い合わせ
-        </Link>
+        {navigation.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={closeMenu}
+            aria-current={isActive(item.href) ? "page" : undefined}
+          >
+            <span>{item.label}</span>
+            <span aria-hidden="true">↗</span>
+          </Link>
+        ))}
       </SlideInMenu>
-    </header>
+    </>
   );
 }

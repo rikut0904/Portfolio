@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useId, useState } from "react";
 
 interface AccordionProps {
   title: string;
@@ -13,27 +14,23 @@ export default function Accordion({
   defaultOpen = false,
 }: AccordionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  const contentId = useId();
 
   return (
-    <div className="rounded-lg my-4 mb-4">
+    <div className={`accordion ${isOpen ? "accordion--open" : ""}`}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 transition-all duration-200 flex justify-between items-center text-left sticky top-0 z-10 rounded-t-lg"
-        style={{
-          backgroundColor: "var(--accordion-background)",
-          borderBottom: isOpen ? "2px solid var(--primary-color)" : "none",
-        }}
+        type="button"
+        onClick={() => setIsOpen((current) => !current)}
+        className="accordion__trigger"
         aria-expanded={isOpen}
+        aria-controls={contentId}
       >
-        <h3 className="my-4" style={{ color: "var(--text-heading)" }}>
-          {title}
-        </h3>
+        <span>{title}</span>
         <svg
-          className={`w-5 h-5 transition-transform duration-300 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className="accordion__icon"
+          aria-hidden="true"
           fill="none"
-          stroke="var(--primary-color)"
+          stroke="currentColor"
           viewBox="0 0 24 24"
         >
           <path
@@ -44,13 +41,8 @@ export default function Accordion({
           />
         </svg>
       </button>
-      <div
-        className={`transition-all duration-300 ease-in-out ${
-          isOpen ? "max-h-[5000px] opacity-100" : "max-h-0 opacity-0"
-        } overflow-hidden rounded-b-lg`}
-        style={{ backgroundColor: "var(--accordion-background)" }}
-      >
-        <div className="px-6 py-4">{children}</div>
+      <div id={contentId} className="accordion__content" aria-hidden={!isOpen}>
+        <div className="accordion__inner">{children}</div>
       </div>
     </div>
   );

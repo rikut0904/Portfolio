@@ -202,7 +202,7 @@ export default function ProductSection() {
 
   if (loading) {
     return (
-      <SiteLayout>
+      <SiteLayout className="products-page">
         <div className="min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-color"></div>
         </div>
@@ -211,18 +211,24 @@ export default function ProductSection() {
   }
 
   return (
-    <SiteLayout>
+    <SiteLayout className="products-page">
       <FadeInSection>
-        <section id="products">
-          <h2>
-            制作物一覧　{filteredProducts.length}件 / 全{publicProducts.length}
-            件
-          </h2>
+        <section id="products" className="page-section">
+          <div className="products-page__heading">
+            <p className="section-kicker">制作実績</p>
+            <h1>制作物一覧</h1>
+            <p className="page-lead">
+              これまでに制作したWebアプリやツールを、使用技術とともに紹介します。
+            </p>
+            <span className="products-result-count">
+              表示中 {filteredProducts.length}件 / 全{publicProducts.length}件
+            </span>
+          </div>
 
           {/* フィルター・ソート */}
           <Accordion title="フィルター・ソート" defaultOpen={false}>
             <div
-              className="p-6 rounded-lg shadow mb-8"
+              className="product-filter-panel p-6 rounded-lg shadow mb-8"
               style={{ backgroundColor: "var(--card-background)" }}
             >
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -418,9 +424,10 @@ export default function ProductSection() {
           {/* 作品一覧 */}
           <div className="grid-card">
             {currentProducts.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">
-                該当する作品がありません
-              </p>
+              <div className="products-empty empty-state">
+                <h2>該当する作品がありません</h2>
+                <p>フィルター条件を変更して、もう一度お試しください。</p>
+              </div>
             ) : (
               currentProducts.map((product: Product) => (
                 <ProductCard
