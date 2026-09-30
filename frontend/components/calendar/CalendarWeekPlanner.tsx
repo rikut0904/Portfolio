@@ -406,34 +406,68 @@ function mergePublicBusyEventsForDay(
         a.end.getTime() - b.end.getTime(),
     );
 
-  const merged: Array<{
+  const publishedEvents = clippedEvents.filter(
+    ({ source }) => source.isPublished,
+  );
+  const privateEvents = clippedEvents.filter(
+    ({ source }) => !source.isPublished,
+  );
+
+  // A private event is hidden only when it overlaps a published event. Published
+  // events remain independent so each one can keep its own label and click target.
+  const privateEventsWithoutPublishedDuplicates = privateEvents.filter(
+    (privateEvent) =>
+      !publishedEvents.some((publishedEvent) =>
+        rangesOverlap(
+          privateEvent.start,
+          privateEvent.end,
+          publishedEvent.start,
+          publishedEvent.end,
+        ),
+      ),
+  );
+
+  const mergedPrivateEvents: Array<{
     source: NormalizedEvent;
     start: Date;
     end: Date;
   }> = [];
 
-  for (const clipped of clippedEvents) {
-    const previous = merged[merged.length - 1];
+  for (const clipped of privateEventsWithoutPublishedDuplicates) {
+    const previous = mergedPrivateEvents[mergedPrivateEvents.length - 1];
     if (previous && clipped.start < previous.end) {
       if (clipped.end > previous.end) {
         previous.end = clipped.end;
       }
       continue;
     }
-    merged.push({ ...clipped });
+    mergedPrivateEvents.push({ ...clipped });
   }
 
-  return merged.map((block, index) => ({
-    ...block.source,
+  const displayPublishedEvents = publishedEvents.map((event) => ({
+    ...event.source,
+    start: event.start.toISOString(),
+    end: event.end.toISOString(),
+    startDate: event.start,
+    endDate: event.end,
+  }));
+  const displayPrivateEvents = mergedPrivateEvents.map((event, index) => ({
+    ...event.source,
     id: `public-busy-${dayTimestamp(day)}-${index}`,
     calendarId: "public-busy",
     summary: "予定あり",
-    start: block.start.toISOString(),
-    end: block.end.toISOString(),
-    startDate: block.start,
-    endDate: block.end,
+    start: event.start.toISOString(),
+    end: event.end.toISOString(),
+    startDate: event.start,
+    endDate: event.end,
     isPublished: false,
   }));
+
+  return [...displayPublishedEvents, ...displayPrivateEvents].sort(
+    (a, b) =>
+      a.startDate.getTime() - b.startDate.getTime() ||
+      a.endDate.getTime() - b.endDate.getTime(),
+  );
 }
 
 function useModalBodyLock(active: boolean) {
