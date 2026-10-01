@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type CalendarBusyEvent,
   getFreeSlotsInDisplayRange,
@@ -90,6 +97,7 @@ export default function MeetingRequestModal({
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
   const [customDurationHours, setCustomDurationHours] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const slotRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const hintKey = preferredHint?.getTime() ?? 0;
 
@@ -180,7 +188,7 @@ export default function MeetingRequestModal({
     if (!open) {
       return;
     }
-    const onKey = (e: KeyboardEvent) => {
+      const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
@@ -202,6 +210,50 @@ export default function MeetingRequestModal({
   const rangeLabel =
     slotStart && slotEnd ? formatSlotRange(slotStart, slotEnd) : "";
   const subject = slotStart && slotEnd ? `MTG依頼（${rangeLabel}）` : "";
+
+  const moveToSlot = (index: number) => {
+    setSelectedIndex(index);
+    requestAnimationFrame(() => slotRefs.current[index]?.focus());
+  };
+
+  const handleSlotKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (availableSlots.length === 0) {
+      return;
+    }
+
+    let nextIndex: number | null = null;
+    switch (event.key) {
+      case "ArrowDown":
+      case "ArrowRight":
+        nextIndex = Math.min(index + 1, availableSlots.length - 1);
+        break;
+      case "ArrowUp":
+      case "ArrowLeft":
+        nextIndex = Math.max(index - 1, 0);
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = availableSlots.length - 1;
+        break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        setSelectedIndex(index);
+        return;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    if (nextIndex !== null) {
+      moveToSlot(nextIndex);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -392,10 +444,15 @@ export default function MeetingRequestModal({
                             key={s.start.getTime()}
                             type="button"
                             role="option"
+                            tabIndex={safeIndex === i ? 0 : -1}
                             aria-selected={safeIndex === i}
                             className="meeting-request-slot"
                             data-selected={safeIndex === i}
+                            ref={(element) => {
+                              slotRefs.current[i] = element;
+                            }}
                             onClick={() => setSelectedIndex(i)}
+                            onKeyDown={(event) => handleSlotKeyDown(event, i)}
                           >
                             <span>{formatSlotRange(s.start, s.end)}</span>
                             <span className="meeting-request-slot__mark">
