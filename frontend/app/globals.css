@@ -774,7 +774,7 @@ h2::before {
 .mobile-menu__close span::after {
   position: absolute;
   top: 50%;
-  left: 0.3rem;
+  left: 50%;
   width: 1rem;
   height: 2px;
   border-radius: 999px;
