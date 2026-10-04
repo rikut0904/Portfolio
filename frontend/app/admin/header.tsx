@@ -8,7 +8,7 @@ import SlideInMenu from "../../components/SlideInMenu";
 
 export default function AdminHeader() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const router = useRouter();
   const closeMenu = useCallback(() => setIsOpen(false), []);
 

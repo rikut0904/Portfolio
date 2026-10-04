@@ -1,14 +1,16 @@
 import React from "react";
 
+interface ActivityFormData {
+  title: string;
+  description: string;
+  image: string;
+  link: string;
+  status: string;
+}
+
 interface ActivityFormProps {
-  formData: {
-    title: string;
-    description: string;
-    image: string;
-    link: string;
-    status: string;
-  };
-  setFormData: (data: any) => void;
+  formData: ActivityFormData;
+  setFormData: (data: ActivityFormData) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   isEditing: boolean;

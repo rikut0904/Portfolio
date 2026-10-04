@@ -8,7 +8,6 @@ import {
 } from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Category {

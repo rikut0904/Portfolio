@@ -279,11 +279,11 @@ export default function DynamicSection({ section }: DynamicSectionProps) {
             {getJapaneseSectionTitle(section.id, meta.displayName, meta.type)}
           </h2>
           <div className="grid-card">
-            {lists.map((list: any, index: number) => (
+            {(lists as ListBlock[]).map((list, index) => (
               <div key={index} className="card">
                 <h3>{list.title}</h3>
                 <ol>
-                  {list.items?.map((item: any, itemIndex: number) => (
+                  {list.items?.map((item, itemIndex) => (
                     <li key={itemIndex}>
                       {typeof item === "string" ? item : item?.text || ""}
                     </li>

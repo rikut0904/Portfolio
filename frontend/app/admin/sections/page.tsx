@@ -8,7 +8,6 @@ import {
 } from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
-import Link from "next/link";
 import SectionForm from "../../../components/admin/SectionForm";
 import NewSectionForm from "../../../components/admin/NewSectionForm";
 import DeleteConfirmModal from "../../../components/admin/DeleteConfirmModal";

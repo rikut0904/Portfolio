@@ -283,27 +283,6 @@ function hasAllDayOnDay(day: Date, allDayEvents: NormalizedEvent[]): boolean {
   return allDayEvents.some((e) => intersectsDay(e, day));
 }
 
-function timedSlotOverlapsBusy(
-  slotStart: Date,
-  slotEnd: Date,
-  day: Date,
-  timedEvents: NormalizedEvent[],
-): boolean {
-  for (const ev of timedEvents) {
-    if (ev.isAllDay) {
-      continue;
-    }
-    if (!intersectsDay(ev, day)) {
-      continue;
-    }
-    const clipped = clipEventToDay(ev, day);
-    if (rangesOverlap(slotStart, slotEnd, clipped.start, clipped.end)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 type ClippedTimed = {
   event: NormalizedEvent;
   clipped: { start: Date; end: Date };
@@ -1431,7 +1410,7 @@ function CalendarWeekPlannerContent({
           );
         }
         setPreferences(body as CalendarPreferencesResponse);
-      } catch (err) {
+      } catch {
         setPreferences(null);
       }
     };

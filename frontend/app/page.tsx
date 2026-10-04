@@ -13,7 +13,7 @@ interface Section {
     editable: boolean;
     sortOrder?: "asc" | "desc";
   };
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export default function Home() {

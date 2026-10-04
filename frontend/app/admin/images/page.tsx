@@ -7,7 +7,6 @@ import {
   AdminPageHeader,
 } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
-import Link from "next/link";
 
 function ImagesContent() {
   const { user } = useAuth();
@@ -118,7 +117,6 @@ function ImagesContent() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 プレビュー
               </label>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={previewUrl}
                 alt="Preview"

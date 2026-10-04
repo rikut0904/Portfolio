@@ -154,7 +154,7 @@ export default function SectionForm({
               onChange={(e) => {
                 try {
                   setFormData(JSON.parse(e.target.value));
-                } catch (error) {
+                } catch {
                   // JSON解析エラーは無視
                 }
               }}

@@ -9,7 +9,7 @@ interface NewSectionFormProps {
     type: string;
     order?: number;
     sortOrder?: "asc" | "desc";
-    data: any;
+    data: Record<string, unknown>;
   }) => Promise<void>;
   onCancel: () => void;
   existingSections?: Array<{

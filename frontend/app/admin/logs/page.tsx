@@ -8,7 +8,6 @@ import {
 } from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
-import Link from "next/link";
 
 type AdminLog = {
   id: string;

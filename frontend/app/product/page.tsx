@@ -95,7 +95,17 @@ export default function ProductSection() {
       const data = await response.json();
       // データが正しい形式かチェック
       if (data && Array.isArray(data.technologies)) {
-        setTechnologies(data.technologies.map((t: any) => t.name));
+        setTechnologies(
+          data.technologies
+            .filter(
+              (technology: unknown): technology is { name: string } =>
+                typeof technology === "object" &&
+                technology !== null &&
+                "name" in technology &&
+                typeof technology.name === "string",
+            )
+            .map((technology: { name: string }) => technology.name),
+        );
       } else {
         console.error("Invalid technologies data format:", data);
         setTechnologies([]);

@@ -7,7 +7,6 @@ import {
   AdminPageHeader,
 } from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
-import Link from "next/link";
 import ProductForm from "../../../components/admin/ProductForm";
 import ProductFilters from "../../../components/admin/ProductFilters";
 import ProductListItem from "../../../components/admin/ProductListItem";
