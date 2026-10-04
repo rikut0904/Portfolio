@@ -33,9 +33,9 @@ export default function DynamicProfileSection({
       try {
         const response = await fetch("/api/sections");
         const data = await response.json();
-        const section = (data.sections as ProfileSectionResponse[] | undefined)?.find(
-          (candidate) => candidate.id === sectionId,
-        );
+        const section = (
+          data.sections as ProfileSectionResponse[] | undefined
+        )?.find((candidate) => candidate.id === sectionId);
         if (section && section.data) {
           setProfileData({
             name: section.data.name || defaultData.name,
