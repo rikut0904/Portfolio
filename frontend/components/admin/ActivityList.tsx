@@ -40,7 +40,7 @@ export default function ActivityList({
               <button
                 onClick={() => onMoveUp(activity)}
                 disabled={index === 0}
-                className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                 title="上に移動"
               >
                 <svg
@@ -60,7 +60,7 @@ export default function ActivityList({
               <button
                 onClick={() => onMoveDown(activity)}
                 disabled={index === activities.length - 1}
-                className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                 title="下に移動"
               >
                 <svg

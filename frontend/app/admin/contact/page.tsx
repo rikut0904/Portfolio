@@ -188,7 +188,7 @@ function InquiriesContent() {
               </label>
               <button
                 type="button"
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50"
+                className="admin-button admin-button--secondary w-full"
                 onClick={() =>
                   setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
                 }
@@ -240,7 +240,7 @@ function InquiriesContent() {
                       <td className="px-3 py-2">
                         <Link
                           href={`/admin/contact/${item.id}`}
-                          className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                          className="admin-button admin-button--ghost admin-button--compact"
                         >
                           詳細
                         </Link>

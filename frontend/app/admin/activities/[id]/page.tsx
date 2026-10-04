@@ -239,13 +239,13 @@ function CategoryActivitiesContent() {
               <div className="flex gap-2">
                 <button
                   onClick={handleSaveCategoryName}
-                  className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
+                  className="admin-button admin-button--primary admin-button--compact"
                 >
                   保存
                 </button>
                 <button
                   onClick={handleCancelCategoryEdit}
-                  className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm sm:text-base"
+                  className="admin-button admin-button--secondary admin-button--compact"
                 >
                   キャンセル
                 </button>

@@ -158,7 +158,7 @@ function LogsContent() {
                       fetchLogs(previousCursor);
                     }}
                     disabled={cursorHistory.length === 0}
-                    className="px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="admin-button admin-button--secondary admin-button--compact"
                   >
                     前へ
                   </button>
@@ -171,7 +171,7 @@ function LogsContent() {
                       fetchLogs(nextCursor);
                     }}
                     disabled={!nextCursor}
-                    className="px-3 py-1.5 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                    className="admin-button admin-button--secondary admin-button--compact"
                   >
                     次へ
                   </button>

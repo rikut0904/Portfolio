@@ -214,7 +214,7 @@ export default function ProductForm({
                       type="button"
                       onClick={handleAddTechnology}
                       disabled={isAddingTech}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                      className="admin-button admin-button--primary admin-button--compact"
                     >
                       {isAddingTech ? "追加中..." : "追加"}
                     </button>

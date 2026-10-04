@@ -956,6 +956,17 @@ h2::before {
   background: transparent;
 }
 
+.admin-button--compact {
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+.admin-button--icon {
+  width: 2rem;
+  padding-inline: 0.35rem;
+}
+
 .admin-page-content .bg-white.rounded-lg.shadow,
 .admin-page-content .bg-white.rounded-lg.shadow-xl,
 .admin-page-content .bg-white.rounded-lg.shadow-md {

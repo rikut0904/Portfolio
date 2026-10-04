@@ -299,13 +299,13 @@ function ActivitiesContent() {
             <div className="flex gap-2 mt-3 sm:mt-4">
               <button
                 onClick={handleSave}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm sm:text-base"
+                className="admin-button admin-button--primary admin-button--compact"
               >
                 保存
               </button>
               <button
                 onClick={handleCancel}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 text-sm sm:text-base"
+                className="admin-button admin-button--secondary admin-button--compact"
               >
                 キャンセル
               </button>
@@ -329,7 +329,7 @@ function ActivitiesContent() {
                       <button
                         onClick={() => handleMoveUp(category)}
                         disabled={index === 0}
-                        className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                         title="上に移動"
                       >
                         <svg
@@ -349,7 +349,7 @@ function ActivitiesContent() {
                       <button
                         onClick={() => handleMoveDown(category)}
                         disabled={index === categories.length - 1}
-                        className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                         title="下に移動"
                       >
                         <svg
@@ -385,13 +385,13 @@ function ActivitiesContent() {
                       <div className="flex gap-2">
                         <button
                           onClick={handleSave}
-                          className="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
+                          className="admin-button admin-button--primary admin-button--compact"
                         >
                           保存
                         </button>
                         <button
                           onClick={handleCancel}
-                          className="flex-1 sm:flex-none px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm sm:text-base"
+                          className="admin-button admin-button--secondary admin-button--compact"
                         >
                           キャンセル
                         </button>
@@ -408,7 +408,7 @@ function ActivitiesContent() {
                       <button
                         onClick={() => handleMoveUp(category)}
                         disabled={index === 0}
-                        className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                         title="上に移動"
                       >
                         <svg
@@ -428,7 +428,7 @@ function ActivitiesContent() {
                       <button
                         onClick={() => handleMoveDown(category)}
                         disabled={index === categories.length - 1}
-                        className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                         title="下に移動"
                       >
                         <svg
@@ -460,7 +460,7 @@ function ActivitiesContent() {
                         </div>
                         <button
                           onClick={() => handleEdit(category)}
-                          className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded mt-0.5 sm:mt-1.5 flex-shrink-0"
+                          className="admin-button admin-button--ghost admin-button--compact admin-button--icon"
                           title="カテゴリ名を編集"
                         >
                           <svg

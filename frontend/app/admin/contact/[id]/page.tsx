@@ -261,7 +261,7 @@ function InquiryDetailContent() {
                     type="button"
                     onClick={handleReply}
                     disabled={replyLoading}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="admin-button admin-button--primary"
                   >
                     {replyLoading ? "送信中..." : "返信を送信する"}
                   </button>

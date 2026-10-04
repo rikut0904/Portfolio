@@ -112,7 +112,7 @@ export default function ListSectionForm({
                 <button
                   type="button"
                   onClick={() => removeList(listIndex)}
-                  className="px-2 py-2 sm:px-3 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 flex-shrink-0 text-base sm:text-lg font-bold"
+                  className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                 >
                   ×
                 </button>
@@ -133,7 +133,7 @@ export default function ListSectionForm({
                   <button
                     type="button"
                     onClick={() => removeItem(listIndex, itemIndex)}
-                    className="px-2 py-1 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm flex-shrink-0"
+                      className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                   >
                     ×
                   </button>
@@ -142,7 +142,7 @@ export default function ListSectionForm({
               <button
                 type="button"
                 onClick={() => addItem(listIndex)}
-                className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm sm:text-base"
+                className="admin-button admin-button--secondary w-full"
               >
                 + 項目を追加
               </button>
@@ -153,7 +153,7 @@ export default function ListSectionForm({
       <button
         type="button"
         onClick={addList}
-        className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm sm:text-base"
+        className="admin-button admin-button--primary w-full"
       >
         + カテゴリを追加
       </button>

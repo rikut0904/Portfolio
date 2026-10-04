@@ -183,10 +183,10 @@ export default function ProductFilters({
                       setFilterTechnologies([...filterTechnologies, tech]);
                     }
                   }}
-                  className={`px-3 py-1 text-sm rounded-full ${
+                  className={`admin-button admin-button--compact ${
                     filterTechnologies.includes(tech)
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      ? "admin-button--primary"
+                      : "admin-button--secondary"
                   }`}
                 >
                   {tech}
@@ -200,7 +200,7 @@ export default function ProductFilters({
         <div className="mt-4">
           <button
             onClick={onClearFilters}
-            className="px-4 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            className="admin-button admin-button--secondary admin-button--compact"
           >
             フィルターをクリア
           </button>

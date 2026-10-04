@@ -64,7 +64,7 @@ export default function StatusModal({
           <div className="mt-6">
             <button
               onClick={onClose}
-              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+              className="admin-button admin-button--secondary w-full"
             >
               キャンセル
             </button>
