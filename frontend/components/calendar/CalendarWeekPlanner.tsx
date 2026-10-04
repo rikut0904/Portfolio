@@ -416,7 +416,7 @@ function mergePublicBusyEventsForDay(
           return [fragment];
         }
 
-        const remaining: typeof fragment[] = [];
+        const remaining: (typeof fragment)[] = [];
         if (fragment.start < publishedEvent.start) {
           remaining.push({
             ...fragment,
