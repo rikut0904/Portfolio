@@ -22,36 +22,38 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="admin-header">
-      <div className="admin-header__inner">
-        <div className="flex items-center gap-4">
-          <Link href="/admin" className="admin-header__brand">
-            管理画面
-          </Link>
+    <>
+      <header className="admin-header">
+        <div className="admin-header__inner">
+          <div className="flex items-center gap-4">
+            <Link href="/admin" className="admin-header__brand">
+              管理画面
+            </Link>
+          </div>
+          <button
+            type="button"
+            className={`admin-header__menu-button ${isOpen ? "is-open" : ""}`}
+            onClick={() => setIsOpen((open) => !open)}
+            aria-label={isOpen ? "管理メニューを閉じる" : "管理メニューを開く"}
+            aria-expanded={isOpen}
+            aria-controls="mobile-navigation"
+          >
+            <span aria-hidden="true">☰</span>
+          </button>
+          <nav className="admin-header__nav" aria-label="管理メニュー">
+            <Link href="/admin/sections">セクション管理</Link>
+            <Link href="/admin/activities">課外活動管理</Link>
+            <Link href="/admin/products">作品管理</Link>
+            <Link href="/admin/calendar">予定管理</Link>
+            <Link href="/admin/contact">お問い合わせ管理</Link>
+            <Link href="/admin/logs">ログ一覧</Link>
+            <Link href="/" target="_blank">
+              サイトを見る
+            </Link>
+            <button onClick={handleSignOut}>ログアウト</button>
+          </nav>
         </div>
-        <button
-          type="button"
-          className={`admin-header__menu-button ${isOpen ? "is-open" : ""}`}
-          onClick={() => setIsOpen((open) => !open)}
-          aria-label={isOpen ? "管理メニューを閉じる" : "管理メニューを開く"}
-          aria-expanded={isOpen}
-          aria-controls="mobile-navigation"
-        >
-          <span aria-hidden="true">☰</span>
-        </button>
-        <nav className="admin-header__nav" aria-label="管理メニュー">
-          <Link href="/admin/sections">セクション管理</Link>
-          <Link href="/admin/activities">課外活動管理</Link>
-          <Link href="/admin/products">作品管理</Link>
-          <Link href="/admin/calendar">予定管理</Link>
-          <Link href="/admin/contact">お問い合わせ管理</Link>
-          <Link href="/admin/logs">ログ一覧</Link>
-          <Link href="/" target="_blank">
-            サイトを見る
-          </Link>
-          <button onClick={handleSignOut}>ログアウト</button>
-        </nav>
-      </div>
+      </header>
 
       <SlideInMenu isOpen={isOpen} onClose={closeMenu} ariaLabel="管理メニュー">
         <Link href="/admin/sections" onClick={closeMenu}>
@@ -79,6 +81,6 @@ export default function AdminHeader() {
           ログアウト
         </button>
       </SlideInMenu>
-    </header>
+    </>
   );
 }
