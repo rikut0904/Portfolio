@@ -12,11 +12,31 @@ interface Stats {
 }
 
 const primaryAdminLinks = [
-  { href: "/admin/sections", label: "セクション管理", description: "プロフィール・資格・履歴を編集" },
-  { href: "/admin/activities", label: "課外活動管理", description: "課外活動の追加・編集・公開状態を管理" },
-  { href: "/admin/products", label: "作品管理", description: "制作物の追加・編集・公開状態を管理" },
-  { href: "/admin/calendar", label: "予定管理", description: "Googleカレンダーの予定を確認" },
-  { href: "/admin/contact", label: "お問い合わせ管理", description: "お問い合わせの確認と返信" },
+  {
+    href: "/admin/sections",
+    label: "セクション管理",
+    description: "プロフィール・資格・履歴を編集",
+  },
+  {
+    href: "/admin/activities",
+    label: "課外活動管理",
+    description: "課外活動の追加・編集・公開状態を管理",
+  },
+  {
+    href: "/admin/products",
+    label: "作品管理",
+    description: "制作物の追加・編集・公開状態を管理",
+  },
+  {
+    href: "/admin/calendar",
+    label: "予定管理",
+    description: "Googleカレンダーの予定を確認",
+  },
+  {
+    href: "/admin/contact",
+    label: "お問い合わせ管理",
+    description: "お問い合わせの確認と返信",
+  },
 ] as const;
 
 const utilityAdminLinks = [
@@ -80,7 +100,11 @@ function DashboardContent() {
           </div>
           <div className="admin-dashboard__primary-grid">
             {primaryAdminLinks.map((item, index) => (
-              <Link key={item.href} href={item.href} className="admin-menu-card">
+              <Link
+                key={item.href}
+                href={item.href}
+                className="admin-menu-card"
+              >
                 <span className="admin-menu-card__index">
                   {String(index + 1).padStart(2, "0")}
                 </span>
@@ -96,7 +120,10 @@ function DashboardContent() {
           </div>
         </section>
 
-        <section className="admin-dashboard__secondary" aria-labelledby="admin-secondary-heading">
+        <section
+          className="admin-dashboard__secondary"
+          aria-labelledby="admin-secondary-heading"
+        >
           <div className="admin-dashboard__section-heading">
             <div>
               <p className="admin-dashboard__eyebrow">TOOLS</p>
@@ -105,7 +132,11 @@ function DashboardContent() {
           </div>
           <div className="admin-dashboard__utility-grid">
             {utilityAdminLinks.map((item) => (
-              <Link key={item.href} href={item.href} className="admin-utility-link">
+              <Link
+                key={item.href}
+                href={item.href}
+                className="admin-utility-link"
+              >
                 <span>{item.label}</span>
                 <span aria-hidden="true">→</span>
               </Link>
@@ -113,7 +144,10 @@ function DashboardContent() {
           </div>
         </section>
 
-        <section className="admin-dashboard__stats" aria-labelledby="admin-stats-heading">
+        <section
+          className="admin-dashboard__stats"
+          aria-labelledby="admin-stats-heading"
+        >
           <div className="admin-dashboard__section-heading">
             <div>
               <p className="admin-dashboard__eyebrow">OVERVIEW</p>

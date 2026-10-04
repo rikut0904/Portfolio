@@ -208,100 +208,100 @@ function CategoryActivitiesContent() {
 
   return (
     <AdminPageContent>
-        <div className="py-2 sm:py-4">
-          <AdminPageHeader
-            page="activities"
-            title={isEditingCategoryName ? "カテゴリ名を編集" : category.name}
-            backHref="/admin/activities"
-            backLabel="カテゴリ一覧"
-            actions={
-              !isEditingCategoryName ? (
-                <button
-                  onClick={handleEditCategoryName}
-                  className="px-3 py-2 text-sm font-semibold text-[var(--primary-strong)]"
-                >
-                  カテゴリ名を編集
-                </button>
-              ) : null
-            }
-          />
-
-          {isEditingCategoryName ? (
-            <div className="mb-4 sm:mb-6 flex items-center gap-2">
-              <input
-                type="text"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base sm:text-xl font-bold"
-                placeholder="カテゴリ名を入力"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveCategoryName}
-                  className="admin-button admin-button--primary admin-button--compact"
-                >
-                  保存
-                </button>
-                <button
-                  onClick={handleCancelCategoryEdit}
-                  className="admin-button admin-button--secondary admin-button--compact"
-                >
-                  キャンセル
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          {!editingActivity && !isAddingNew && (
-            <div className="mb-4 sm:mb-6">
+      <div className="py-2 sm:py-4">
+        <AdminPageHeader
+          page="activities"
+          title={isEditingCategoryName ? "カテゴリ名を編集" : category.name}
+          backHref="/admin/activities"
+          backLabel="カテゴリ一覧"
+          actions={
+            !isEditingCategoryName ? (
               <button
-                onClick={handleAddNew}
-                className="admin-button admin-button--primary"
+                onClick={handleEditCategoryName}
+                className="px-3 py-2 text-sm font-semibold text-[var(--primary-strong)]"
               >
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                新規追加
+                カテゴリ名を編集
+              </button>
+            ) : null
+          }
+        />
+
+        {isEditingCategoryName ? (
+          <div className="mb-4 sm:mb-6 flex items-center gap-2">
+            <input
+              type="text"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base sm:text-xl font-bold"
+              placeholder="カテゴリ名を入力"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveCategoryName}
+                className="admin-button admin-button--primary admin-button--compact"
+              >
+                保存
+              </button>
+              <button
+                onClick={handleCancelCategoryEdit}
+                className="admin-button admin-button--secondary admin-button--compact"
+              >
+                キャンセル
               </button>
             </div>
-          )}
+          </div>
+        ) : null}
 
-          {(isAddingNew || editingActivity) && (
-            <ActivityForm
-              formData={formData}
-              setFormData={setFormData}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              isEditing={!!editingActivity}
-            />
-          )}
+        {!editingActivity && !isAddingNew && (
+          <div className="mb-4 sm:mb-6">
+            <button
+              onClick={handleAddNew}
+              className="admin-button admin-button--primary"
+            >
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              新規追加
+            </button>
+          </div>
+        )}
 
-          <ActivityList
-            activities={activities}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
+        {(isAddingNew || editingActivity) && (
+          <ActivityForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isEditing={!!editingActivity}
           />
-        </div>
+        )}
 
-        <DeleteConfirmModal
-          isOpen={!!deletingActivity}
-          sectionName={deletingActivity?.title || ""}
-          onConfirm={handleDeleteConfirm}
-          onCancel={handleDeleteCancel}
+        <ActivityList
+          activities={activities}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+          onMoveUp={handleMoveUp}
+          onMoveDown={handleMoveDown}
         />
+      </div>
+
+      <DeleteConfirmModal
+        isOpen={!!deletingActivity}
+        sectionName={deletingActivity?.title || ""}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
     </AdminPageContent>
   );
 }

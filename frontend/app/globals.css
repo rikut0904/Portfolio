@@ -919,7 +919,8 @@ h2::before {
 .admin-button--primary {
   color: white;
   background: var(--primary-color);
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 18%, transparent);
+  box-shadow: 0 6px 16px
+    color-mix(in srgb, var(--primary-color) 18%, transparent);
 }
 
 .admin-button--primary:hover:not(:disabled) {
@@ -1065,7 +1066,11 @@ h2::before {
   border: 1px solid var(--card-border);
   border-radius: 999px;
   color: var(--primary-strong);
-  background: color-mix(in srgb, var(--surface-solid) 76%, var(--primary-light));
+  background: color-mix(
+    in srgb,
+    var(--surface-solid) 76%,
+    var(--primary-light)
+  );
   font-size: 0.78rem;
   font-weight: 750;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color) 8%, transparent);
@@ -1312,7 +1317,8 @@ h2::before {
   border: 1px solid transparent;
   border-radius: 999px !important;
   background: var(--primary-color) !important;
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 18%, transparent);
+  box-shadow: 0 6px 16px
+    color-mix(in srgb, var(--primary-color) 18%, transparent);
   font-weight: 750;
 }
 
@@ -1435,12 +1441,20 @@ h2::before {
 }
 
 .admin-contact-card tbody tr:hover {
-  background: color-mix(in srgb, var(--primary-light) 36%, var(--surface-solid)) !important;
+  background: color-mix(
+    in srgb,
+    var(--primary-light) 36%,
+    var(--surface-solid)
+  ) !important;
 }
 
 .admin-contact-detail-card > .rounded-lg.border {
   border-color: var(--card-border) !important;
-  background: color-mix(in srgb, var(--primary-light) 24%, var(--surface-solid)) !important;
+  background: color-mix(
+    in srgb,
+    var(--primary-light) 24%,
+    var(--surface-solid)
+  ) !important;
 }
 
 .admin-product-filters {

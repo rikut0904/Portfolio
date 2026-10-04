@@ -188,7 +188,7 @@ export default function MeetingRequestModal({
     if (!open) {
       return;
     }
-      const onKey = (e: globalThis.KeyboardEvent) => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }

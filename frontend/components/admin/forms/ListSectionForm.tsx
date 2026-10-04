@@ -133,7 +133,7 @@ export default function ListSectionForm({
                   <button
                     type="button"
                     onClick={() => removeItem(listIndex, itemIndex)}
-                      className="admin-button admin-button--danger admin-button--compact admin-button--icon"
+                    className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                   >
                     ×
                   </button>

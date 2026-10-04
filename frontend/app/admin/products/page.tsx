@@ -131,116 +131,116 @@ function ProductsContent() {
 
   return (
     <AdminPageContent>
-        <AdminPageHeader
-          page="products"
-          actions={
+      <AdminPageHeader
+        page="products"
+        actions={
           <button
             onClick={handleAddNew}
             className="admin-button admin-button--primary w-full sm:w-auto"
           >
             + 新しい作品を追加
           </button>
-          }
-        />
+        }
+      />
 
-        {(isAddingNew || editingProduct) && (
-          <ProductForm
-            editingProduct={editingProduct}
-            formData={formData}
-            setFormData={setFormData}
-            technologies={technologies}
-            newTechName={newTechName}
-            setNewTechName={setNewTechName}
-            isAddingTech={isAddingTech}
-            handleAddTechnology={handleAddTechnology}
-            handleSubmit={handleSubmit}
-            onCancel={handleCancel}
-            categories={CATEGORIES}
-            statuses={STATUSES}
-            deployStatuses={DEPLOY_STATUSES}
-          />
-        )}
-
-        <ProductFilters
-          filterCategory={filterCategory}
-          setFilterCategory={setFilterCategory}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterDeployStatus={filterDeployStatus}
-          setFilterDeployStatus={setFilterDeployStatus}
-          filterCreatedYear={filterCreatedYear}
-          setFilterCreatedYear={setFilterCreatedYear}
-          filterCreatedMonth={filterCreatedMonth}
-          setFilterCreatedMonth={setFilterCreatedMonth}
-          filterTechnologies={filterTechnologies}
-          setFilterTechnologies={setFilterTechnologies}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
+      {(isAddingNew || editingProduct) && (
+        <ProductForm
+          editingProduct={editingProduct}
+          formData={formData}
+          setFormData={setFormData}
+          technologies={technologies}
+          newTechName={newTechName}
+          setNewTechName={setNewTechName}
+          isAddingTech={isAddingTech}
+          handleAddTechnology={handleAddTechnology}
+          handleSubmit={handleSubmit}
+          onCancel={handleCancel}
           categories={CATEGORIES}
           statuses={STATUSES}
           deployStatuses={DEPLOY_STATUSES}
-          technologies={technologies}
-          availableYears={availableYears}
-          availableMonths={availableMonths}
-          onClearFilters={clearFilters}
         />
+      )}
 
-        <div className="admin-product-list bg-white rounded-lg shadow">
-          <div className="px-3 py-3 sm:px-6 sm:py-4 border-b">
-            <h2 className="text-base sm:text-xl font-semibold truncate">
-              作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}
-              件）
-            </h2>
-          </div>
-          <div className="divide-y">
-            {currentProducts.map((product) => (
-              <ProductListItem
-                key={product.id}
-                product={product}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusClick={setStatusModalProduct}
-                onDeployStatusClick={setDeployStatusModalProduct}
-              />
-            ))}
-          </div>
+      <ProductFilters
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        filterDeployStatus={filterDeployStatus}
+        setFilterDeployStatus={setFilterDeployStatus}
+        filterCreatedYear={filterCreatedYear}
+        setFilterCreatedYear={setFilterCreatedYear}
+        filterCreatedMonth={filterCreatedMonth}
+        setFilterCreatedMonth={setFilterCreatedMonth}
+        filterTechnologies={filterTechnologies}
+        setFilterTechnologies={setFilterTechnologies}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        categories={CATEGORIES}
+        statuses={STATUSES}
+        deployStatuses={DEPLOY_STATUSES}
+        technologies={technologies}
+        availableYears={availableYears}
+        availableMonths={availableMonths}
+        onClearFilters={clearFilters}
+      />
 
-          {/* ページネーション */}
-          {filteredProducts.length > itemsPerPage && (
-            <div className="px-3 py-4 sm:px-6 sm:py-5 border-t">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                variant="admin"
-              />
-            </div>
-          )}
+      <div className="admin-product-list bg-white rounded-lg shadow">
+        <div className="px-3 py-3 sm:px-6 sm:py-4 border-b">
+          <h2 className="text-base sm:text-xl font-semibold truncate">
+            作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}
+            件）
+          </h2>
+        </div>
+        <div className="divide-y">
+          {currentProducts.map((product) => (
+            <ProductListItem
+              key={product.id}
+              product={product}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusClick={setStatusModalProduct}
+              onDeployStatusClick={setDeployStatusModalProduct}
+            />
+          ))}
         </div>
 
-        {statusModalProduct && (
-          <StatusModal
-            product={statusModalProduct}
-            statuses={STATUSES}
-            onStatusChange={(productId, newStatus) => {
-              handleQuickStatusChange(productId, newStatus);
-              setStatusModalProduct(null);
-            }}
-            onClose={() => setStatusModalProduct(null)}
-          />
+        {/* ページネーション */}
+        {filteredProducts.length > itemsPerPage && (
+          <div className="px-3 py-4 sm:px-6 sm:py-5 border-t">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              variant="admin"
+            />
+          </div>
         )}
+      </div>
 
-        {deployStatusModalProduct && (
-          <DeployStatusModal
-            product={deployStatusModalProduct}
-            deployStatuses={DEPLOY_STATUSES}
-            onDeployStatusChange={(productId, newDeployStatus) => {
-              handleQuickDeployStatusChange(productId, newDeployStatus);
-              setDeployStatusModalProduct(null);
-            }}
-            onClose={() => setDeployStatusModalProduct(null)}
-          />
-        )}
+      {statusModalProduct && (
+        <StatusModal
+          product={statusModalProduct}
+          statuses={STATUSES}
+          onStatusChange={(productId, newStatus) => {
+            handleQuickStatusChange(productId, newStatus);
+            setStatusModalProduct(null);
+          }}
+          onClose={() => setStatusModalProduct(null)}
+        />
+      )}
+
+      {deployStatusModalProduct && (
+        <DeployStatusModal
+          product={deployStatusModalProduct}
+          deployStatuses={DEPLOY_STATUSES}
+          onDeployStatusChange={(productId, newDeployStatus) => {
+            handleQuickDeployStatusChange(productId, newDeployStatus);
+            setDeployStatusModalProduct(null);
+          }}
+          onClose={() => setDeployStatusModalProduct(null)}
+        />
+      )}
     </AdminPageContent>
   );
 }

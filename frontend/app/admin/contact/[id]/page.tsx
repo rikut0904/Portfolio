@@ -165,135 +165,133 @@ function InquiryDetailContent() {
 
   return (
     <AdminPageContent className="admin-page-content--narrow">
-        <AdminPageHeader
-          page="contactDetail"
-          description="やり取りの履歴を確認できます"
-        />
-        <div className="admin-contact-detail-card bg-white p-4 sm:p-6 rounded-lg shadow space-y-6">
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
+      <AdminPageHeader
+        page="contactDetail"
+        description="やり取りの履歴を確認できます"
+      />
+      <div className="admin-contact-detail-card bg-white p-4 sm:p-6 rounded-lg shadow space-y-6">
+        {error && <p className="text-sm text-red-600">{error}</p>}
+        {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
 
-          {!loading && detail && (
-            <>
-              <div className="space-y-2">
-                <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                  <span>状態: {statusLabel(detail.status)}</span>
-                  <span>受付日時: {formatDateTime(detail.createdAt)}</span>
-                  {detail.threadId && (
-                    <span>スレッドID: {detail.threadId}</span>
-                  )}
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  {detail.subject || "-"}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  カテゴリ: {detail.category || "-"}
-                </p>
-                {detail.threadUrl && (
-                  <p className="text-sm">
-                    <a
-                      href={detail.threadUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-700 hover:text-blue-900"
-                    >
-                      公開スレッドを開く
-                    </a>
-                  </p>
-                )}
+        {!loading && detail && (
+          <>
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                <span>状態: {statusLabel(detail.status)}</span>
+                <span>受付日時: {formatDateTime(detail.createdAt)}</span>
+                {detail.threadId && <span>スレッドID: {detail.threadId}</span>}
               </div>
-
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <p className="text-xs text-gray-500 mb-2">お問い合わせ内容</p>
-                <p className="whitespace-pre-wrap text-sm text-gray-900">
-                  {detail.message || "-"}
-                </p>
-              </div>
-
-              <div className="rounded-lg border border-gray-200 bg-white p-4">
-                <p className="text-xs text-gray-500 mb-2">連絡先</p>
-                <p className="text-sm text-gray-900">
-                  {detail.contactName || "-"}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {detail.contactEmail || "-"}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">
-                  対応状況を更新
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {(
-                    ["pending", "in_progress", "resolved"] as InquiryStatus[]
-                  ).map((status) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => handleStatusUpdate(status)}
-                      disabled={statusLoading}
-                      className={`rounded-md px-3 py-1 text-sm font-medium border ${
-                        detail.status === status
-                          ? "bg-blue-600 text-white border-blue-600"
-                          : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      {statusLabel(status)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-700">返信内容</p>
-                <textarea
-                  value={replyMessage}
-                  onChange={(event) => setReplyMessage(event.target.value)}
-                  className="min-h-[140px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                  placeholder="回答内容を記載してください"
-                />
-                {replyError && (
-                  <p className="text-sm text-red-600">{replyError}</p>
-                )}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={handleReply}
-                    disabled={replyLoading}
-                    className="admin-button admin-button--primary"
+              <h2 className="text-lg font-semibold text-gray-900">
+                {detail.subject || "-"}
+              </h2>
+              <p className="text-sm text-gray-500">
+                カテゴリ: {detail.category || "-"}
+              </p>
+              {detail.threadUrl && (
+                <p className="text-sm">
+                  <a
+                    href={detail.threadUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-700 hover:text-blue-900"
                   >
-                    {replyLoading ? "送信中..." : "返信を送信する"}
-                  </button>
-                </div>
-              </div>
-
-              {replies.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-500">返信履歴</p>
-                  {replies.map((reply) => (
-                    <div
-                      key={reply.id}
-                      className="rounded-lg border border-gray-200 bg-white p-4"
-                    >
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
-                        <span>
-                          {reply.senderType === "admin"
-                            ? "運営"
-                            : reply.senderName || "お問い合わせ者"}
-                        </span>
-                        <span>{formatDateTime(reply.createdAt)}</span>
-                      </div>
-                      <p className="whitespace-pre-wrap text-sm text-gray-900">
-                        {reply.message}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                    公開スレッドを開く
+                  </a>
+                </p>
               )}
-            </>
-          )}
-        </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs text-gray-500 mb-2">お問い合わせ内容</p>
+              <p className="whitespace-pre-wrap text-sm text-gray-900">
+                {detail.message || "-"}
+              </p>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4">
+              <p className="text-xs text-gray-500 mb-2">連絡先</p>
+              <p className="text-sm text-gray-900">
+                {detail.contactName || "-"}
+              </p>
+              <p className="text-xs text-gray-500">
+                {detail.contactEmail || "-"}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">
+                対応状況を更新
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  ["pending", "in_progress", "resolved"] as InquiryStatus[]
+                ).map((status) => (
+                  <button
+                    key={status}
+                    type="button"
+                    onClick={() => handleStatusUpdate(status)}
+                    disabled={statusLoading}
+                    className={`rounded-md px-3 py-1 text-sm font-medium border ${
+                      detail.status === status
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                    }`}
+                  >
+                    {statusLabel(status)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">返信内容</p>
+              <textarea
+                value={replyMessage}
+                onChange={(event) => setReplyMessage(event.target.value)}
+                className="min-h-[140px] w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
+                placeholder="回答内容を記載してください"
+              />
+              {replyError && (
+                <p className="text-sm text-red-600">{replyError}</p>
+              )}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleReply}
+                  disabled={replyLoading}
+                  className="admin-button admin-button--primary"
+                >
+                  {replyLoading ? "送信中..." : "返信を送信する"}
+                </button>
+              </div>
+            </div>
+
+            {replies.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-500">返信履歴</p>
+                {replies.map((reply) => (
+                  <div
+                    key={reply.id}
+                    className="rounded-lg border border-gray-200 bg-white p-4"
+                  >
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                      <span>
+                        {reply.senderType === "admin"
+                          ? "運営"
+                          : reply.senderName || "お問い合わせ者"}
+                      </span>
+                      <span>{formatDateTime(reply.createdAt)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm text-gray-900">
+                      {reply.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </AdminPageContent>
   );
 }

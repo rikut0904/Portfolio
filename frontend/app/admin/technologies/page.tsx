@@ -219,158 +219,153 @@ function TechnologiesContent() {
 
   return (
     <AdminPageContent>
-        <AdminPageHeader page="technologies" />
+      <AdminPageHeader page="technologies" />
 
-        {/* 追加フォーム */}
-        <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
-            新しい技術を追加
-          </h2>
-          <form
-            onSubmit={handleAddTechnology}
-            className="space-y-2 sm:space-y-3"
-          >
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-              <input
-                type="text"
-                value={newTechName}
-                onChange={(e) => setNewTechName(e.target.value)}
-                placeholder="技術名を入力（例: Vue.js）"
-                className="flex-1 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                required
-              />
-              <select
-                value={newTechCategory}
-                onChange={(e) => setNewTechCategory(e.target.value)}
-                className="px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-              >
-                <option value="">カテゴリを選択</option>
-                {TECH_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="submit"
-                disabled={isAdding}
-                className="admin-button admin-button--primary whitespace-nowrap"
-              >
-                {isAdding ? "追加中..." : "追加"}
-              </button>
-            </div>
-          </form>
-        </div>
+      {/* 追加フォーム */}
+      <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-8">
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+          新しい技術を追加
+        </h2>
+        <form onSubmit={handleAddTechnology} className="space-y-2 sm:space-y-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <input
+              type="text"
+              value={newTechName}
+              onChange={(e) => setNewTechName(e.target.value)}
+              placeholder="技術名を入力（例: Vue.js）"
+              className="flex-1 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              required
+            />
+            <select
+              value={newTechCategory}
+              onChange={(e) => setNewTechCategory(e.target.value)}
+              className="px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+            >
+              <option value="">カテゴリを選択</option>
+              {TECH_CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <button
+              type="submit"
+              disabled={isAdding}
+              className="admin-button admin-button--primary whitespace-nowrap"
+            >
+              {isAdding ? "追加中..." : "追加"}
+            </button>
+          </div>
+        </form>
+      </div>
 
-        {/* フィルター */}
-        <div className="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 sm:mb-6">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-            カテゴリでフィルター
-          </label>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="w-full sm:w-64 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
-          >
-            <option value="">すべて表示</option>
-            {TECH_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* フィルター */}
+      <div className="bg-white p-3 sm:p-4 rounded-lg shadow mb-4 sm:mb-6">
+        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+          カテゴリでフィルター
+        </label>
+        <select
+          value={filterCategory}
+          onChange={(e) => setFilterCategory(e.target.value)}
+          className="w-full sm:w-64 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg text-sm sm:text-base"
+        >
+          <option value="">すべて表示</option>
+          {TECH_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* 技術リスト（カテゴリごと） */}
-        <div className="space-y-4 sm:space-y-6">
-          {TECH_CATEGORIES.map((category) => {
-            const techs = groupedTechnologies[category];
-            if (techs.length === 0 && filterCategory) return null;
+      {/* 技術リスト（カテゴリごと） */}
+      <div className="space-y-4 sm:space-y-6">
+        {TECH_CATEGORIES.map((category) => {
+          const techs = groupedTechnologies[category];
+          if (techs.length === 0 && filterCategory) return null;
 
-            return (
-              <div
-                key={category}
-                className="bg-white p-3 sm:p-6 rounded-lg shadow"
-              >
-                <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-900 truncate">
-                  {category}（{techs.length}件）
-                </h2>
-
-                {techs.length === 0 ? (
-                  <p className="text-gray-500 text-xs sm:text-sm">
-                    このカテゴリには技術が登録されていません。
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                    {techs.map((tech) => (
-                      <div
-                        key={tech.id}
-                        className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">
-                          {tech.name}
-                        </span>
-                        <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
-                          <button
-                            onClick={() => startEditing(tech)}
-                            className="admin-button admin-button--ghost"
-                          >
-                            編集
-                          </button>
-                          <button
-                            onClick={() =>
-                              handleDeleteTechnology(tech.id, tech.name)
-                            }
-                            className="admin-button admin-button--danger"
-                          >
-                            削除
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* カテゴリなし */}
-          {uncategorized.length > 0 && (
-            <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+          return (
+            <div
+              key={category}
+              className="bg-white p-3 sm:p-6 rounded-lg shadow"
+            >
               <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-900 truncate">
-                カテゴリ未設定（{uncategorized.length}件）
+                {category}（{techs.length}件）
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                {uncategorized.map((tech) => (
-                  <div
-                    key={tech.id}
-                    className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                  >
-                    <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">
-                      {tech.name}
-                    </span>
-                    <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => startEditing(tech)}
-                        className="admin-button admin-button--ghost"
-                      >
-                        編集
-                      </button>
-                      <button
-                        onClick={() =>
-                          handleDeleteTechnology(tech.id, tech.name)
-                        }
-                        className="admin-button admin-button--danger"
-                      >
-                        削除
-                      </button>
+
+              {techs.length === 0 ? (
+                <p className="text-gray-500 text-xs sm:text-sm">
+                  このカテゴリには技術が登録されていません。
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+                  {techs.map((tech) => (
+                    <div
+                      key={tech.id}
+                      className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                    >
+                      <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">
+                        {tech.name}
+                      </span>
+                      <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => startEditing(tech)}
+                          className="admin-button admin-button--ghost"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleDeleteTechnology(tech.id, tech.name)
+                          }
+                          className="admin-button admin-button--danger"
+                        >
+                          削除
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })}
+
+        {/* カテゴリなし */}
+        {uncategorized.length > 0 && (
+          <div className="bg-white p-3 sm:p-6 rounded-lg shadow">
+            <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 text-gray-900 truncate">
+              カテゴリ未設定（{uncategorized.length}件）
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
+              {uncategorized.map((tech) => (
+                <div
+                  key={tech.id}
+                  className="flex items-center justify-between p-2 sm:p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                >
+                  <span className="font-medium text-gray-900 text-sm sm:text-base truncate flex-1 mr-2">
+                    {tech.name}
+                  </span>
+                  <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
+                    <button
+                      onClick={() => startEditing(tech)}
+                      className="admin-button admin-button--ghost"
+                    >
+                      編集
+                    </button>
+                    <button
+                      onClick={() => handleDeleteTechnology(tech.id, tech.name)}
+                      className="admin-button admin-button--danger"
+                    >
+                      削除
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       {/* 編集モーダル */}
       {editingTech && (
         <>

@@ -262,157 +262,209 @@ function ActivitiesContent() {
 
   return (
     <AdminPageContent>
-        <AdminPageHeader
-          page="activities"
-          actions={
-            !isAddingNew && !editingCategory ? (
-              <button
-                onClick={handleAddNew}
-                className="admin-button admin-button--primary"
-              >
-                + 新規カテゴリ追加
-              </button>
-            ) : null
-          }
-        />
+      <AdminPageHeader
+        page="activities"
+        actions={
+          !isAddingNew && !editingCategory ? (
+            <button
+              onClick={handleAddNew}
+              className="admin-button admin-button--primary"
+            >
+              + 新規カテゴリ追加
+            </button>
+          ) : null
+        }
+      />
 
-        {/* 新規追加フォーム */}
-        {isAddingNew && (
-          <div className="bg-white rounded-lg shadow p-3 sm:p-6 mb-4 sm:mb-6">
-            <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
-              新規カテゴリ追加
-            </h2>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex-1">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                  カテゴリ名
-                </label>
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                  placeholder="カテゴリ名を入力"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-3 sm:mt-4">
-              <button
-                onClick={handleSave}
-                className="admin-button admin-button--primary admin-button--compact"
-              >
-                保存
-              </button>
-              <button
-                onClick={handleCancel}
-                className="admin-button admin-button--secondary admin-button--compact"
-              >
-                キャンセル
-              </button>
+      {/* 新規追加フォーム */}
+      {isAddingNew && (
+        <div className="bg-white rounded-lg shadow p-3 sm:p-6 mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">
+            新規カテゴリ追加
+          </h2>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex-1">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                カテゴリ名
+              </label>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                placeholder="カテゴリ名を入力"
+              />
             </div>
           </div>
-        )}
-
-        {/* カテゴリ一覧 */}
-        <div className="space-y-2 sm:space-y-3">
-          {categories.map((category, index) => (
-            <div
-              key={category.id}
-              className="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+          <div className="flex gap-2 mt-3 sm:mt-4">
+            <button
+              onClick={handleSave}
+              className="admin-button admin-button--primary admin-button--compact"
             >
-              {editingCategory?.id === category.id ? (
-                // 編集モード（インライン編集）
-                <div className="p-3 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-4">
-                    {/* 順番変更ボタン（編集中も表示） */}
-                    <div className="flex flex-col gap-1">
-                      <button
-                        onClick={() => handleMoveUp(category)}
-                        disabled={index === 0}
-                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
-                        title="上に移動"
+              保存
+            </button>
+            <button
+              onClick={handleCancel}
+              className="admin-button admin-button--secondary admin-button--compact"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* カテゴリ一覧 */}
+      <div className="space-y-2 sm:space-y-3">
+        {categories.map((category, index) => (
+          <div
+            key={category.id}
+            className="bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+          >
+            {editingCategory?.id === category.id ? (
+              // 編集モード（インライン編集）
+              <div className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* 順番変更ボタン（編集中も表示） */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => handleMoveUp(category)}
+                      disabled={index === 0}
+                      className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                      title="上に移動"
+                    >
+                      <svg
+                        className="w-3 h-3 sm:w-4 sm:h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <svg
-                          className="w-3 h-3 sm:w-4 sm:h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
+                        />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleMoveDown(category)}
+                      disabled={index === categories.length - 1}
+                      className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                      title="下に移動"
+                    >
+                      <svg
+                        className="w-3 h-3 sm:w-4 sm:h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <input
+                        type="text"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border-2 border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        placeholder="カテゴリ名を入力"
+                        autoFocus
+                      />
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        ID: {category.id} | 順番: {category.order}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSave}
+                        className="admin-button admin-button--primary admin-button--compact"
+                      >
+                        保存
                       </button>
                       <button
-                        onClick={() => handleMoveDown(category)}
-                        disabled={index === categories.length - 1}
-                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
-                        title="下に移動"
+                        onClick={handleCancel}
+                        className="admin-button admin-button--secondary admin-button--compact"
                       >
-                        <svg
-                          className="w-3 h-3 sm:w-4 sm:h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
+                        キャンセル
                       </button>
                     </div>
-
-                    <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
-                      <div className="flex-1 min-w-0">
-                        <input
-                          type="text"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          className="w-full px-2 py-1.5 sm:px-3 sm:py-2 border-2 border-blue-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-                          placeholder="カテゴリ名を入力"
-                          autoFocus
+                  </div>
+                </div>
+              </div>
+            ) : (
+              // 通常表示モード
+              <div className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  {/* 順番変更ボタン */}
+                  <div className="flex flex-col gap-1">
+                    <button
+                      onClick={() => handleMoveUp(category)}
+                      disabled={index === 0}
+                      className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                      title="上に移動"
+                    >
+                      <svg
+                        className="w-3 h-3 sm:w-4 sm:h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 15l7-7 7 7"
                         />
-                        <p className="text-xs text-gray-500 mt-1 truncate">
+                      </svg>
+                    </button>
+                    <button
+                      onClick={() => handleMoveDown(category)}
+                      disabled={index === categories.length - 1}
+                      className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                      title="下に移動"
+                    >
+                      <svg
+                        className="w-3 h-3 sm:w-4 sm:h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* カテゴリ情報 */}
+                  <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                          {category.name}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 truncate">
                           ID: {category.id} | 順番: {category.order}
                         </p>
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleSave}
-                          className="admin-button admin-button--primary admin-button--compact"
-                        >
-                          保存
-                        </button>
-                        <button
-                          onClick={handleCancel}
-                          className="admin-button admin-button--secondary admin-button--compact"
-                        >
-                          キャンセル
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // 通常表示モード
-                <div className="p-3 sm:p-6">
-                  <div className="flex items-center gap-2 sm:gap-4">
-                    {/* 順番変更ボタン */}
-                    <div className="flex flex-col gap-1">
                       <button
-                        onClick={() => handleMoveUp(category)}
-                        disabled={index === 0}
-                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
-                        title="上に移動"
+                        onClick={() => handleEdit(category)}
+                        className="admin-button admin-button--ghost admin-button--compact admin-button--icon"
+                        title="カテゴリ名を編集"
                       >
                         <svg
-                          className="w-3 h-3 sm:w-4 sm:h-4"
+                          className="w-3.5 h-3.5 sm:w-4 sm:h-4"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -421,84 +473,32 @@ function ActivitiesContent() {
                             strokeLinecap="round"
                             strokeLinejoin="round"
                             strokeWidth={2}
-                            d="M5 15l7-7 7 7"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handleMoveDown(category)}
-                        disabled={index === categories.length - 1}
-                        className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
-                        title="下に移動"
-                      >
-                        <svg
-                          className="w-3 h-3 sm:w-4 sm:h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
+                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                           />
                         </svg>
                       </button>
                     </div>
-
-                    {/* カテゴリ情報 */}
-                    <div className="flex-1 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                      <div className="flex items-start gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                            {category.name}
-                          </h3>
-                          <p className="text-xs sm:text-sm text-gray-500 mt-0.5 sm:mt-1 truncate">
-                            ID: {category.id} | 順番: {category.order}
-                          </p>
-                        </div>
-                        <button
-                          onClick={() => handleEdit(category)}
-                          className="admin-button admin-button--ghost admin-button--compact admin-button--icon"
-                          title="カテゴリ名を編集"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5 sm:w-4 sm:h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto">
-                        <button
-                          onClick={() => handleCategoryClick(category)}
-                          className="admin-button admin-button--primary"
-                        >
-                          編集
-                        </button>
-                        <button
-                          onClick={() => handleDelete(category.id)}
-                          className="admin-button admin-button--danger"
-                        >
-                          削除
-                        </button>
-                      </div>
+                    <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => handleCategoryClick(category)}
+                        className="admin-button admin-button--primary"
+                      >
+                        編集
+                      </button>
+                      <button
+                        onClick={() => handleDelete(category.id)}
+                        className="admin-button admin-button--danger"
+                      >
+                        削除
+                      </button>
                     </div>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </AdminPageContent>
   );
 }

@@ -91,7 +91,9 @@ export function AdminPageHeader({
         <h1>{title ?? meta.title}</h1>
         {description ? <p>{description}</p> : null}
       </div>
-      {actions ? <div className="admin-page-header__actions">{actions}</div> : null}
+      {actions ? (
+        <div className="admin-page-header__actions">{actions}</div>
+      ) : null}
     </header>
   );
 }

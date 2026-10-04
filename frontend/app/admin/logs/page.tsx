@@ -87,99 +87,99 @@ function LogsContent() {
 
   return (
     <AdminPageContent>
-        <AdminPageHeader page="logs" />
+      <AdminPageHeader page="logs" />
 
-        {loading ? (
-          <AdminLoading compact />
-        ) : (
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
-            <div className="px-3 py-3 sm:px-6 sm:py-4 border-b dark:border-gray-800">
-              <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
-                操作ログ
-              </h2>
-            </div>
-            <div className="divide-y">
-              {logs.length === 0 ? (
-                <div className="px-3 py-6 sm:px-6 text-sm text-gray-600 dark:text-gray-300">
-                  ログはありません。
-                </div>
-              ) : (
-                logs.map((log) => (
-                  <div key={log.id} className="px-3 py-3 sm:px-6 sm:py-4">
-                    <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+      {loading ? (
+        <AdminLoading compact />
+      ) : (
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
+          <div className="px-3 py-3 sm:px-6 sm:py-4 border-b dark:border-gray-800">
+            <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+              操作ログ
+            </h2>
+          </div>
+          <div className="divide-y">
+            {logs.length === 0 ? (
+              <div className="px-3 py-6 sm:px-6 text-sm text-gray-600 dark:text-gray-300">
+                ログはありません。
+              </div>
+            ) : (
+              logs.map((log) => (
+                <div key={log.id} className="px-3 py-3 sm:px-6 sm:py-4">
+                  <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">
+                      {formatDate(log.createdAt)}
+                    </span>
+                    <span
+                      className={`px-2 py-0.5 rounded-full font-medium ${levelBadge(log.level)}`}
+                    >
+                      {log.level || "info"}
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">
+                      {log.action || "-"}
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-300">
+                      {log.entity || "-"}
+                    </span>
+                    {log.entityId && (
                       <span className="text-gray-500 dark:text-gray-400">
-                        {formatDate(log.createdAt)}
+                        #{log.entityId}
                       </span>
-                      <span
-                        className={`px-2 py-0.5 rounded-full font-medium ${levelBadge(log.level)}`}
-                      >
-                        {log.level || "info"}
-                      </span>
-                      <span className="font-medium text-gray-900 dark:text-gray-100">
-                        {log.action || "-"}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-300">
-                        {log.entity || "-"}
-                      </span>
-                      {log.entityId && (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          #{log.entityId}
-                        </span>
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
-                      <span className="font-medium text-gray-700 dark:text-gray-200">
-                        ユーザー:
-                      </span>{" "}
-                      {log.userEmail || "-"}
-                    </div>
-                    {log.details && (
-                      <pre className="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-words">
-                        {JSON.stringify(log.details, null, 2)}
-                      </pre>
                     )}
                   </div>
-                ))
-              )}
-            </div>
-            {(cursorHistory.length > 0 || nextCursor) && (
-              <div className="px-3 py-3 sm:px-6 sm:py-4 border-t dark:border-gray-800 flex items-center justify-between text-xs sm:text-sm">
-                <span className="text-gray-500 dark:text-gray-400">
-                  {cursorHistory.length + 1} ページ
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const previousCursor =
-                        cursorHistory[cursorHistory.length - 1] ?? null;
-                      setCursorHistory((prev) => prev.slice(0, -1));
-                      setLoading(true);
-                      fetchLogs(previousCursor);
-                    }}
-                    disabled={cursorHistory.length === 0}
-                    className="admin-button admin-button--secondary admin-button--compact"
-                  >
-                    前へ
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!nextCursor) return;
-                      setCursorHistory((prev) => [...prev, currentCursor]);
-                      setLoading(true);
-                      fetchLogs(nextCursor);
-                    }}
-                    disabled={!nextCursor}
-                    className="admin-button admin-button--secondary admin-button--compact"
-                  >
-                    次へ
-                  </button>
+                  <div className="mt-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                    <span className="font-medium text-gray-700 dark:text-gray-200">
+                      ユーザー:
+                    </span>{" "}
+                    {log.userEmail || "-"}
+                  </div>
+                  {log.details && (
+                    <pre className="mt-2 text-xs text-gray-500 dark:text-gray-400 whitespace-pre-wrap break-words">
+                      {JSON.stringify(log.details, null, 2)}
+                    </pre>
+                  )}
                 </div>
-              </div>
+              ))
             )}
           </div>
-        )}
+          {(cursorHistory.length > 0 || nextCursor) && (
+            <div className="px-3 py-3 sm:px-6 sm:py-4 border-t dark:border-gray-800 flex items-center justify-between text-xs sm:text-sm">
+              <span className="text-gray-500 dark:text-gray-400">
+                {cursorHistory.length + 1} ページ
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const previousCursor =
+                      cursorHistory[cursorHistory.length - 1] ?? null;
+                    setCursorHistory((prev) => prev.slice(0, -1));
+                    setLoading(true);
+                    fetchLogs(previousCursor);
+                  }}
+                  disabled={cursorHistory.length === 0}
+                  className="admin-button admin-button--secondary admin-button--compact"
+                >
+                  前へ
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!nextCursor) return;
+                    setCursorHistory((prev) => [...prev, currentCursor]);
+                    setLoading(true);
+                    fetchLogs(nextCursor);
+                  }}
+                  disabled={!nextCursor}
+                  className="admin-button admin-button--secondary admin-button--compact"
+                >
+                  次へ
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </AdminPageContent>
   );
 }
