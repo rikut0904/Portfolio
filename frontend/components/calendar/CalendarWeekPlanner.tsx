@@ -392,35 +392,70 @@ function mergePublicBusyEventsForDay(
     ({ source }) => !source.isPublished,
   );
 
-  // A private event is hidden only when it overlaps a published event. Published
-  // events remain independent so each one can keep its own label and click target.
-  const privateEventsWithoutPublishedDuplicates = privateEvents.filter(
-    (privateEvent) =>
-      !publishedEvents.some((publishedEvent) =>
-        rangesOverlap(
-          privateEvent.start,
-          privateEvent.end,
-          publishedEvent.start,
-          publishedEvent.end,
-        ),
-      ),
-  );
+  // Published events have priority only for the interval they occupy. Keep the
+  // non-overlapping parts of private events so their busy time remains visible.
+  const privateFragments = privateEvents.flatMap((privateEvent) => {
+    let fragments = [
+      {
+        source: privateEvent.source,
+        start: privateEvent.start,
+        end: privateEvent.end,
+      },
+    ];
 
-  const mergedPrivateEvents: Array<{
+    for (const publishedEvent of publishedEvents) {
+      fragments = fragments.flatMap((fragment) => {
+        if (
+          !rangesOverlap(
+            fragment.start,
+            fragment.end,
+            publishedEvent.start,
+            publishedEvent.end,
+          )
+        ) {
+          return [fragment];
+        }
+
+        const remaining: typeof fragment[] = [];
+        if (fragment.start < publishedEvent.start) {
+          remaining.push({
+            ...fragment,
+            end: publishedEvent.start,
+          });
+        }
+        if (publishedEvent.end < fragment.end) {
+          remaining.push({
+            ...fragment,
+            start: publishedEvent.end,
+          });
+        }
+        return remaining;
+      });
+    }
+
+    return fragments;
+  });
+
+  const sortedPrivateFragments: Array<{
     source: NormalizedEvent;
     start: Date;
     end: Date;
-  }> = [];
+  }> = privateFragments.sort(
+    (a, b) =>
+      a.start.getTime() - b.start.getTime() ||
+      a.end.getTime() - b.end.getTime(),
+  );
 
-  for (const clipped of privateEventsWithoutPublishedDuplicates) {
-    const previous = mergedPrivateEvents[mergedPrivateEvents.length - 1];
-    if (previous && clipped.start < previous.end) {
+  const mergedPrivateRanges: typeof sortedPrivateFragments = [];
+  for (const clipped of sortedPrivateFragments) {
+    const previous = mergedPrivateRanges[mergedPrivateRanges.length - 1];
+    if (previous && clipped.start <= previous.end) {
       if (clipped.end > previous.end) {
         previous.end = clipped.end;
       }
       continue;
     }
-    mergedPrivateEvents.push({ ...clipped });
+    mergedPrivateRanges.push({ ...clipped });
   }
 
   const displayPublishedEvents = publishedEvents.map((event) => ({
@@ -430,7 +465,7 @@ function mergePublicBusyEventsForDay(
     startDate: event.start,
     endDate: event.end,
   }));
-  const displayPrivateEvents = mergedPrivateEvents.map((event, index) => ({
+  const displayPrivateEvents = mergedPrivateRanges.map((event, index) => ({
     ...event.source,
     id: `public-busy-${dayTimestamp(day)}-${index}`,
     calendarId: "public-busy",
