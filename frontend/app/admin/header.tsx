@@ -55,7 +55,12 @@ export default function AdminHeader() {
         </div>
       </header>
 
-      <SlideInMenu isOpen={isOpen} onClose={closeMenu} ariaLabel="管理メニュー">
+      <SlideInMenu
+        isOpen={isOpen}
+        onClose={closeMenu}
+        ariaLabel="管理メニュー"
+        closeAtWidth={768}
+      >
         <Link href="/admin/sections" onClick={closeMenu}>
           セクション管理
         </Link>

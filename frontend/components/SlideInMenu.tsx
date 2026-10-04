@@ -6,6 +6,7 @@ type SlideInMenuProps = {
   isOpen: boolean;
   onClose: () => void;
   ariaLabel: string;
+  closeAtWidth: number;
   children: React.ReactNode;
 };
 
@@ -16,6 +17,7 @@ export default function SlideInMenu({
   isOpen,
   onClose,
   ariaLabel,
+  closeAtWidth,
   children,
 }: SlideInMenuProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -24,6 +26,11 @@ export default function SlideInMenu({
 
   useEffect(() => {
     if (!isOpen) {
+      return;
+    }
+
+    if (window.innerWidth >= closeAtWidth) {
+      onClose();
       return;
     }
 
@@ -71,12 +78,20 @@ export default function SlideInMenu({
 
     document.addEventListener("keydown", handleKeyDown);
 
+    const handleViewportChange = () => {
+      if (window.innerWidth >= closeAtWidth) {
+        onClose();
+      }
+    };
+    window.addEventListener("resize", handleViewportChange);
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleViewportChange);
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [closeAtWidth, isOpen, onClose]);
 
   return (
     <div

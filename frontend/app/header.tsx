@@ -62,6 +62,7 @@ export default function Header() {
         isOpen={isOpen}
         onClose={closeMenu}
         ariaLabel="メインメニュー"
+        closeAtWidth={601}
       >
         {navigation.map((item) => (
           <Link
