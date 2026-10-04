@@ -56,7 +56,7 @@ install-backend:
 
 up:
 	$(COMPOSE) --profile ci up -d --wait postgres
-	$(COMPOSE) up --build
+	$(COMPOSE) up -d --build --wait
 
 down:
 	$(COMPOSE) down
