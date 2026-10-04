@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
@@ -258,15 +261,14 @@ function ActivitiesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <AdminPageContent>
         <AdminPageHeader
           page="activities"
           actions={
             !isAddingNew && !editingCategory ? (
               <button
                 onClick={handleAddNew}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm sm:text-base"
+                className="admin-button admin-button--primary"
               >
                 + 新規カテゴリ追加
               </button>
@@ -479,13 +481,13 @@ function ActivitiesContent() {
                       <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto">
                         <button
                           onClick={() => handleCategoryClick(category)}
-                          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
+                          className="admin-button admin-button--primary"
                         >
                           編集
                         </button>
                         <button
                           onClick={() => handleDelete(category.id)}
-                          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
+                          className="admin-button admin-button--danger"
                         >
                           削除
                         </button>
@@ -497,8 +499,7 @@ function ActivitiesContent() {
             </div>
           ))}
         </div>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

@@ -3,7 +3,10 @@
 import React, { useState } from "react";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
 import Link from "next/link";
-import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../../components/admin/AdminLoading";
 import { useParams } from "next/navigation";
 import DeleteConfirmModal from "../../../../components/admin/DeleteConfirmModal";
@@ -204,8 +207,7 @@ function CategoryActivitiesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+    <AdminPageContent>
         <div className="py-2 sm:py-4">
           <AdminPageHeader
             page="activities"
@@ -255,7 +257,7 @@ function CategoryActivitiesContent() {
             <div className="mb-4 sm:mb-6">
               <button
                 onClick={handleAddNew}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+                className="admin-button admin-button--primary"
               >
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5"
@@ -300,8 +302,7 @@ function CategoryActivitiesContent() {
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
         />
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../../components/admin/AdminLoading";
 import { useAuth } from "../../../../lib/auth/AuthContext";
 import {
@@ -113,8 +116,7 @@ function CalendarSettingsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="mx-auto max-w-5xl px-2 py-4 sm:px-4 lg:px-8">
+    <AdminPageContent className="admin-page-content--narrow">
         <AdminPageHeader
           page="calendarSettings"
           actions={
@@ -122,7 +124,7 @@ function CalendarSettingsContent() {
               type="button"
               onClick={() => void savePreferences()}
               disabled={saving || !hasChanges}
-              className="rounded-full bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="admin-button admin-button--primary"
             >
               {saving ? "保存中..." : "設定を保存"}
             </button>
@@ -212,8 +214,7 @@ function CalendarSettingsContent() {
             )}
           </div>
         </section>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

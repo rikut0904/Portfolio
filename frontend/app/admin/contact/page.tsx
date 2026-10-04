@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 
@@ -124,8 +127,7 @@ function InquiriesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-6xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <AdminPageContent>
         <AdminPageHeader
           page="contact"
           description="送信されたお問い合わせの内容を確認できます"
@@ -250,8 +252,7 @@ function InquiriesContent() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

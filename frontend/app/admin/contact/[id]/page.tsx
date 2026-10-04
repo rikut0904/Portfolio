@@ -4,7 +4,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../../lib/auth/AuthContext";
 
 type InquiryStatus = "pending" | "in_progress" | "resolved";
@@ -161,8 +164,7 @@ function InquiryDetailContent() {
   }, [detail?.replies]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <AdminPageContent className="admin-page-content--narrow">
         <AdminPageHeader
           page="contactDetail"
           description="やり取りの履歴を確認できます"
@@ -292,8 +294,7 @@ function InquiryDetailContent() {
             </>
           )}
         </div>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

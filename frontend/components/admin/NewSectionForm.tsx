@@ -235,14 +235,14 @@ export default function NewSectionForm({
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          className="admin-button admin-button--primary"
         >
           {loading ? "作成中..." : "作成"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          className="admin-button admin-button--secondary"
         >
           キャンセル
         </button>

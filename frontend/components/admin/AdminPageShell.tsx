@@ -5,6 +5,11 @@ interface AdminPageShellProps {
   children: React.ReactNode;
 }
 
+interface AdminPageContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 export const ADMIN_PAGE_META = {
   products: {
     title: "作品管理",
@@ -88,6 +93,15 @@ export function AdminPageHeader({
       </div>
       {actions ? <div className="admin-page-header__actions">{actions}</div> : null}
     </header>
+  );
+}
+
+export function AdminPageContent({
+  children,
+  className = "",
+}: AdminPageContentProps) {
+  return (
+    <main className={`admin-page-content ${className}`.trim()}>{children}</main>
   );
 }
 

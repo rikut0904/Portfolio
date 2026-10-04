@@ -59,13 +59,13 @@ export default function DeleteConfirmModal({
         <div className="flex gap-3">
           <button
             onClick={onCancel}
-            className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+            className="admin-button admin-button--secondary flex-1"
           >
             キャンセル
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="admin-button admin-button--danger flex-1"
           >
             削除する
           </button>

@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
@@ -315,15 +318,14 @@ function SectionsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+    <AdminPageContent>
         <AdminPageHeader
           page="sections"
           actions={
             !editingSection && !isCreating ? (
               <button
                 onClick={() => setIsCreating(true)}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+                className="admin-button admin-button--primary"
               >
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5"
@@ -425,14 +427,14 @@ function SectionsContent() {
                   <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
                     <button
                       onClick={() => handleEdit(section)}
-                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
+                      className="admin-button admin-button--primary"
                     >
                       編集
                     </button>
                     {section.meta.editable && (
                       <button
                         onClick={() => handleDeleteClick(section)}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base whitespace-nowrap"
+                        className="admin-button admin-button--danger"
                       >
                         削除
                       </button>
@@ -451,8 +453,7 @@ function SectionsContent() {
           onConfirm={handleDeleteConfirm}
           onCancel={handleDeleteCancel}
         />
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

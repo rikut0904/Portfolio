@@ -2,7 +2,10 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
@@ -83,8 +86,7 @@ function LogsContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
+    <AdminPageContent>
         <AdminPageHeader page="logs" />
 
         {loading ? (
@@ -178,8 +180,7 @@ function LogsContent() {
             )}
           </div>
         )}
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

@@ -2,7 +2,10 @@
 
 import React, { useRef, useState } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 
@@ -75,8 +78,7 @@ function ImagesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+    <AdminPageContent className="admin-page-content--narrow">
         <AdminPageHeader page="images" />
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="space-y-4">
@@ -129,7 +131,7 @@ function ImagesContent() {
             <button
               onClick={handleUpload}
               disabled={!selectedFile || uploading}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="admin-button admin-button--primary w-full"
             >
               {uploading ? "アップロード中..." : "GitHubにアップロード"}
             </button>
@@ -163,8 +165,7 @@ function ImagesContent() {
             </ol>
           </div>
         </div>
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

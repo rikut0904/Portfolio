@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import Link from "next/link";
 import ProductForm from "../../../components/admin/ProductForm";
@@ -127,14 +130,13 @@ function ProductsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+    <AdminPageContent>
         <AdminPageHeader
           page="products"
           actions={
           <button
             onClick={handleAddNew}
-            className="w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md text-sm sm:text-base"
+            className="admin-button admin-button--primary w-full sm:w-auto"
           >
             + 新しい作品を追加
           </button>
@@ -239,8 +241,7 @@ function ProductsContent() {
             onClose={() => setDeployStatusModalProduct(null)}
           />
         )}
-      </main>
-    </div>
+    </AdminPageContent>
   );
 }
 

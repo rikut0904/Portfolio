@@ -2,7 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
 import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
@@ -215,8 +218,7 @@ function TechnologiesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+    <AdminPageContent>
         <AdminPageHeader page="technologies" />
 
         {/* 追加フォーム */}
@@ -252,7 +254,7 @@ function TechnologiesContent() {
               <button
                 type="submit"
                 disabled={isAdding}
-                className="px-4 py-2 sm:px-6 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-medium whitespace-nowrap text-sm sm:text-base"
+                className="admin-button admin-button--primary whitespace-nowrap"
               >
                 {isAdding ? "追加中..." : "追加"}
               </button>
@@ -311,7 +313,7 @@ function TechnologiesContent() {
                         <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                           <button
                             onClick={() => startEditing(tech)}
-                            className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm px-1 sm:px-0"
+                            className="admin-button admin-button--ghost"
                           >
                             編集
                           </button>
@@ -319,7 +321,7 @@ function TechnologiesContent() {
                             onClick={() =>
                               handleDeleteTechnology(tech.id, tech.name)
                             }
-                            className="text-red-600 hover:text-red-800 text-xs sm:text-sm px-1 sm:px-0"
+                            className="admin-button admin-button--danger"
                           >
                             削除
                           </button>
@@ -350,7 +352,7 @@ function TechnologiesContent() {
                     <div className="flex gap-1.5 sm:gap-2 flex-shrink-0">
                       <button
                         onClick={() => startEditing(tech)}
-                        className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm px-1 sm:px-0"
+                        className="admin-button admin-button--ghost"
                       >
                         編集
                       </button>
@@ -358,7 +360,7 @@ function TechnologiesContent() {
                         onClick={() =>
                           handleDeleteTechnology(tech.id, tech.name)
                         }
-                        className="text-red-600 hover:text-red-800 text-xs sm:text-sm px-1 sm:px-0"
+                        className="admin-button admin-button--danger"
                       >
                         削除
                       </button>
@@ -369,8 +371,6 @@ function TechnologiesContent() {
             </div>
           )}
         </div>
-      </main>
-
       {/* 編集モーダル */}
       {editingTech && (
         <>
@@ -426,13 +426,13 @@ function TechnologiesContent() {
               <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   onClick={handleEditTechnology}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm sm:text-base"
+                  className="admin-button admin-button--primary flex-1"
                 >
                   保存
                 </button>
                 <button
                   onClick={cancelEditing}
-                  className="px-4 py-2 sm:px-6 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium text-sm sm:text-base"
+                  className="admin-button admin-button--secondary"
                 >
                   キャンセル
                 </button>
@@ -441,7 +441,7 @@ function TechnologiesContent() {
           </div>
         </>
       )}
-    </div>
+    </AdminPageContent>
   );
 }
 
