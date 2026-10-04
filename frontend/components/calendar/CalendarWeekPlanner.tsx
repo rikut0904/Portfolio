@@ -458,13 +458,9 @@ function mergePublicBusyEventsForDay(
     mergedPrivateRanges.push({ ...clipped });
   }
 
-  const displayPublishedEvents = publishedEvents.map((event) => ({
-    ...event.source,
-    start: event.start.toISOString(),
-    end: event.end.toISOString(),
-    startDate: event.start,
-    endDate: event.end,
-  }));
+  // Keep the original event for detail actions. Positioning clips it separately
+  // through clipEventToDay, so the clicked block must not rewrite its schedule.
+  const displayPublishedEvents = publishedEvents.map(({ source }) => source);
   const displayPrivateEvents = mergedPrivateRanges.map((event, index) => ({
     ...event.source,
     id: `public-busy-${dayTimestamp(day)}-${index}`,
