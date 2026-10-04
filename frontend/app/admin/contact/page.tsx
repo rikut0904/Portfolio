@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
 
 type InquiryStatus = "pending" | "in_progress" | "resolved";
@@ -195,7 +196,7 @@ function InquiriesContent() {
             </div>
           </div>
 
-          {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
+          {loading && <AdminLoading compact />}
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           {!loading && !error && sortedItems.length === 0 && (

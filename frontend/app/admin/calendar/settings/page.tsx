@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
 import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../../components/admin/AdminLoading";
 import { useAuth } from "../../../../lib/auth/AuthContext";
 import {
   type CalendarColorMap,
@@ -142,9 +143,7 @@ function CalendarSettingsContent() {
 
           <div className="px-4 py-5 sm:px-8">
             {loading ? (
-              <div className="rounded-2xl bg-white/85 p-8 text-center text-[var(--text-body)]">
-                読み込み中...
-              </div>
+              <AdminLoading compact />
             ) : error ? (
               <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-700">
                 {error}

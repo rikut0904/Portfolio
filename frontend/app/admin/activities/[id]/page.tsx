@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
 import Link from "next/link";
 import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../../components/admin/AdminLoading";
 import { useParams } from "next/navigation";
 import DeleteConfirmModal from "../../../../components/admin/DeleteConfirmModal";
 import ActivityForm from "../../../../components/admin/ActivityForm";
@@ -181,11 +182,7 @@ function CategoryActivitiesContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   if (!category) {

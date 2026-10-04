@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../components/admin/ProtectedRoute";
+import AdminLoading from "../../components/admin/AdminLoading";
 
 interface Stats {
   productsCount: number;
@@ -120,9 +121,7 @@ function DashboardContent() {
             </div>
           </div>
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="admin-spinner" aria-label="読み込み中" />
-            </div>
+            <AdminLoading compact />
           ) : (
             <div className="admin-dashboard__stats-grid">
               <div>

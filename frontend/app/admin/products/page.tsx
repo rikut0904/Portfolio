@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
 import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../components/admin/AdminLoading";
 import Link from "next/link";
 import ProductForm from "../../../components/admin/ProductForm";
 import ProductFilters from "../../../components/admin/ProductFilters";
@@ -122,11 +123,7 @@ function ProductsContent() {
   ]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   return (
