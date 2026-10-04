@@ -1917,7 +1917,7 @@ function CalendarWeekPlannerContent({
     <>
       {variant === "admin" ? (
         <div className="min-h-screen bg-gray-100">
-          <main className="mx-auto max-w-7xl px-2 py-4 sm:px-4 lg:px-8">
+          <div className="mx-auto max-w-7xl px-2 py-4 sm:px-4 lg:px-8">
             <Link
               href="/admin"
               className="mb-4 inline-block text-sm text-blue-800 hover:text-gray-900"
@@ -1925,7 +1925,7 @@ function CalendarWeekPlannerContent({
               ← ダッシュボード
             </Link>
             {calendarSection}
-          </main>
+          </div>
           {modals}
         </div>
       ) : (
