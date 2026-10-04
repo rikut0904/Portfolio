@@ -49,8 +49,9 @@ export default function ProductFilters({
   onClearFilters,
 }: ProductFiltersProps) {
   return (
-    <Accordion title="フィルター・ソート" defaultOpen={false}>
-      <div className="bg-white p-6 rounded-lg shadow mb-8">
+    <div className="admin-product-filters">
+      <Accordion title="フィルター・ソート" defaultOpen={false}>
+        <div className="bg-white p-6 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* カテゴリフィルター */}
           <div>
@@ -204,7 +205,8 @@ export default function ProductFilters({
             フィルターをクリア
           </button>
         </div>
-      </div>
-    </Accordion>
+        </div>
+      </Accordion>
+    </div>
   );
 }

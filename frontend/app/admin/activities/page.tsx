@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -262,27 +263,19 @@ function ActivitiesContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <div className="mb-4 sm:mb-6">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm mb-1 sm:mb-2 inline-block"
-          >
-            ← ダッシュボード
-          </Link>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-            <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">
-              課外活動カテゴリ管理
-            </h1>
-            {!isAddingNew && !editingCategory && (
+        <AdminPageHeader
+          page="activities"
+          actions={
+            !isAddingNew && !editingCategory ? (
               <button
                 onClick={handleAddNew}
                 className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-md hover:bg-green-700 text-sm sm:text-base"
               >
                 + 新規カテゴリ追加
               </button>
-            )}
-          </div>
-        </div>
+            ) : null
+          }
+        />
 
         {/* 新規追加フォーム */}
         {isAddingNew && (

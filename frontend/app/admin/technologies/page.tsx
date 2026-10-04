@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 
@@ -219,17 +220,7 @@ function TechnologiesContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <div className="mb-4 sm:mb-6">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
-          >
-            ← ダッシュボード
-          </Link>
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">
-            技術管理
-          </h1>
-        </div>
+        <AdminPageHeader page="technologies" />
 
         {/* 追加フォーム */}
         <div className="bg-white p-3 sm:p-6 rounded-lg shadow mb-4 sm:mb-8">

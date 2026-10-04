@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../../lib/auth/AuthContext";
 import {
   type CalendarColorMap,
@@ -113,29 +114,26 @@ function CalendarSettingsContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="mx-auto max-w-5xl px-2 py-4 sm:px-4 lg:px-8">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <Link
-            href="/admin/calendar"
-            className="inline-block text-sm text-blue-800 hover:text-gray-900"
-          >
-            ← 予定管理へ戻る
-          </Link>
-          <button
-            type="button"
-            onClick={() => void savePreferences()}
-            disabled={saving || !hasChanges}
-            className="rounded-full bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {saving ? "保存中..." : "設定を保存"}
-          </button>
-        </div>
+        <AdminPageHeader
+          page="calendarSettings"
+          actions={
+            <button
+              type="button"
+              onClick={() => void savePreferences()}
+              disabled={saving || !hasChanges}
+              className="rounded-full bg-[var(--primary-color)] px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving ? "保存中..." : "設定を保存"}
+            </button>
+          }
+        />
 
         <section className="overflow-hidden rounded-[2rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,235,255,0.92))] shadow-[0_20px_60px_rgba(107,70,193,0.12)]">
           <div className="border-b border-[var(--card-border)] px-5 py-5 sm:px-8">
             <p className="text-xs uppercase tracking-[0.35em] text-[var(--text-body)]">
               Calendar Settings
             </p>
-            <h1 className="mb-3 border-none pl-0">カレンダー設定</h1>
+            <h2 className="mb-3 border-none pl-0">カレンダー設定</h2>
             <p className="max-w-3xl text-sm text-[var(--text-body)]">
               `calendarId`
               ごとの色と表示ラベルを管理します。予定管理画面ではここで付けた表示名と色を使います。

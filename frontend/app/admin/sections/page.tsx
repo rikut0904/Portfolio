@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 import SectionForm from "../../../components/admin/SectionForm";
@@ -319,16 +320,10 @@ function SectionsContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="py-2 sm:py-4">
-          <Link
-            href="/admin"
-            className="text-blue-800 hover:text-gray-900 mb-2 sm:mb-4 inline-block text-sm sm:text-base"
-          >
-            ← ダッシュボード
-          </Link>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
-            <h1 className="text-lg sm:text-2xl font-bold">セクション管理</h1>
-            {!editingSection && !isCreating && (
+        <AdminPageHeader
+          page="sections"
+          actions={
+            !editingSection && !isCreating ? (
               <button
                 onClick={() => setIsCreating(true)}
                 className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
@@ -348,9 +343,9 @@ function SectionsContent() {
                 </svg>
                 新規セクションを作成
               </button>
-            )}
-          </div>
-        </div>
+            ) : null
+          }
+        />
         {isCreating ? (
           /* 新規作成モード */
           <NewSectionForm

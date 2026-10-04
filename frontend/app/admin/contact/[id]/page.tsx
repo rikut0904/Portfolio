@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../../lib/auth/AuthContext";
 
 type InquiryStatus = "pending" | "in_progress" | "resolved";
@@ -162,24 +163,11 @@ function InquiryDetailContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-4xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <div className="bg-white p-4 sm:p-6 rounded-lg shadow space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-lg sm:text-2xl font-bold text-gray-900">
-                お問い合わせ詳細
-              </h1>
-              <p className="text-sm text-gray-600">
-                やり取りの履歴を確認できます
-              </p>
-            </div>
-            <Link
-              href="/admin/contact"
-              className="text-sm text-blue-800 hover:text-gray-900"
-            >
-              一覧へ戻る
-            </Link>
-          </div>
-
+        <AdminPageHeader
+          page="contactDetail"
+          description="やり取りの履歴を確認できます"
+        />
+        <div className="admin-contact-detail-card bg-white p-4 sm:p-6 rounded-lg shadow space-y-6">
           {error && <p className="text-sm text-red-600">{error}</p>}
           {loading && <p className="text-sm text-gray-500">読み込み中...</p>}
 

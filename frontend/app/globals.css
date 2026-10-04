@@ -867,6 +867,102 @@ h2::before {
 }
 
 /* Admin shell */
+.admin-page-shell {
+  min-height: 100vh;
+  background: var(--background);
+}
+
+.admin-page-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem 0;
+}
+
+.admin-page-header__copy {
+  min-width: 0;
+}
+
+.admin-page-header__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  margin-bottom: 0.55rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  color: var(--primary-strong);
+  background: color-mix(in srgb, var(--surface-solid) 76%, var(--primary-light));
+  font-size: 0.78rem;
+  font-weight: 750;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--primary-color) 8%, transparent);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.admin-page-header__back:hover {
+  border-color: color-mix(in srgb, var(--primary-color) 36%, transparent);
+  color: var(--primary-color);
+  background: var(--primary-light);
+  transform: translateX(-0.12rem);
+}
+
+.admin-page-header__back:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 42%, transparent);
+  outline-offset: 3px;
+}
+
+.admin-page-header h1 {
+  margin: 0;
+  color: var(--text-heading);
+  font-size: clamp(1.65rem, 4vw, 2.5rem);
+  font-weight: 850;
+  letter-spacing: -0.035em;
+}
+
+.admin-page-header__copy > p {
+  max-width: 42rem;
+  margin: 0.35rem 0 0;
+  color: var(--text-body);
+  font-size: 0.82rem;
+}
+
+.admin-page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.admin-page-header__actions > button,
+.admin-page-header__actions > a {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-page-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.85rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .admin-page-header__actions {
+    justify-content: flex-start;
+  }
+
+  .admin-page-header__actions > button,
+  .admin-page-header__actions > a {
+    width: 100%;
+  }
+}
+
 .admin-header {
   position: fixed;
   inset: 0 0 auto;
@@ -976,10 +1072,237 @@ h2::before {
   }
 }
 
+/* Shared admin page surfaces */
+.admin > .min-h-screen:not(.admin-dashboard) {
+  background: var(--background) !important;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) > main {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.75rem 0 4rem;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) h1 {
+  margin-top: 0.35rem;
+  color: var(--text-heading);
+  font-size: clamp(1.75rem, 4vw, 2.7rem);
+  font-weight: 850;
+  letter-spacing: -0.03em;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) h2,
+.admin > .min-h-screen:not(.admin-dashboard) h3 {
+  color: var(--text-heading);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) a:not(.admin-header__brand) {
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) .bg-white.rounded-lg.shadow,
+.admin > .min-h-screen:not(.admin-dashboard) .bg-white.rounded-lg.shadow-xl,
+.admin > .min-h-screen:not(.admin-dashboard) .bg-white.rounded-lg.shadow-md {
+  border: 1px solid var(--card-border);
+  border-radius: 1.15rem !important;
+  background: var(--surface-solid) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) input,
+.admin > .min-h-screen:not(.admin-dashboard) select,
+.admin > .min-h-screen:not(.admin-dashboard) textarea {
+  border-color: var(--input-border) !important;
+  border-radius: 0.8rem !important;
+  background: var(--input-background) !important;
+  color: var(--text-heading);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) input:focus,
+.admin > .min-h-screen:not(.admin-dashboard) select:focus,
+.admin > .min-h-screen:not(.admin-dashboard) textarea:focus {
+  border-color: var(--primary-color) !important;
+  outline: 0;
+  box-shadow: 0 0 0 4px
+    color-mix(in srgb, var(--primary-color) 14%, transparent) !important;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-blue-600,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-blue-600,
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-green-600,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-green-600 {
+  border: 1px solid transparent;
+  border-radius: 999px !important;
+  background: var(--primary-color) !important;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--primary-color) 18%, transparent);
+  font-weight: 750;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-red-600,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-red-600 {
+  border: 1px solid color-mix(in srgb, #c45269 38%, var(--card-border));
+  border-radius: 999px !important;
+  color: #a43c53 !important;
+  background: color-mix(in srgb, #f8dfe5 58%, var(--surface-solid)) !important;
+  box-shadow: none;
+  font-weight: 750;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-600,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-700,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-600,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-700 {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  font-weight: 750;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-600,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-700 {
+  border-color: color-mix(in srgb, var(--primary-color) 26%, transparent);
+  color: var(--primary-strong) !important;
+  background: var(--primary-light);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-600,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-700 {
+  border-color: color-mix(in srgb, #c45269 30%, transparent);
+  color: #a43c53 !important;
+  background: color-mix(in srgb, #f8dfe5 42%, transparent);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-gray-200,
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-gray-300,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-gray-200,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-gray-300 {
+  border: 1px solid var(--card-border);
+  border-radius: 999px !important;
+  color: var(--text-body) !important;
+  background: var(--button-background) !important;
+  box-shadow: none;
+  font-weight: 750;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-blue-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-blue-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-green-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-green-600:hover {
+  background: var(--primary-strong) !important;
+  transform: translateY(-1px);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-red-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-red-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-red-700:hover {
+  border-color: #c45269;
+  background: #f8dfe5 !important;
+  transform: translateY(-1px);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-600:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.text-blue-700:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-gray-200:hover,
+.admin > .min-h-screen:not(.admin-dashboard) button.bg-gray-300:hover,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-gray-200:hover,
+.admin > .min-h-screen:not(.admin-dashboard) a.bg-gray-300:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light) !important;
+  transform: translateY(-1px);
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) button:focus-visible,
+.admin > .min-h-screen:not(.admin-dashboard) a:focus-visible,
+.admin > .min-h-screen:not(.admin-dashboard) input:focus-visible,
+.admin > .min-h-screen:not(.admin-dashboard) select:focus-visible,
+.admin > .min-h-screen:not(.admin-dashboard) textarea:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--primary-color) 42%, transparent);
+  outline-offset: 3px;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) section {
+  margin-bottom: 0;
+}
+
+.admin-contact-card,
+.admin-contact-detail-card {
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem !important;
+  background: var(--surface-solid) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.admin-contact-card table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: 0.9rem;
+}
+
+.admin-contact-card thead {
+  background: var(--primary-light) !important;
+  color: var(--primary-strong) !important;
+}
+
+.admin-contact-card th,
+.admin-contact-card td {
+  border-color: var(--card-border) !important;
+}
+
+.admin-contact-card tbody tr {
+  background: var(--surface-solid) !important;
+  transition: background-color 180ms ease;
+}
+
+.admin-contact-card tbody tr:hover {
+  background: color-mix(in srgb, var(--primary-light) 36%, var(--surface-solid)) !important;
+}
+
+.admin-contact-detail-card > .rounded-lg.border {
+  border-color: var(--card-border) !important;
+  background: color-mix(in srgb, var(--primary-light) 24%, var(--surface-solid)) !important;
+}
+
+.admin-product-filters {
+  margin-bottom: 1.25rem;
+}
+
+.admin-product-list {
+  margin-top: 0;
+}
+
+.admin > .min-h-screen:not(.admin-dashboard) .border-gray-200,
+.admin > .min-h-screen:not(.admin-dashboard) .border-gray-300,
+.admin > .min-h-screen:not(.admin-dashboard) .border-b,
+.admin > .min-h-screen:not(.admin-dashboard) .border-t {
+  border-color: var(--card-border) !important;
+}
+
+@media (max-width: 600px) {
+  .admin > .min-h-screen:not(.admin-dashboard) > main {
+    width: min(100% - 1.25rem, 1120px);
+    padding-top: 1.25rem;
+  }
+}
+
 .admin-dashboard__main {
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
   padding: 2rem 0 4rem;
+}
+
+.admin-dashboard {
+  background: var(--background) !important;
 }
 
 .admin-dashboard section {

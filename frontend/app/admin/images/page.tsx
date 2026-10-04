@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 
@@ -76,15 +77,7 @@ function ImagesContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="py-5">
-          <Link
-            href="/admin"
-            className="text-blue-800 hover:text-gray-900 mb-4"
-          >
-            ← ダッシュボード
-          </Link>
-          <h1 className="text-2xl font-bold mb-4">画像管理</h1>
-        </div>
+        <AdminPageHeader page="images" />
         <div className="bg-white p-6 rounded-lg shadow">
           <div className="space-y-4">
             {/* アップロード先選択 */}

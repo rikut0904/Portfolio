@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import { useAuth } from "../../../lib/auth/AuthContext";
 import Link from "next/link";
 
@@ -83,17 +84,7 @@ function LogsContent() {
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-6">
-        <div className="mb-3 sm:mb-6">
-          <Link
-            href="/admin"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs sm:text-sm"
-          >
-            ← ダッシュボード
-          </Link>
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1 sm:mt-2">
-            ログ一覧
-          </h1>
-        </div>
+        <AdminPageHeader page="logs" />
 
         {loading ? (
           <div className="flex items-center justify-center py-12">

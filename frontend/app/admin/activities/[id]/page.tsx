@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
 import Link from "next/link";
+import { AdminPageHeader } from "../../../../components/admin/AdminPageShell";
 import { useParams } from "next/navigation";
 import DeleteConfirmModal from "../../../../components/admin/DeleteConfirmModal";
 import ActivityForm from "../../../../components/admin/ActivityForm";
@@ -209,12 +210,22 @@ function CategoryActivitiesContent() {
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
         <div className="py-2 sm:py-4">
-          <Link
-            href="/admin/activities"
-            className="text-blue-800 hover:text-gray-900 mb-2 sm:mb-4 inline-block text-sm sm:text-base"
-          >
-            ← カテゴリ一覧
-          </Link>
+          <AdminPageHeader
+            page="activities"
+            title={isEditingCategoryName ? "カテゴリ名を編集" : category.name}
+            backHref="/admin/activities"
+            backLabel="カテゴリ一覧"
+            actions={
+              !isEditingCategoryName ? (
+                <button
+                  onClick={handleEditCategoryName}
+                  className="px-3 py-2 text-sm font-semibold text-[var(--primary-strong)]"
+                >
+                  カテゴリ名を編集
+                </button>
+              ) : null
+            }
+          />
 
           {isEditingCategoryName ? (
             <div className="mb-4 sm:mb-6 flex items-center gap-2">
@@ -241,30 +252,7 @@ function CategoryActivitiesContent() {
                 </button>
               </div>
             </div>
-          ) : (
-            <div className="mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3">
-              <h1 className="text-lg sm:text-2xl font-bold">{category.name}</h1>
-              <button
-                onClick={handleEditCategoryName}
-                className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded mt-1 sm:mt-2.5"
-                title="カテゴリ名を編集"
-              >
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
-              </button>
-            </div>
-          )}
+          ) : null}
 
           {!editingActivity && !isAddingNew && (
             <div className="mb-4 sm:mb-6">

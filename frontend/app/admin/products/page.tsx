@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import { AdminPageHeader } from "../../../components/admin/AdminPageShell";
 import Link from "next/link";
 import ProductForm from "../../../components/admin/ProductForm";
 import ProductFilters from "../../../components/admin/ProductFilters";
@@ -131,25 +132,17 @@ function ProductsContent() {
   return (
     <div className="min-h-screen bg-gray-100">
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="py-2 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div className="w-full sm:w-auto">
-            <Link
-              href="/admin"
-              className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
-            >
-              ← ダッシュボード
-            </Link>
-            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">
-              作品管理
-            </h1>
-          </div>
+        <AdminPageHeader
+          page="products"
+          actions={
           <button
             onClick={handleAddNew}
             className="w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md text-sm sm:text-base"
           >
             + 新しい作品を追加
           </button>
-        </div>
+          }
+        />
 
         {(isAddingNew || editingProduct) && (
           <ProductForm
@@ -193,7 +186,7 @@ function ProductsContent() {
           onClearFilters={clearFilters}
         />
 
-        <div className="bg-white rounded-lg shadow">
+        <div className="admin-product-list bg-white rounded-lg shadow">
           <div className="px-3 py-3 sm:px-6 sm:py-4 border-b">
             <h2 className="text-base sm:text-xl font-semibold truncate">
               作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}
