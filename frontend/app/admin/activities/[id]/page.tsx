@@ -111,17 +111,17 @@ function CategoryActivitiesContent() {
       image: normalizeActivityImage(formData.image),
     };
 
-    let success = false;
+    const success = editingActivity
+      ? await updateActivity(editingActivity.id, dataToSave)
+      : await createActivity(dataToSave);
 
     if (editingActivity) {
-      success = await updateActivity(editingActivity.id, dataToSave);
       if (success) {
         alert("更新しました");
       } else {
         alert("更新に失敗しました");
       }
     } else {
-      success = await createActivity(dataToSave);
       if (success) {
         alert("追加しました");
       } else {

@@ -1,8 +1,7 @@
 import js from "@eslint/js";
-import importPlugin from "eslint-plugin-import";
-import jsxA11y from "eslint-plugin-jsx-a11y";
-import react from "eslint-plugin-react";
+import importPlugin from "eslint-plugin-import-x";
 import reactHooks from "eslint-plugin-react-hooks";
+import { createTypeScriptImportResolver } from "eslint-import-resolver-typescript";
 import tseslint from "typescript-eslint";
 
 const config = tseslint.config(
@@ -14,20 +13,16 @@ const config = tseslint.config(
   {
     files: ["**/*.{js,jsx,ts,tsx}"],
     plugins: {
-      import: importPlugin,
-      "jsx-a11y": jsxA11y,
-      react,
+      "import-x": importPlugin,
       "react-hooks": reactHooks,
     },
     settings: {
-      react: { version: "detect" },
-      "import/resolver": {
-        typescript: true,
-      },
+      "import-x/resolver-next": [
+        createTypeScriptImportResolver({ alwaysTryTypes: true }),
+      ],
     },
     rules: {
-      "import/no-unresolved": "error",
-      "react/jsx-no-target-blank": "error",
+      "import-x/no-unresolved": "error",
       ...reactHooks.configs["recommended-latest"].rules,
       "react-hooks/immutability": "off",
       "react-hooks/static-components": "off",
