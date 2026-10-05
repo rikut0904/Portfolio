@@ -33,7 +33,7 @@ func (r *SectionRepository) List(ctx context.Context) ([]section.Section, error)
 }
 
 func (r *SectionRepository) Create(ctx context.Context, input section.SectionPayload) (section.Section, error) {
-	if strings.TrimSpace(input.ID) == "" || strings.TrimSpace(input.DisplayName) == "" || strings.TrimSpace(input.TypeName) == "" {
+	if !section.IsValidID(input.ID) || strings.TrimSpace(input.DisplayName) == "" || strings.TrimSpace(input.TypeName) == "" {
 		return section.Section{}, section.ErrInvalid
 	}
 	var result section.Section

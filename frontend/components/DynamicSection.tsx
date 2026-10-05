@@ -86,7 +86,9 @@ const getJapaneseSectionTitle = (
   const title = displayName.trim();
   if (/[ぁ-んァ-ヶ一-龠]/.test(title)) return title;
 
-  if (sectionTitleById[id]) return sectionTitleById[id];
+  if (Object.prototype.hasOwnProperty.call(sectionTitleById, id)) {
+    return sectionTitleById[id];
+  }
 
   const normalized = title.toLowerCase();
   if (normalized.includes("profile") || normalized.includes("about")) {

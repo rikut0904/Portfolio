@@ -43,8 +43,13 @@ export default function NewSectionForm({
     }
 
     // IDのバリデーション（英数字とハイフン、アンダースコアのみ）
-    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-      alert("IDは英数字、ハイフン、アンダースコアのみ使用できます");
+    if (
+      !/^[a-zA-Z0-9_-]+$/.test(id) ||
+      ["__proto__", "constructor", "prototype"].includes(id)
+    ) {
+      alert(
+        "IDは英数字、ハイフン、アンダースコアのみ使用できます（予約語は使用できません）",
+      );
       return;
     }
 
