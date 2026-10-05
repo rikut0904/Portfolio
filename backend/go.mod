@@ -3,7 +3,7 @@ module portfolio-backend
 go 1.26.0
 
 require (
-	github.com/aws/aws-sdk-go-v2/config v1.33.4
+	github.com/aws/aws-sdk-go-v2/config v1.33.6
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.6
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.77.0
 	github.com/go-playground/validator/v10 v10.30.5
