@@ -224,7 +224,7 @@ export default function MeetingRequestModal({
       return;
     }
 
-    let nextIndex: number | null = null;
+    let nextIndex: number;
     switch (event.key) {
       case "ArrowDown":
       case "ArrowRight":
@@ -250,9 +250,7 @@ export default function MeetingRequestModal({
     }
 
     event.preventDefault();
-    if (nextIndex !== null) {
-      moveToSlot(nextIndex);
-    }
+    moveToSlot(nextIndex);
   };
 
   const handleSubmit = async (e: FormEvent) => {
