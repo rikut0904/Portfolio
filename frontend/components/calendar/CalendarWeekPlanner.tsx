@@ -49,7 +49,10 @@ function offsetHours(date: Date) {
 }
 
 /** 1日列内の予定ブロックを、表示中の時間帯に収まる部分だけ描画用に変換する。範囲外なら null */
-function timedBlockPositionInGrid(clipped: { start: Date; end: Date }) {
+function timedBlockPositionInGrid(
+  clipped: { start: Date; end: Date },
+  minimumHeight = 22,
+) {
   const startH = offsetHours(clipped.start);
   const endH = offsetHours(clipped.end);
   const v0 = Math.max(startH, GRID_DISPLAY_START_HOUR);
@@ -59,7 +62,7 @@ function timedBlockPositionInGrid(clipped: { start: Date; end: Date }) {
   }
   const top = (v0 - GRID_DISPLAY_START_HOUR) * HOUR_HEIGHT;
   const rawH = (v1 - v0) * HOUR_HEIGHT;
-  const height = Math.max(22, rawH);
+  const height = Math.max(minimumHeight, rawH);
   return { top, height };
 }
 
@@ -1257,7 +1260,12 @@ function WeekCalendarGrid({
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 border-t border-dashed border-[var(--card-border)]" />
                 {displayTimedEvents.map((event) => {
                   const clipped = clipEventToDay(event, day);
-                  const gridPos = timedBlockPositionInGrid(clipped);
+                  const minimumBlockHeight =
+                    variant === "public" && !event.isPublished ? 0 : 22;
+                  const gridPos = timedBlockPositionInGrid(
+                    clipped,
+                    minimumBlockHeight,
+                  );
                   if (!gridPos) {
                     return null;
                   }
