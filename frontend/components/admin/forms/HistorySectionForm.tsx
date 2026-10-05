@@ -131,7 +131,7 @@ export default function HistorySectionForm({
           <button
             type="button"
             onClick={handleSortHistories}
-            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+            className="admin-button admin-button--primary admin-button--compact"
           >
             今すぐソート
           </button>
@@ -188,7 +188,7 @@ export default function HistorySectionForm({
               <button
                 type="button"
                 onClick={() => removeHistory(historyIndex)}
-                className="px-2 py-2 sm:px-3 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 flex-shrink-0 text-base sm:text-lg font-bold"
+                className="admin-button admin-button--danger admin-button--compact admin-button--icon"
               >
                 ×
               </button>
@@ -226,7 +226,7 @@ export default function HistorySectionForm({
                     <button
                       type="button"
                       onClick={() => removeDetail(historyIndex, detailIndex)}
-                      className="px-2 py-1 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm flex-shrink-0"
+                      className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                     >
                       ×
                     </button>
@@ -250,7 +250,7 @@ export default function HistorySectionForm({
               <button
                 type="button"
                 onClick={() => addDetail(historyIndex)}
-                className="w-full px-3 py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm sm:text-base"
+                className="admin-button admin-button--secondary w-full"
               >
                 + 詳細を追加
               </button>
@@ -261,7 +261,7 @@ export default function HistorySectionForm({
       <button
         type="button"
         onClick={addHistory}
-        className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm sm:text-base"
+        className="admin-button admin-button--primary w-full"
       >
         + 履歴を追加
       </button>

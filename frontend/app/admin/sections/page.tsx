@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../components/admin/AdminLoading";
 import { useAuth } from "../../../lib/auth/AuthContext";
-import Link from "next/link";
 import SectionForm from "../../../components/admin/SectionForm";
 import NewSectionForm from "../../../components/admin/NewSectionForm";
 import DeleteConfirmModal from "../../../components/admin/DeleteConfirmModal";
@@ -309,158 +313,146 @@ function SectionsContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="py-2 sm:py-4">
-          <Link
-            href="/admin"
-            className="text-blue-800 hover:text-gray-900 mb-2 sm:mb-4 inline-block text-sm sm:text-base"
-          >
-            ← ダッシュボード
-          </Link>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0 mb-3 sm:mb-4">
-            <h1 className="text-lg sm:text-2xl font-bold">セクション管理</h1>
-            {!editingSection && !isCreating && (
-              <button
-                onClick={() => setIsCreating(true)}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+    <AdminPageContent>
+      <AdminPageHeader
+        page="sections"
+        actions={
+          !editingSection && !isCreating ? (
+            <button
+              onClick={() => setIsCreating(true)}
+              className="admin-button admin-button--primary"
+            >
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                新規セクションを作成
-              </button>
-            )}
-          </div>
-        </div>
-        {isCreating ? (
-          /* 新規作成モード */
-          <NewSectionForm
-            onSave={handleCreate}
-            onCancel={handleCancelCreate}
-            existingSections={sections}
-          />
-        ) : editingSection ? (
-          /* 編集モード */
-          <SectionForm
-            section={editingSection}
-            onSave={handleSave}
-            onCancel={handleCancel}
-            onMetaUpdate={handleMetaUpdate}
-          />
-        ) : (
-          /* 一覧モード */
-          <div className="space-y-3 sm:space-y-4">
-            {sections.map((section, index) => (
-              <div
-                key={section.id}
-                className="bg-white p-3 sm:p-6 rounded-lg shadow"
-              >
-                <div className="flex items-start gap-2 sm:gap-4">
-                  {/* 順番変更ボタン */}
-                  <div className="flex flex-col gap-1 flex-shrink-0">
-                    <button
-                      onClick={() => handleMoveUp(section)}
-                      disabled={index === 0}
-                      className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="上に移動"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              新規セクションを作成
+            </button>
+          ) : null
+        }
+      />
+      {isCreating ? (
+        /* 新規作成モード */
+        <NewSectionForm
+          onSave={handleCreate}
+          onCancel={handleCancelCreate}
+          existingSections={sections}
+        />
+      ) : editingSection ? (
+        /* 編集モード */
+        <SectionForm
+          section={editingSection}
+          onSave={handleSave}
+          onCancel={handleCancel}
+          onMetaUpdate={handleMetaUpdate}
+        />
+      ) : (
+        /* 一覧モード */
+        <div className="space-y-3 sm:space-y-4">
+          {sections.map((section, index) => (
+            <div
+              key={section.id}
+              className="bg-white p-3 sm:p-6 rounded-lg shadow"
+            >
+              <div className="flex items-start gap-2 sm:gap-4">
+                {/* 順番変更ボタン */}
+                <div className="flex flex-col gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleMoveUp(section)}
+                    disabled={index === 0}
+                    className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                    title="上に移動"
+                  >
+                    <svg
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        className="w-3 h-3 sm:w-4 sm:h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 15l7-7 7 7"
-                        />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => handleMoveDown(section)}
-                      disabled={index === sections.length - 1}
-                      className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="下に移動"
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M5 15l7-7 7 7"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => handleMoveDown(section)}
+                    disabled={index === sections.length - 1}
+                    className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
+                    title="下に移動"
+                  >
+                    <svg
+                      className="w-3 h-3 sm:w-4 sm:h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <svg
-                        className="w-3 h-3 sm:w-4 sm:h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                  </div>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-                  {/* セクション情報 */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                      {section.meta.displayName}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 truncate">
-                      ID: {section.id} | 順番: {section.meta.order}
-                    </p>
-                  </div>
+                {/* セクション情報 */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                    {section.meta.displayName}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 truncate">
+                    ID: {section.id} | 順番: {section.meta.order}
+                  </p>
+                </div>
 
-                  {/* 編集・削除ボタン（縦並び） */}
-                  <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
+                {/* 編集・削除ボタン（縦並び） */}
+                <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
+                  <button
+                    onClick={() => handleEdit(section)}
+                    className="admin-button admin-button--primary"
+                  >
+                    編集
+                  </button>
+                  {section.meta.editable && (
                     <button
-                      onClick={() => handleEdit(section)}
-                      className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
+                      onClick={() => handleDeleteClick(section)}
+                      className="admin-button admin-button--danger"
                     >
-                      編集
+                      削除
                     </button>
-                    {section.meta.editable && (
-                      <button
-                        onClick={() => handleDeleteClick(section)}
-                        className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base whitespace-nowrap"
-                      >
-                        削除
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
+      )}
 
-        {/* 削除確認モーダル */}
-        <DeleteConfirmModal
-          isOpen={!!deletingSection}
-          sectionName={deletingSection?.meta.displayName || ""}
-          onConfirm={handleDeleteConfirm}
-          onCancel={handleDeleteCancel}
-        />
-      </main>
-    </div>
+      {/* 削除確認モーダル */}
+      <DeleteConfirmModal
+        isOpen={!!deletingSection}
+        sectionName={deletingSection?.meta.displayName || ""}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
+    </AdminPageContent>
   );
 }
 

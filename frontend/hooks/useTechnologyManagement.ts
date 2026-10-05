@@ -17,7 +17,17 @@ export function useTechnologyManagement() {
         return;
       }
       const techs = Array.isArray(data.technologies) ? data.technologies : [];
-      setTechnologies(techs.map((t: any) => t?.name).filter(Boolean));
+      setTechnologies(
+        techs
+          .filter(
+            (technology: unknown): technology is { name: string } =>
+              typeof technology === "object" &&
+              technology !== null &&
+              "name" in technology &&
+              typeof technology.name === "string",
+          )
+          .map((technology: { name: string }) => technology.name),
+      );
     } catch (error) {
       console.error("Failed to fetch technologies:", error);
       setTechnologies([]);

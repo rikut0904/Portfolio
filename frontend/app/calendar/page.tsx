@@ -5,7 +5,7 @@ import { CalendarWeekPlanner } from "../../components/calendar/CalendarWeekPlann
 
 export default function CalendarPage() {
   return (
-    <SiteLayout wide>
+    <SiteLayout wide className="calendar-page">
       <CalendarWeekPlanner variant="public" />
     </SiteLayout>
   );

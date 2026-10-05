@@ -40,7 +40,7 @@ export default function ActivityList({
               <button
                 onClick={() => onMoveUp(activity)}
                 disabled={index === 0}
-                className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                 title="上に移動"
               >
                 <svg
@@ -60,7 +60,7 @@ export default function ActivityList({
               <button
                 onClick={() => onMoveDown(activity)}
                 disabled={index === activities.length - 1}
-                className="p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                 title="下に移動"
               >
                 <svg
@@ -104,13 +104,13 @@ export default function ActivityList({
             <div className="flex flex-col gap-1.5 sm:gap-2 flex-shrink-0">
               <button
                 onClick={() => onEdit(activity)}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base whitespace-nowrap"
+                className="admin-button admin-button--primary"
               >
                 編集
               </button>
               <button
                 onClick={() => onDelete(activity)}
-                className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base whitespace-nowrap"
+                className="admin-button admin-button--danger"
               >
                 削除
               </button>

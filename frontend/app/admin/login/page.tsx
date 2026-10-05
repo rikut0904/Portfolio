@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import AdminSignInForm from "../../../components/admin/AdminSignInForm";
+import AdminLoading from "../../../components/admin/AdminLoading";
 
 export default function LoginPage() {
   const [ready, setReady] = useState(false);
@@ -40,11 +41,7 @@ export default function LoginPage() {
   }, [router]);
 
   if (!ready) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 text-gray-500">
-        読み込み中...
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   return <AdminSignInForm />;

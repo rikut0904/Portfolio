@@ -107,13 +107,13 @@ export default function ProductListItem({
       <div className="flex flex-col gap-1.5 sm:gap-2 w-full sm:w-auto sm:ml-4">
         <button
           onClick={() => onEdit(product)}
-          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
+          className="admin-button admin-button--primary"
         >
           編集
         </button>
         <button
           onClick={() => onDelete(product.id)}
-          className="px-3 py-1.5 sm:px-4 sm:py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
+          className="admin-button admin-button--danger"
         >
           削除
         </button>

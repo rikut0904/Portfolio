@@ -1,14 +1,49 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import ProtectedRoute from "../../components/admin/ProtectedRoute";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import ProtectedRoute from "../../components/admin/ProtectedRoute";
+import AdminLoading from "../../components/admin/AdminLoading";
 
 interface Stats {
   productsCount: number;
   sectionsCount: number;
   publicProductsCount: number;
 }
+
+const primaryAdminLinks = [
+  {
+    href: "/admin/sections",
+    label: "セクション管理",
+    description: "プロフィール・資格・履歴を編集",
+  },
+  {
+    href: "/admin/activities",
+    label: "課外活動管理",
+    description: "課外活動の追加・編集・公開状態を管理",
+  },
+  {
+    href: "/admin/products",
+    label: "作品管理",
+    description: "制作物の追加・編集・公開状態を管理",
+  },
+  {
+    href: "/admin/calendar",
+    label: "予定管理",
+    description: "Googleカレンダーの予定を確認",
+  },
+  {
+    href: "/admin/contact",
+    label: "お問い合わせ管理",
+    description: "お問い合わせの確認と返信",
+  },
+] as const;
+
+const utilityAdminLinks = [
+  { href: "/admin/images", label: "画像管理" },
+  { href: "/admin/technologies", label: "技術管理" },
+  { href: "/admin/logs", label: "ログ一覧" },
+] as const;
 
 function DashboardContent() {
   const [stats, setStats] = useState<Stats>({
@@ -17,25 +52,24 @@ function DashboardContent() {
     publicProductsCount: 0,
   });
   const [loading, setLoading] = useState(true);
+
   const fetchStats = useCallback(async () => {
     try {
-      // 作品数を取得
-      const productsRes = await fetch("/api/products");
+      const [productsRes, sectionsRes] = await Promise.all([
+        fetch("/api/products"),
+        fetch("/api/sections"),
+      ]);
       const productsData = await productsRes.json();
-      const products = productsData.products || [];
-
-      // セクション数を取得
-      const sectionsRes = await fetch("/api/sections");
       const sectionsData = await sectionsRes.json();
+      const products = productsData.products || [];
       const sections = sectionsData.sections || [];
-
-      // 公開中の作品数
-      const publicProducts = products.filter((p: any) => p.status === "公開");
 
       setStats({
         productsCount: products.length,
         sectionsCount: sections.length,
-        publicProductsCount: publicProducts.length,
+        publicProductsCount: products.filter(
+          (product: { status?: string }) => product.status === "公開",
+        ).length,
       });
     } catch (error) {
       console.error("Failed to fetch stats:", error);
@@ -49,319 +83,96 @@ function DashboardContent() {
   }, [fetchStats]);
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-          {/* セクション管理 */}
-          <Link
-            href="/admin/sections"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  セクション管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  プロフィール、資格、履歴などのセクションを編集
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-          </Link>
+    <div className="admin-dashboard min-h-screen bg-gray-100">
+      <main className="admin-dashboard__main">
+        <header className="admin-dashboard__intro">
+          <p className="section-kicker">Workspace</p>
+          <h1>管理画面</h1>
+        </header>
 
-          {/* 作品管理 */}
-          <Link
-            href="/admin/products"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  作品管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  制作物の追加・編集・削除
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
+        <section aria-labelledby="admin-primary-heading">
+          <div className="admin-dashboard__section-heading">
+            <div>
+              <p className="admin-dashboard__eyebrow">MAIN MENU</p>
+              <h2 id="admin-primary-heading">主要メニュー</h2>
             </div>
-          </Link>
-
-          {/* お問い合わせ管理 */}
-          <Link
-            href="/admin/contact"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  お問い合わせ管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  お問い合わせ内容の確認と返信
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <span>{primaryAdminLinks.length}項目</span>
+          </div>
+          <div className="admin-dashboard__primary-grid">
+            {primaryAdminLinks.map((item, index) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="admin-menu-card"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 10h8m-8 4h6m6 4H6a2 2 0 01-2-2V6a2 2 0 012-2h8l6 6v8a2 2 0 01-2 2z"
-                />
-              </svg>
-            </div>
-          </Link>
+                <span className="admin-menu-card__index">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span className="admin-menu-card__body">
+                  <strong>{item.label}</strong>
+                  <span>{item.description}</span>
+                </span>
+                <span className="admin-menu-card__arrow" aria-hidden="true">
+                  ↗
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-          <Link
-            href="/admin/calendar"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  予定管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  Googleカレンダーの予定を日・週・月・年で確認
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-violet-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        <section
+          className="admin-dashboard__secondary"
+          aria-labelledby="admin-secondary-heading"
+        >
+          <div className="admin-dashboard__section-heading">
+            <div>
+              <p className="admin-dashboard__eyebrow">TOOLS</p>
+              <h2 id="admin-secondary-heading">その他の管理</h2>
+            </div>
+          </div>
+          <div className="admin-dashboard__utility-grid">
+            {utilityAdminLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="admin-utility-link"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-            </div>
-          </Link>
+                <span>{item.label}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </div>
+        </section>
 
-          {/* 画像管理 */}
-          <Link
-            href="/admin/images"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  画像管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  画像のアップロード・管理（GitHub連携）
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-purple-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
+        <section
+          className="admin-dashboard__stats"
+          aria-labelledby="admin-stats-heading"
+        >
+          <div className="admin-dashboard__section-heading">
+            <div>
+              <p className="admin-dashboard__eyebrow">OVERVIEW</p>
+              <h2 id="admin-stats-heading">クイック情報</h2>
             </div>
-          </Link>
-
-          {/* 技術管理 */}
-          <Link
-            href="/admin/technologies"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  技術管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  使用技術の追加・削除
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                />
-              </svg>
-            </div>
-          </Link>
-
-          {/* 課外活動管理 */}
-          <Link
-            href="/admin/activities"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  課外活動管理
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  課外活動カテゴリと参加活動の管理
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-red-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
-            </div>
-          </Link>
-
-          {/* ログ一覧 */}
-          <Link
-            href="/admin/logs"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  ログ一覧
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  管理操作のログを確認
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h10"
-                />
-              </svg>
-            </div>
-          </Link>
-
-          {/* プレビュー */}
-          <Link
-            href="/"
-            target="_blank"
-            className="bg-white p-3 sm:p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <h2 className="text-base sm:text-xl font-semibold text-gray-900 truncate">
-                  サイトを表示
-                </h2>
-                <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-gray-600 line-clamp-2">
-                  公開ページを別タブで開く
-                </p>
-              </div>
-              <svg
-                className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                />
-              </svg>
-            </div>
-          </Link>
-        </div>
-
-        {/* 統計情報 */}
-        <div className="mt-4 sm:mt-8 bg-white p-3 sm:p-6 rounded-lg shadow">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-3 sm:mb-4">
-            クイック情報
-          </h2>
+          </div>
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
+            <AdminLoading compact />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl sm:text-3xl font-bold text-blue-600">
-                  {stats.sectionsCount}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  セクション
-                </p>
+            <div className="admin-dashboard__stats-grid">
+              <div>
+                <strong>{stats.sectionsCount}</strong>
+                <span>セクション</span>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl sm:text-3xl font-bold text-green-600">
-                  {stats.productsCount}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  制作物（全体）
-                </p>
+              <div>
+                <strong>{stats.productsCount}</strong>
+                <span>制作物（全体）</span>
               </div>
-              <div className="text-center p-3 sm:p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl sm:text-3xl font-bold text-purple-600">
-                  {stats.publicProductsCount}
-                </p>
-                <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                  公開中の作品
-                </p>
+              <div>
+                <strong>{stats.publicProductsCount}</strong>
+                <span>公開中の作品</span>
               </div>
             </div>
           )}
-        </div>
+        </section>
       </main>
     </div>
   );

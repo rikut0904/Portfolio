@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import ProtectedRoute from "../../../components/admin/ProtectedRoute";
-import Link from "next/link";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../components/admin/AdminLoading";
 import ProductForm from "../../../components/admin/ProductForm";
 import ProductFilters from "../../../components/admin/ProductFilters";
 import ProductListItem from "../../../components/admin/ProductListItem";
@@ -121,136 +125,122 @@ function ProductsContent() {
   ]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="py-2 sm:py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div className="w-full sm:w-auto">
-            <Link
-              href="/admin"
-              className="text-blue-600 hover:text-blue-800 text-sm sm:text-base"
-            >
-              ← ダッシュボード
-            </Link>
-            <h1 className="text-lg sm:text-2xl font-bold text-gray-900 mt-1 sm:mt-2">
-              作品管理
-            </h1>
-          </div>
+    <AdminPageContent>
+      <AdminPageHeader
+        page="products"
+        actions={
           <button
             onClick={handleAddNew}
-            className="w-full sm:w-auto px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 shadow-md text-sm sm:text-base"
+            className="admin-button admin-button--primary w-full sm:w-auto"
           >
             + 新しい作品を追加
           </button>
-        </div>
+        }
+      />
 
-        {(isAddingNew || editingProduct) && (
-          <ProductForm
-            editingProduct={editingProduct}
-            formData={formData}
-            setFormData={setFormData}
-            technologies={technologies}
-            newTechName={newTechName}
-            setNewTechName={setNewTechName}
-            isAddingTech={isAddingTech}
-            handleAddTechnology={handleAddTechnology}
-            handleSubmit={handleSubmit}
-            onCancel={handleCancel}
-            categories={CATEGORIES}
-            statuses={STATUSES}
-            deployStatuses={DEPLOY_STATUSES}
-          />
-        )}
-
-        <ProductFilters
-          filterCategory={filterCategory}
-          setFilterCategory={setFilterCategory}
-          filterStatus={filterStatus}
-          setFilterStatus={setFilterStatus}
-          filterDeployStatus={filterDeployStatus}
-          setFilterDeployStatus={setFilterDeployStatus}
-          filterCreatedYear={filterCreatedYear}
-          setFilterCreatedYear={setFilterCreatedYear}
-          filterCreatedMonth={filterCreatedMonth}
-          setFilterCreatedMonth={setFilterCreatedMonth}
-          filterTechnologies={filterTechnologies}
-          setFilterTechnologies={setFilterTechnologies}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
+      {(isAddingNew || editingProduct) && (
+        <ProductForm
+          editingProduct={editingProduct}
+          formData={formData}
+          setFormData={setFormData}
+          technologies={technologies}
+          newTechName={newTechName}
+          setNewTechName={setNewTechName}
+          isAddingTech={isAddingTech}
+          handleAddTechnology={handleAddTechnology}
+          handleSubmit={handleSubmit}
+          onCancel={handleCancel}
           categories={CATEGORIES}
           statuses={STATUSES}
           deployStatuses={DEPLOY_STATUSES}
-          technologies={technologies}
-          availableYears={availableYears}
-          availableMonths={availableMonths}
-          onClearFilters={clearFilters}
         />
+      )}
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-3 py-3 sm:px-6 sm:py-4 border-b">
-            <h2 className="text-base sm:text-xl font-semibold truncate">
-              作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}
-              件）
-            </h2>
-          </div>
-          <div className="divide-y">
-            {currentProducts.map((product) => (
-              <ProductListItem
-                key={product.id}
-                product={product}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onStatusClick={setStatusModalProduct}
-                onDeployStatusClick={setDeployStatusModalProduct}
-              />
-            ))}
-          </div>
+      <ProductFilters
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        filterDeployStatus={filterDeployStatus}
+        setFilterDeployStatus={setFilterDeployStatus}
+        filterCreatedYear={filterCreatedYear}
+        setFilterCreatedYear={setFilterCreatedYear}
+        filterCreatedMonth={filterCreatedMonth}
+        setFilterCreatedMonth={setFilterCreatedMonth}
+        filterTechnologies={filterTechnologies}
+        setFilterTechnologies={setFilterTechnologies}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        categories={CATEGORIES}
+        statuses={STATUSES}
+        deployStatuses={DEPLOY_STATUSES}
+        technologies={technologies}
+        availableYears={availableYears}
+        availableMonths={availableMonths}
+        onClearFilters={clearFilters}
+      />
 
-          {/* ページネーション */}
-          {filteredProducts.length > itemsPerPage && (
-            <div className="px-3 py-4 sm:px-6 sm:py-5 border-t">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                variant="admin"
-              />
-            </div>
-          )}
+      <div className="admin-product-list bg-white rounded-lg shadow">
+        <div className="px-3 py-3 sm:px-6 sm:py-4 border-b">
+          <h2 className="text-base sm:text-xl font-semibold truncate">
+            作品一覧（{filteredProducts.length}件 / 全{safeProducts.length}
+            件）
+          </h2>
+        </div>
+        <div className="divide-y">
+          {currentProducts.map((product) => (
+            <ProductListItem
+              key={product.id}
+              product={product}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onStatusClick={setStatusModalProduct}
+              onDeployStatusClick={setDeployStatusModalProduct}
+            />
+          ))}
         </div>
 
-        {statusModalProduct && (
-          <StatusModal
-            product={statusModalProduct}
-            statuses={STATUSES}
-            onStatusChange={(productId, newStatus) => {
-              handleQuickStatusChange(productId, newStatus);
-              setStatusModalProduct(null);
-            }}
-            onClose={() => setStatusModalProduct(null)}
-          />
+        {/* ページネーション */}
+        {filteredProducts.length > itemsPerPage && (
+          <div className="px-3 py-4 sm:px-6 sm:py-5 border-t">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              variant="admin"
+            />
+          </div>
         )}
+      </div>
 
-        {deployStatusModalProduct && (
-          <DeployStatusModal
-            product={deployStatusModalProduct}
-            deployStatuses={DEPLOY_STATUSES}
-            onDeployStatusChange={(productId, newDeployStatus) => {
-              handleQuickDeployStatusChange(productId, newDeployStatus);
-              setDeployStatusModalProduct(null);
-            }}
-            onClose={() => setDeployStatusModalProduct(null)}
-          />
-        )}
-      </main>
-    </div>
+      {statusModalProduct && (
+        <StatusModal
+          product={statusModalProduct}
+          statuses={STATUSES}
+          onStatusChange={(productId, newStatus) => {
+            handleQuickStatusChange(productId, newStatus);
+            setStatusModalProduct(null);
+          }}
+          onClose={() => setStatusModalProduct(null)}
+        />
+      )}
+
+      {deployStatusModalProduct && (
+        <DeployStatusModal
+          product={deployStatusModalProduct}
+          deployStatuses={DEPLOY_STATUSES}
+          onDeployStatusChange={(productId, newDeployStatus) => {
+            handleQuickDeployStatusChange(productId, newDeployStatus);
+            setDeployStatusModalProduct(null);
+          }}
+          onClose={() => setDeployStatusModalProduct(null)}
+        />
+      )}
+    </AdminPageContent>
   );
 }
 

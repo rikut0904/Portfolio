@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AdminHeader from "./header";
+import AdminPageShell from "../../components/admin/AdminPageShell";
 
 export const metadata: Metadata = {
   title: "管理画面 | 平田 陸翔",
@@ -11,10 +11,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <div className="admin min-h-screen bg-gray-50 pt-20">
-      <AdminHeader />
-      {children}
-    </div>
-  );
+  return <AdminPageShell>{children}</AdminPageShell>;
 }

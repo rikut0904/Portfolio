@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   type CalendarBusyEvent,
   getFreeSlotsInDisplayRange,
@@ -27,13 +34,7 @@ const DURATION_LABEL: Record<
   30: "30分",
   60: "1時間",
   90: "1.5時間",
-  120: "2時間",
-  180: "3時間",
 };
-
-/** リストボックスの表示行数（超えるとセレクト内でスクロール） */
-const DURATION_SELECT_ROWS = 5;
-const SLOT_SELECT_MAX_VISIBLE_ROWS = 12;
 
 function formatSlotRange(start: Date, end: Date) {
   const dFmt = new Intl.DateTimeFormat("ja-JP", {
@@ -94,7 +95,9 @@ export default function MeetingRequestModal({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [durationMinutes, setDurationMinutes] = useState<number>(60);
+  const [customDurationHours, setCustomDurationHours] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const slotRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const hintKey = preferredHint?.getTime() ?? 0;
 
@@ -137,6 +140,7 @@ export default function MeetingRequestModal({
       setSubmitting(false);
       setSelectedIndex(0);
       setDurationMinutes(60);
+      setCustomDurationHours("");
     }
   }, [open]);
 
@@ -184,7 +188,7 @@ export default function MeetingRequestModal({
     if (!open) {
       return;
     }
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
       }
@@ -206,6 +210,50 @@ export default function MeetingRequestModal({
   const rangeLabel =
     slotStart && slotEnd ? formatSlotRange(slotStart, slotEnd) : "";
   const subject = slotStart && slotEnd ? `MTG依頼（${rangeLabel}）` : "";
+
+  const moveToSlot = (index: number) => {
+    setSelectedIndex(index);
+    requestAnimationFrame(() => slotRefs.current[index]?.focus());
+  };
+
+  const handleSlotKeyDown = (
+    event: ReactKeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) => {
+    if (availableSlots.length === 0) {
+      return;
+    }
+
+    let nextIndex: number | null = null;
+    switch (event.key) {
+      case "ArrowDown":
+      case "ArrowRight":
+        nextIndex = Math.min(index + 1, availableSlots.length - 1);
+        break;
+      case "ArrowUp":
+      case "ArrowLeft":
+        nextIndex = Math.max(index - 1, 0);
+        break;
+      case "Home":
+        nextIndex = 0;
+        break;
+      case "End":
+        nextIndex = availableSlots.length - 1;
+        break;
+      case "Enter":
+      case " ":
+        event.preventDefault();
+        setSelectedIndex(index);
+        return;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    if (nextIndex !== null) {
+      moveToSlot(nextIndex);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -257,14 +305,20 @@ export default function MeetingRequestModal({
 
   const titleId = "meeting-request-modal-title";
   const canSubmit = availableSlots.length > 0 && Boolean(slotStart && slotEnd);
+  const isCustomDuration = customDurationHours !== "";
 
-  const slotSelectSize =
-    availableSlots.length <= 1
-      ? 1
-      : Math.min(SLOT_SELECT_MAX_VISIBLE_ROWS, availableSlots.length);
+  const handleCustomDurationChange = (value: string) => {
+    setCustomDurationHours(value);
+    const hours = Number(value);
+    if (Number.isFinite(hours) && hours >= 0.5 && hours <= 8) {
+      setDurationMinutes(Math.round(hours * 60));
+      return;
+    }
+    setDurationMinutes(0);
+  };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-4">
+    <div className="meeting-request-overlay fixed inset-0 z-[100] flex items-end justify-center px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:items-center sm:p-4">
       <button
         type="button"
         className="absolute inset-0 bg-black/45 backdrop-blur-[1px]"
@@ -275,10 +329,10 @@ export default function MeetingRequestModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[min(100%,26rem)] flex-col overflow-hidden rounded-t-[1.75rem] border border-[var(--card-border)] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(245,235,255,0.96))] shadow-[0_-12px_48px_rgba(0,0,0,0.18)] sm:max-h-[min(88vh,920px)] sm:rounded-[2rem] sm:shadow-[0_24px_80px_rgba(107,70,193,0.18)] md:max-w-[min(100%,48rem)] md:max-h-[min(90vh,720px)]"
+        className="meeting-request-panel relative z-10 flex max-h-[min(92vh,100dvh)] w-full max-w-[min(100%,26rem)] flex-col overflow-hidden sm:max-h-[min(88vh,920px)] md:max-w-[min(100%,48rem)] md:max-h-[min(90vh,720px)]"
       >
         <div className="flex min-h-0 flex-1 flex-col">
-          <header className="relative shrink-0 border-b border-[var(--card-border)] px-4 pb-3 pt-4 sm:px-6 sm:pb-4 sm:pt-5">
+          <header className="meeting-request-header relative shrink-0 px-4 pb-4 pt-5 sm:px-7 sm:pb-5 sm:pt-6">
             <button
               type="button"
               onClick={onClose}
@@ -295,7 +349,7 @@ export default function MeetingRequestModal({
             >
               打ち合わせの依頼
             </h2>
-            <p className="mt-2 text-sm text-[var(--text-body)]">
+            <p className="meeting-request-subtitle mt-2 text-sm text-[var(--text-body)]">
               カレンダーに表示している時間帯の範囲だけから、長さと開始時刻を選べます。
             </p>
           </header>
@@ -318,65 +372,94 @@ export default function MeetingRequestModal({
               onSubmit={handleSubmit}
               className="flex min-h-0 flex-1 flex-col"
             >
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 md:px-8 md:py-6">
+              <div className="meeting-request-body min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-7 sm:py-5">
                 <div className="flex flex-col gap-0 md:flex-row md:items-stretch md:gap-8">
                   <section
                     aria-labelledby="mtg-schedule-heading"
-                    className="flex min-h-0 min-w-0 flex-1 flex-col md:basis-0"
+                    className="meeting-request-section flex min-h-0 min-w-0 flex-1 flex-col md:basis-0"
                   >
                     <h3 id="mtg-schedule-heading" className="sr-only">
-                      日時の選択
+                      打ち合わせ日時
                     </h3>
-                    <label
-                      className="block text-sm font-medium text-[var(--text-heading)]"
-                      htmlFor="mtg-duration"
-                    >
+                    <div className="meeting-request-label">
                       打ち合わせの長さ
-                    </label>
-                    <div className="mt-2 max-h-[min(30vh,12rem)] overflow-y-auto overscroll-contain rounded-xl border border-[var(--card-border)] bg-white [-webkit-overflow-scrolling:touch] md:max-h-[min(40vh,14rem)]">
-                      <select
-                        id="mtg-duration"
-                        size={DURATION_SELECT_ROWS}
-                        value={durationMinutes}
-                        onChange={(ev) =>
-                          setDurationMinutes(Number(ev.target.value))
-                        }
-                        className="w-full border-0 bg-transparent px-3 py-1.5 text-sm text-[var(--text-heading)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/35 focus:ring-inset"
-                      >
-                        {MTG_DURATION_OPTIONS_MINUTES.map((m) => (
-                          <option key={m} value={m}>
-                            {DURATION_LABEL[m]}
-                          </option>
-                        ))}
-                      </select>
                     </div>
-
-                    <label
-                      className="mt-4 block text-sm font-medium text-[var(--text-heading)]"
-                      htmlFor="mtg-slot"
+                    <div
+                      className="meeting-request-duration-grid mt-2"
+                      aria-label="打ち合わせの長さ"
                     >
-                      希望の開始〜終了
+                      {MTG_DURATION_OPTIONS_MINUTES.map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          className="meeting-request-choice"
+                          data-selected={
+                            !isCustomDuration && durationMinutes === m
+                          }
+                          aria-pressed={
+                            !isCustomDuration && durationMinutes === m
+                          }
+                          onClick={() => {
+                            setCustomDurationHours("");
+                            setDurationMinutes(m);
+                          }}
+                        >
+                          {DURATION_LABEL[m]}
+                        </button>
+                      ))}
+                    </div>
+                    <label className="meeting-request-custom-duration mt-2">
+                      <span>任意の長さ</span>
+                      <span className="meeting-request-custom-duration__input">
+                        <input
+                          type="number"
+                          min="0.5"
+                          max="8"
+                          step="0.5"
+                          value={customDurationHours}
+                          onChange={(event) =>
+                            handleCustomDurationChange(event.target.value)
+                          }
+                          placeholder="例: 2"
+                          aria-label="任意の打ち合わせ時間（時間）"
+                        />
+                        <span>時間</span>
+                      </span>
                     </label>
+
+                    <div className="meeting-request-label mt-5">
+                      希望の開始〜終了
+                    </div>
                     <p className="mt-1 text-xs text-[var(--text-body)]">
                       表示中の時間帯に収まり、予定と重ならない候補だけが並びます（開始は30分刻み）。
                     </p>
                     {availableSlots.length > 0 ? (
-                      <div className="mt-2 max-h-[min(40vh,16rem)] overflow-y-auto overscroll-contain rounded-xl border border-[var(--card-border)] bg-white [-webkit-overflow-scrolling:touch] md:max-h-[min(50vh,22rem)]">
-                        <select
-                          id="mtg-slot"
-                          size={slotSelectSize}
-                          value={safeIndex}
-                          onChange={(ev) =>
-                            setSelectedIndex(Number(ev.target.value))
-                          }
-                          className="w-full min-w-0 border-0 bg-transparent px-3 py-1.5 text-sm text-[var(--text-heading)] focus:outline-none focus:ring-2 focus:ring-[var(--primary-color)]/35 focus:ring-inset"
-                        >
-                          {availableSlots.map((s, i) => (
-                            <option key={s.start.getTime()} value={i}>
-                              {formatSlotRange(s.start, s.end)}
-                            </option>
-                          ))}
-                        </select>
+                      <div
+                        className="meeting-request-slot-list mt-2"
+                        role="listbox"
+                        aria-label="希望の開始時刻"
+                      >
+                        {availableSlots.map((s, i) => (
+                          <button
+                            key={s.start.getTime()}
+                            type="button"
+                            role="option"
+                            tabIndex={safeIndex === i ? 0 : -1}
+                            aria-selected={safeIndex === i}
+                            className="meeting-request-slot"
+                            data-selected={safeIndex === i}
+                            ref={(element) => {
+                              slotRefs.current[i] = element;
+                            }}
+                            onClick={() => setSelectedIndex(i)}
+                            onKeyDown={(event) => handleSlotKeyDown(event, i)}
+                          >
+                            <span>{formatSlotRange(s.start, s.end)}</span>
+                            <span className="meeting-request-slot__mark">
+                              {safeIndex === i ? "選択中" : "選択"}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     ) : (
                       <p className="mt-2 rounded-xl border border-amber-200/90 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
@@ -387,11 +470,17 @@ export default function MeetingRequestModal({
 
                   <section
                     aria-labelledby="mtg-contact-heading"
-                    className="mt-6 flex min-h-0 min-w-0 flex-1 flex-col border-t border-[var(--card-border)] pt-6 md:mt-0 md:basis-0 md:border-l md:border-t-0 md:pl-8 md:pt-0"
+                    className="meeting-request-section mt-6 flex min-h-0 min-w-0 flex-1 flex-col border-t border-[var(--card-border)] pt-6 md:mt-0 md:basis-0 md:border-l md:border-t-0 md:pl-8 md:pt-0"
                   >
                     <h3 id="mtg-contact-heading" className="sr-only">
-                      お名前・連絡先・内容
+                      連絡先
                     </h3>
+                    {rangeLabel ? (
+                      <div className="meeting-request-selection mt-4 mb-4">
+                        <span>選択中の候補</span>
+                        <strong>{rangeLabel}</strong>
+                      </div>
+                    ) : null}
                     <label
                       className="block text-sm font-medium text-[var(--text-heading)]"
                       htmlFor="mtg-name"
@@ -444,7 +533,7 @@ export default function MeetingRequestModal({
                   <p className="mt-4 text-sm text-red-600 md:mt-6">{error}</p>
                 ) : null}
               </div>
-              <footer className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-[var(--card-border)] px-4 py-3 sm:px-6 sm:py-4">
+              <footer className="meeting-request-footer flex shrink-0 flex-wrap items-center justify-end gap-2 px-4 py-3 sm:px-7 sm:py-4">
                 <button
                   type="button"
                   onClick={onClose}

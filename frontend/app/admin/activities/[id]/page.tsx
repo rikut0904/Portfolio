@@ -3,6 +3,11 @@
 import React, { useState } from "react";
 import ProtectedRoute from "../../../../components/admin/ProtectedRoute";
 import Link from "next/link";
+import {
+  AdminPageContent,
+  AdminPageHeader,
+} from "../../../../components/admin/AdminPageShell";
+import AdminLoading from "../../../../components/admin/AdminLoading";
 import { useParams } from "next/navigation";
 import DeleteConfirmModal from "../../../../components/admin/DeleteConfirmModal";
 import ActivityForm from "../../../../components/admin/ActivityForm";
@@ -180,11 +185,7 @@ function CategoryActivitiesContent() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <AdminLoading />;
   }
 
   if (!category) {
@@ -206,117 +207,102 @@ function CategoryActivitiesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-        <div className="py-2 sm:py-4">
-          <Link
-            href="/admin/activities"
-            className="text-blue-800 hover:text-gray-900 mb-2 sm:mb-4 inline-block text-sm sm:text-base"
-          >
-            ← カテゴリ一覧
-          </Link>
-
-          {isEditingCategoryName ? (
-            <div className="mb-4 sm:mb-6 flex items-center gap-2">
-              <input
-                type="text"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base sm:text-xl font-bold"
-                placeholder="カテゴリ名を入力"
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={handleSaveCategoryName}
-                  className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm sm:text-base"
-                >
-                  保存
-                </button>
-                <button
-                  onClick={handleCancelCategoryEdit}
-                  className="flex-1 sm:flex-none px-3 py-2 sm:px-4 sm:py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm sm:text-base"
-                >
-                  キャンセル
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3">
-              <h1 className="text-lg sm:text-2xl font-bold">{category.name}</h1>
+    <AdminPageContent>
+      <div className="py-2 sm:py-4">
+        <AdminPageHeader
+          page="activities"
+          title={isEditingCategoryName ? "カテゴリ名を編集" : category.name}
+          backHref="/admin/activities"
+          backLabel="カテゴリ一覧"
+          actions={
+            !isEditingCategoryName ? (
               <button
                 onClick={handleEditCategoryName}
-                className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded mt-1 sm:mt-2.5"
-                title="カテゴリ名を編集"
+                className="px-3 py-2 text-sm font-semibold text-[var(--primary-strong)]"
               >
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                  />
-                </svg>
+                カテゴリ名を編集
               </button>
-            </div>
-          )}
-
-          {!editingActivity && !isAddingNew && (
-            <div className="mb-4 sm:mb-6">
-              <button
-                onClick={handleAddNew}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
-              >
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                新規追加
-              </button>
-            </div>
-          )}
-
-          {(isAddingNew || editingActivity) && (
-            <ActivityForm
-              formData={formData}
-              setFormData={setFormData}
-              onSubmit={handleSubmit}
-              onCancel={handleCancel}
-              isEditing={!!editingActivity}
-            />
-          )}
-
-          <ActivityList
-            activities={activities}
-            onEdit={handleEdit}
-            onDelete={handleDeleteClick}
-            onMoveUp={handleMoveUp}
-            onMoveDown={handleMoveDown}
-          />
-        </div>
-
-        <DeleteConfirmModal
-          isOpen={!!deletingActivity}
-          sectionName={deletingActivity?.title || ""}
-          onConfirm={handleDeleteConfirm}
-          onCancel={handleDeleteCancel}
+            ) : null
+          }
         />
-      </main>
-    </div>
+
+        {isEditingCategoryName ? (
+          <div className="mb-4 sm:mb-6 flex items-center gap-2">
+            <input
+              type="text"
+              value={categoryName}
+              onChange={(e) => setCategoryName(e.target.value)}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-base sm:text-xl font-bold"
+              placeholder="カテゴリ名を入力"
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveCategoryName}
+                className="admin-button admin-button--primary admin-button--compact"
+              >
+                保存
+              </button>
+              <button
+                onClick={handleCancelCategoryEdit}
+                className="admin-button admin-button--secondary admin-button--compact"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {!editingActivity && !isAddingNew && (
+          <div className="mb-4 sm:mb-6">
+            <button
+              onClick={handleAddNew}
+              className="admin-button admin-button--primary"
+            >
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              新規追加
+            </button>
+          </div>
+        )}
+
+        {(isAddingNew || editingActivity) && (
+          <ActivityForm
+            formData={formData}
+            setFormData={setFormData}
+            onSubmit={handleSubmit}
+            onCancel={handleCancel}
+            isEditing={!!editingActivity}
+          />
+        )}
+
+        <ActivityList
+          activities={activities}
+          onEdit={handleEdit}
+          onDelete={handleDeleteClick}
+          onMoveUp={handleMoveUp}
+          onMoveDown={handleMoveDown}
+        />
+      </div>
+
+      <DeleteConfirmModal
+        isOpen={!!deletingActivity}
+        sectionName={deletingActivity?.title || ""}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+      />
+    </AdminPageContent>
   );
 }
 

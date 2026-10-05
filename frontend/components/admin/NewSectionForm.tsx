@@ -9,7 +9,7 @@ interface NewSectionFormProps {
     type: string;
     order?: number;
     sortOrder?: "asc" | "desc";
-    data: any;
+    data: Record<string, unknown>;
   }) => Promise<void>;
   onCancel: () => void;
   existingSections?: Array<{
@@ -43,8 +43,13 @@ export default function NewSectionForm({
     }
 
     // IDのバリデーション（英数字とハイフン、アンダースコアのみ）
-    if (!/^[a-zA-Z0-9_-]+$/.test(id)) {
-      alert("IDは英数字、ハイフン、アンダースコアのみ使用できます");
+    if (
+      !/^[a-zA-Z0-9_-]+$/.test(id) ||
+      ["__proto__", "constructor", "prototype"].includes(id)
+    ) {
+      alert(
+        "IDは英数字、ハイフン、アンダースコアのみ使用できます（予約語は使用できません）",
+      );
       return;
     }
 
@@ -235,14 +240,14 @@ export default function NewSectionForm({
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+          className="admin-button admin-button--primary"
         >
           {loading ? "作成中..." : "作成"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+          className="admin-button admin-button--secondary"
         >
           キャンセル
         </button>

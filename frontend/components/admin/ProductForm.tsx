@@ -214,7 +214,7 @@ export default function ProductForm({
                       type="button"
                       onClick={handleAddTechnology}
                       disabled={isAddingTech}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 text-sm"
+                      className="admin-button admin-button--primary admin-button--compact"
                     >
                       {isAddingTech ? "追加中..." : "追加"}
                     </button>
@@ -354,14 +354,14 @@ export default function ProductForm({
               <div className="mt-6 flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  className="admin-button admin-button--primary flex-1"
                 >
                   {editingProduct ? "更新" : "追加"}
                 </button>
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
+                  className="admin-button admin-button--secondary"
                 >
                   キャンセル
                 </button>

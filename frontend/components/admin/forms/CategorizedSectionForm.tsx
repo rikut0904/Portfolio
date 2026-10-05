@@ -216,7 +216,7 @@ export default function CategorizedSectionForm({
                     type="button"
                     onClick={() => moveListUp(listIndex)}
                     disabled={listIndex === 0}
-                    className="p-0.5 sm:p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                     title="上に移動"
                   >
                     <svg
@@ -237,7 +237,7 @@ export default function CategorizedSectionForm({
                     type="button"
                     onClick={() => moveListDown(listIndex)}
                     disabled={listIndex === lists.length - 1}
-                    className="p-0.5 sm:p-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                     title="下に移動"
                   >
                     <svg
@@ -262,7 +262,7 @@ export default function CategorizedSectionForm({
                 <button
                   type="button"
                   onClick={() => removeList(listIndex)}
-                  className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm flex-shrink-0"
+                  className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                 >
                   ×
                 </button>
@@ -295,7 +295,7 @@ export default function CategorizedSectionForm({
                             type="button"
                             onClick={() => moveItemUp(listIndex, itemIndex)}
                             disabled={itemIndex === 0}
-                            className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                             title="上に移動"
                           >
                             <svg
@@ -318,7 +318,7 @@ export default function CategorizedSectionForm({
                             disabled={
                               itemIndex === (list.items || []).length - 1
                             }
-                            className="p-0.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="admin-button admin-button--secondary admin-button--compact admin-button--icon"
                             title="下に移動"
                           >
                             <svg
@@ -348,7 +348,7 @@ export default function CategorizedSectionForm({
                         <button
                           type="button"
                           onClick={() => removeItem(listIndex, itemIndex)}
-                          className="px-1.5 py-0.5 sm:px-3 sm:py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm flex-shrink-0"
+                          className="admin-button admin-button--danger admin-button--compact admin-button--icon"
                         >
                           ×
                         </button>
@@ -359,7 +359,7 @@ export default function CategorizedSectionForm({
                 <button
                   type="button"
                   onClick={() => addItem(listIndex)}
-                  className="w-full px-2 py-1.5 sm:px-3 sm:py-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-xs sm:text-base"
+                  className="admin-button admin-button--secondary w-full"
                 >
                   + 項目を追加
                 </button>
@@ -371,7 +371,7 @@ export default function CategorizedSectionForm({
       <button
         type="button"
         onClick={addList}
-        className="w-full px-4 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm sm:text-base"
+        className="admin-button admin-button--primary w-full"
       >
         + カテゴリを追加
       </button>

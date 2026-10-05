@@ -3,9 +3,28 @@ package section
 import (
 	"encoding/json"
 	"errors"
+	"regexp"
+	"strings"
 )
 
 var ErrInvalid = errors.New("invalid section")
+
+var sectionIDPattern = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+var reservedSectionIDs = map[string]struct{}{
+	"__proto__":   {},
+	"constructor": {},
+	"prototype":   {},
+}
+
+func IsValidID(id string) bool {
+	id = strings.TrimSpace(id)
+	if id == "" || !sectionIDPattern.MatchString(id) {
+		return false
+	}
+	_, reserved := reservedSectionIDs[id]
+	return !reserved
+}
 
 type SectionMeta struct {
 	ID          string `json:"id"`

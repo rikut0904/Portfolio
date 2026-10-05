@@ -6,6 +6,7 @@ type SlideInMenuProps = {
   isOpen: boolean;
   onClose: () => void;
   ariaLabel: string;
+  closeAtWidth: number;
   children: React.ReactNode;
 };
 
@@ -16,6 +17,7 @@ export default function SlideInMenu({
   isOpen,
   onClose,
   ariaLabel,
+  closeAtWidth,
   children,
 }: SlideInMenuProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -27,7 +29,14 @@ export default function SlideInMenu({
       return;
     }
 
+    if (window.innerWidth >= closeAtWidth) {
+      onClose();
+      return;
+    }
+
     previousFocusRef.current = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     const focusTarget =
       closeButtonRef.current ||
@@ -69,24 +78,30 @@ export default function SlideInMenu({
 
     document.addEventListener("keydown", handleKeyDown);
 
+    const handleViewportChange = () => {
+      if (window.innerWidth >= closeAtWidth) {
+        onClose();
+      }
+    };
+    window.addEventListener("resize", handleViewportChange);
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", handleViewportChange);
+      document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
-  }, [isOpen, onClose]);
+  }, [closeAtWidth, isOpen, onClose]);
 
   return (
     <div
-      className={`md:hidden fixed inset-0 z-50 transition-opacity duration-200 ${
-        isOpen
-          ? "opacity-100 pointer-events-auto"
-          : "opacity-0 pointer-events-none"
-      }`}
+      id="mobile-navigation"
+      className={`mobile-menu ${isOpen ? "mobile-menu--open" : ""}`}
       aria-hidden={!isOpen}
     >
       <button
         type="button"
-        className="absolute inset-0 bg-primary-color/15 backdrop-blur-sm"
+        className="mobile-menu__backdrop"
         aria-label="メニューを閉じる"
         onClick={onClose}
         tabIndex={isOpen ? 0 : -1}
@@ -96,21 +111,24 @@ export default function SlideInMenu({
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
-        className={`absolute right-0 top-0 h-full w-80 bg-[var(--card-background)] text-header-color shadow-lg pt-16 px-7 pb-7 flex flex-col space-y-6 text-xl transition-transform duration-200 ease-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        }`}
+        className="mobile-menu__panel"
       >
-        <button
-          ref={closeButtonRef}
-          type="button"
-          className="absolute right-4 top-4 text-4xl text-header-color"
-          aria-label="メニューを閉じる"
-          onClick={onClose}
-          tabIndex={isOpen ? 0 : -1}
-        >
-          ×
-        </button>
-        {children}
+        <div className="mobile-menu__header">
+          <p>メニュー</p>
+          <button
+            ref={closeButtonRef}
+            type="button"
+            className="mobile-menu__close"
+            aria-label="メニューを閉じる"
+            onClick={onClose}
+            tabIndex={isOpen ? 0 : -1}
+          >
+            <span aria-hidden="true" />
+          </button>
+        </div>
+        <nav className="mobile-menu__nav" aria-label={ariaLabel}>
+          {children}
+        </nav>
       </div>
     </div>
   );
