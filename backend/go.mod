@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.9
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.9
-	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.77.0
+	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.79.1
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.16.0
