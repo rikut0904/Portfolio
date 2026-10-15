@@ -7,8 +7,8 @@ FRONTEND_SERVICE := frontend
 MIGRATION_DB_SERVICE ?= postgres
 DEFAULT_LOCAL_DATABASE_URL := postgresql://portfolio:portfolio@postgres:5432/portfolio?sslmode=disable
 LOCAL_DATABASE_URL ?= $(DEFAULT_LOCAL_DATABASE_URL)
-GO := /usr/local/go/bin/go
-GOFMT := /usr/local/go/bin/gofmt
+GO ?= go
+GOFMT ?= gofmt
 
 .PHONY: help init-env install install-frontend install-backend \
 	up down restart logs ps build rebuild clean clean/all \

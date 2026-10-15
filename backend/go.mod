@@ -1,6 +1,6 @@
 module portfolio-backend
 
-go 1.26.0
+go 1.27.0
 
 require (
 	github.com/aws/aws-sdk-go-v2/config v1.33.6
@@ -8,7 +8,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sesv2 v1.77.0
 	github.com/go-playground/validator/v10 v10.30.5
 	github.com/google/uuid v1.6.0
-	github.com/labstack/echo/v4 v4.15.4
+	github.com/labstack/echo/v4 v4.16.0
 	google.golang.org/api v0.301.0
 	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
@@ -58,7 +58,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect

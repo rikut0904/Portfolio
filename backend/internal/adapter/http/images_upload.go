@@ -86,7 +86,7 @@ func (h *BaseHandler) uploadImage(w http.ResponseWriter, r *http.Request, user *
 		return NewAppError(http.StatusBadRequest, "Only image files are allowed", nil)
 	}
 
-	repoPath := path.Join("public", "img", repoDir, fileName)
+	repoPath := path.Join("frontend", "public", "img", repoDir, fileName)
 	publicPath := path.Join(publicDir, fileName)
 	if !strings.HasPrefix(publicPath, "/") {
 		publicPath = "/" + publicPath
