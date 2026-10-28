@@ -54,7 +54,15 @@ function timedBlockPositionInGrid(
   minimumHeight = 22,
 ) {
   const startH = offsetHours(clipped.start);
-  const endH = offsetHours(clipped.end);
+  // `clipEventToDay` represents the end of a day as the following day's
+  // midnight.  `Date#getHours()` returns 0 for that value, but in this grid
+  // it must be rendered as 24:00; otherwise events crossing midnight are
+  // treated as having no visible range on the day they continue through.
+  const rawEndH = offsetHours(clipped.end);
+  const endH =
+    rawEndH === 0 && clipped.end.getTime() > clipped.start.getTime()
+      ? 24
+      : rawEndH;
   const v0 = Math.max(startH, GRID_DISPLAY_START_HOUR);
   const v1 = Math.min(endH, GRID_DISPLAY_END_HOUR);
   if (v1 <= v0) {
