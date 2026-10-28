@@ -1045,7 +1045,7 @@ function WeekCalendarGrid({
     variant === "admin" || event.isPublished;
 
   return (
-    <div className="-mx-3 overflow-x-auto overflow-y-visible px-3 sm:-mx-5 sm:px-5">
+    <div className="-mx-3 overflow-x-auto overflow-y-hidden px-3 sm:-mx-5 sm:px-5">
       <div className="min-w-[900px] space-y-3 sm:space-y-4">
         <div
           className="grid gap-2 sm:gap-3"
